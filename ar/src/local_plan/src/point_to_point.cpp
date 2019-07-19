@@ -14,12 +14,12 @@ struct Axis {
 
 class PTP {
 public:
-  PTP(ros::NodeHandle &n, const string &velocity, const string &goal,
+  PTP(ros::NodeHandle *n, const string &velocity, const string &goal,
       const string &current_point) {
-    velocity_pub = n.advertise<geometry_msgs::Twist>(velocity, 1);
-    goal_sub = n.subscribe(goal, 1, &PTP::getGoalPoint, this);
+    velocity_pub = n->advertise<geometry_msgs::Twist>(velocity, 1);
+    goal_sub = n->subscribe(goal, 1, &PTP::getGoalPoint, this);
     current_point_pub =
-        n.subscribe(current_point, 1, &PTP::getCurrentPoint, this);
+        n->subscribe(current_point, 1, &PTP::getCurrentPoint, this);
 
     start = ros::Time::now();
   }
@@ -143,10 +143,10 @@ private:
 };
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "wheel/local_planner");
+  ros::init(argc, argv, "local_planner");
   ros::NodeHandle n;
 
-  PTP controller(n, "wheel/velocity", "wheel/goal_point", "robot_pose");
+  PTP controller(&n, "wheel/velocity", "wheel/goal_point", "robot_pose");
 
   constexpr double FREQ = 100;
   ros::Rate loop_rate(FREQ);
