@@ -1,3 +1,4 @@
+#include "../include/pid.hpp"
 #include <cmath>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Pose2D.h>
@@ -6,6 +7,7 @@
 #include <ros/ros.h>
 
 using namespace std;
+using namespace arrc;
 
 struct Axis {
   double x;
@@ -24,6 +26,7 @@ public:
 
     start = ros::Time::now();
   }
+
   void getGoalPoint(const geometry_msgs::Pose &msgs) {
     Axis dummy_point;
     dummy_point.x = msgs.position.x;
@@ -32,6 +35,7 @@ public:
     dummy_point.yaw = atan2(x * x - w * w, 2 * x * w);
     goal_point_list.push(dummy_point);
   }
+
   /* void getCurrentPoint(const geometry_msgs::Pose &msgs) { */
   /* current_point.x = msgs.position.x; */
   /* current_point.y = msgs.position.y; */
@@ -42,6 +46,7 @@ public:
     current_point.y = msgs.y;
     current_point.yaw = msgs.theta;
   }
+
   void control() {
     ros::Time current = ros::Time::now();
     double duration = current.toSec() - start.toSec();
@@ -89,13 +94,15 @@ public:
 
     goal_twist.linear.x = velocity_goal[0];
     goal_twist.linear.y = velocity_goal[1];
+    goal_twist.angular.z = -moment.control(goal_point.yaw * 180 / M_PI,
+                                           current_point.yaw * 180 / M_PI);
     velocity_pub.publish(goal_twist);
     prev = current;
   }
 
 private:
   queue<Axis> goal_point_list;
-  Axis current_point, goal_point;
+  Axis current_point = {}, goal_point = {};
   ros::Subscriber goal_sub, current_point_pub;
   ros::Publisher velocity_pub;
   ros::Time start, prev;
@@ -104,10 +111,13 @@ private:
   double velocity_goal[2] = {}, velocity_max[2] = {}, velocity_min[2] = {},
          velocity_diff[2] = {};
   double accel_time[2] = {}, const_time[2] = {}, decel_time[2] = {};
-  constexpr static double VELOCITY_MIN = 500, VELOCITY_MAX = 1500,
-                          ACCEL_MAX = 2000;
+  constexpr static double VELOCITY_MIN = 500, VELOCITY_MAX = 1000,
+                          ACCEL_MAX = 1500;
   constexpr static double ERROR_MIN = 10;
   bool is_accel_finish[2] = {};
+
+  PidVelocity moment{10, 0, 0};
+  // constexpr double DRIVE_RADIUS = 425
 
   void setParam() {
 
