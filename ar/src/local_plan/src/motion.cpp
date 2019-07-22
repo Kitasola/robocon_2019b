@@ -1,7 +1,7 @@
 #include "../include/ptp.hpp"
 #include <ros/ros.h>
 
-using namespace std;
+using namespace arrc;
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "motion_planner");
