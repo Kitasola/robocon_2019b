@@ -13,7 +13,7 @@ class Ptp {
 public:
   Ptp(ros::NodeHandle *n, const std::string &goal_point,
       const std::string &current_point) {
-    goal_point_pub = n->advertise<geometry_msgs::Pose>(goal_point, 1);
+    goal_point_pub = n->advertise<geometry_msgs::Pose2D>(goal_point, 1);
     current_point_sub = n->subscribe(current_point, 1, &Ptp::getCurrent, this);
   }
 
