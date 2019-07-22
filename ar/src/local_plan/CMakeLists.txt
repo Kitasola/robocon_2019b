@@ -136,7 +136,8 @@ set (UTILITY ~/arrc/arrc_utility/)
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/local_plan_node.cpp)
-add_executable(local_planner src/point_to_point.cpp)
+add_executable(local_planner src/local.cpp)
+add_executable(motion_planner src/motion.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -153,6 +154,9 @@ add_executable(local_planner src/point_to_point.cpp)
 #   ${catkin_LIBRARIES}
 # )
 target_link_libraries(local_planner
+    ${catkin_LIBRARIES}
+)
+target_link_libraries(motion_planner
     ${catkin_LIBRARIES}
 )
 

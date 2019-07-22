@@ -9,11 +9,13 @@
 
 namespace arrc {
 class SVelocity {
+
 public:
-  SVelocity(ros::NodeHandle *n, const string &velocity, const string &goal) {
+  SVelocity(ros::NodeHandle *n, const std::string &velocity,
+            const std::string &goal_point, const std::string &current_point) {
     velocity_pub = n->advertise<geometry_msgs::Twist>(velocity, 1);
-    goal_sub = n->subscribe(goal, 1, &PTP::getGoalPoint, this);
-    current_pub = n->subscribe(current_point, 1, &PTP::getCurrent, this);
+    goal_sub = n->subscribe(goal_point, 1, &SVelocity::getGoal, this);
+    current_pub = n->subscribe(current_point, 1, &SVelocity::getCurrent, this);
     start = ros::Time::now();
   }
 
@@ -121,7 +123,7 @@ private:
                           ACCEL_MAX = 1500;
 
   PidVelocity moment{10, 0, 0};
-
+};
 } // namespace arrc
 
 #endif
