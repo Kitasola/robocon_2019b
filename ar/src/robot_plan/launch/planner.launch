@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node name="robot_state_publisher" pkg="loa" type=""/>
+
+</launch>
