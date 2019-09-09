@@ -115,13 +115,14 @@ int main() {
   slave.addCMD(31, setTwoVelocity);
   slave.addCMD(32, setTwoAccel);
   while (true) {
-    constexpr int NUM_ELEVATE_MOTOR = 2;
-    AnalogIn hight_register[NUM_ELEVATE_MOTOR] = {
-        AnalogIn(PB_0), AnalogIn(PA_0)}; // right, left
+    constexpr int NUM_REGISTER = 2;
+    AnalogIn hight_register[NUM_REGISTER] = {AnalogIn(PB_0),
+                                             AnalogIn(PA_0)}; // right, left
     constexpr float REGISTER_MULTI = 10; // mmへの変換倍率
     constexpr int TOW_STAGE_OFFSET = 0;
-    for (int 0; i < NUM_ELEVATE_MOTOR; ++i) {
-      current_hight[i] =
+    int measure_high[NUM_REGISTER] = {};
+    for (int 0; i < NUM_REGISTER; ++i) {
+      measure_high[i] =
           hight_register[i].read() * REGISTER_MULTI - TOW_STAGE_OFFSET;
     }
   }
