@@ -1,6 +1,9 @@
 #include <mbed.h>
+#include <pid.hpp>
 #include <rotary_inc.hpp>
 #include <scrp_slave.hpp>
+
+using namespace arrc;
 
 ScrpSlave slave(PA_9, PA_10, PA_12, SERIAL_TX, SERIAL_RX, 0x0803e000);
 
@@ -63,26 +66,32 @@ bool safe(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-int goal_two_hight = 0; // [mm]
-// cmで高さを指定する
+int goal_two_hight = 0;          // [mm]
+int dummy_current_two_hight = 0; // [mm]
 bool setTwoHigh(int cmd, int rx_data, int &tx_data) {
+  // rx_data, tx_data [cm]
   goal_two_hight = rx_data * 10;
+  tx_data = dummy_current_two_hight / 10;
   return true;
 }
 
-int two_max_velocity = 0; // PWM/s
+int two_max_velocity = 0; // mm/s
 bool setTwoVelocity(int cmd, int rx_data, int &tx_data) {
-  two_max_velocity = rx_data;
+  // rx_data, tx_data [cm]
+  two_max_velocity = rx_data * 10;
   return true;
 }
 
-int two_max_accel = 0; // PWM/s^2
+int two_max_accel = 0; // mm/s^2
 bool setTwoAccel(int cmd, int rx_data, int &tx_data) {
-  two_max_accel = rx_data;
+  // rx_data, tx_data [cm]
+  two_max_accel = rx_data * 10;
   return true;
 }
 
 int main() {
+  Timer time;
+  time.start();
   if (PORT_FUNCTION[0] == 0) {
     motor_pwm[0][0] = new PwmOut(MOTOR_PIN[0][0]);
     motor_pwm[0][0]->period(PERIOD);
@@ -115,15 +124,27 @@ int main() {
   slave.addCMD(31, setTwoVelocity);
   slave.addCMD(32, setTwoAccel);
   while (true) {
-    constexpr int NUM_REGISTER = 2;
-    AnalogIn hight_register[NUM_REGISTER] = {AnalogIn(PB_0),
-                                             AnalogIn(PA_0)}; // right, left
-    constexpr float REGISTER_MULTI = 10; // mmへの変換倍率
+    float delta_t = time.read();
+    time.reset();
+    constexpr int NUM_TWO_REGISTER = 2;
+    AnalogIn two_register[NUM_TWO_REGISTER] = {AnalogIn(PB_0),
+                                               AnalogIn(PA_0)}; // right, left
+    constexpr float TWO_REGISTER_MULTI = 10; // mmへの変換倍率
     constexpr int TOW_STAGE_OFFSET = 0;
-    int measure_high[NUM_REGISTER] = {};
-    for (int 0; i < NUM_REGISTER; ++i) {
-      measure_high[i] =
-          hight_register[i].read() * REGISTER_MULTI - TOW_STAGE_OFFSET;
+    int two_hight_current[NUM_TWO_REGISTER] = {};
+    static int two_hight_prev[NUM_TWO_REGISTER] = {};
+    int two_velocity[NUM_TWO_REGISTER] = {};
+    PidVelocity two_motor[NUM_TWO_REGISTER] = {PidVelocity(0, 0, 0, 0),
+                                               PidVelocity(0, 0, 0, 0)};
+
+    for (int i = 0; i < NUM_TWO_REGISTER; ++i) {
+      two_hight_current[i] =
+          two_register[i].read() * TWO_REGISTER_MULTI - TOW_STAGE_OFFSET;
+      spinMotor(i + 2,
+                two_motor[i].control(
+                    two_max_velocity,
+                    (two_hight_current[i] - two_hight_prev[i]) / delta_t));
+      two_hight_prev[i] = two_hight_current[i];
     }
   }
 }
