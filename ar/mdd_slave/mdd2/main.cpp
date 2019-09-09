@@ -89,6 +89,16 @@ bool setTwoAccel(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
+DigitalOut arm_solenoid[2] = {DigitalOut(PB_6), DigitalOut(PA_11)};
+DigitalOut arm_led[2] = {DigitalOut(PB_3), DigitalOut(PB_4)};
+bool solenoid(int cmd, int rx_data, int &tx_data) {
+  arm_solenoid[0].write(rx_data % 10);
+  arm_led[0].write(rx_data % 10);
+  arm_solenoid[1].write((rx_data / 10) % 10);
+  arm_led[1].write((rx_data / 10) % 10);
+  return true;
+}
+
 int main() {
   Timer time;
   time.start();
@@ -123,6 +133,7 @@ int main() {
   slave.addCMD(30, setTwoHigh);
   slave.addCMD(31, setTwoVelocity);
   slave.addCMD(32, setTwoAccel);
+  slave.addCMD(40, solenoid);
   while (true) {
     float delta_t = time.read();
     time.reset();
