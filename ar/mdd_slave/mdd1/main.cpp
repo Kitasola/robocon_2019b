@@ -87,8 +87,8 @@ bool serveHanger(int cmd, int rx_data, int &tx_data) {
     speed = 0;
   }
   tx_data = speed;
-  spinMotor(3, speed);
   spinMotor(4, speed);
+  spinMotor(5, speed);
   return true;
 }
 
@@ -107,15 +107,16 @@ int main() {
   for (int i = 2; i < NUM_PORT; ++i) {
     switch (PORT_FUNCTION[i]) {
     case 0:
-      motor_pwm[i][0] = new PwmOut(MOTOR_PIN[i][0]);
-      motor_pwm[i][0]->period(PERIOD);
-      motor_pwm[i][1] = new PwmOut(MOTOR_PIN[i][1]);
-      motor_pwm[i][1]->period(PERIOD);
-      motor_led[i] = new DigitalOut(MOTOR_PIN[i][2]);
+      motor_pwm[i - 1][0] = new PwmOut(MOTOR_PIN[i - 1][0]);
+      motor_pwm[i - 1][0]->period(PERIOD);
+      motor_pwm[i - 1][1] = new PwmOut(MOTOR_PIN[i - 1][1]);
+      motor_pwm[i - 1][1]->period(PERIOD);
+      motor_led[i - 1] = new DigitalOut(MOTOR_PIN[i - 1][2]);
       slave.addCMD(i + 1, spinMotor);
       break;
     case 1:
-      rotary[i] = new RotaryInc(ENCODER_PIN[i][0], ENCODER_PIN[i][1], RANGE, 1);
+      rotary[i - 1] =
+          new RotaryInc(ENCODER_PIN[i - 1][0], ENCODER_PIN[i - 1][1], RANGE, 1);
       break;
     }
   }
