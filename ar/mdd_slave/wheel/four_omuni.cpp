@@ -1,9 +1,9 @@
-#include "pid.hpp"
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
 #include <gy521.hpp>
 #include <math.h>
 #include <mbed.h>
+#include <pid.hpp>
 #include <ros.h>
 #include <rotary_inc.hpp>
 #include <scrp_slave.hpp>
@@ -23,8 +23,9 @@ ros::NodeHandle nh;
 geometry_msgs::Twist goal_twist;
 void getTwist(const geometry_msgs::Twist &msgs) { goal_twist = msgs; }
 geometry_msgs::Pose2D robot_pose;
-ros::Publisher robot_pose_pub("wheel/robot_pose", &robot_pose);
-ros::Subscriber<geometry_msgs::Twist> velocity_sub("wheel/velocity", &getTwist);
+ros::Publisher robot_pose_pub("/wheel/robot_pose", &robot_pose);
+ros::Subscriber<geometry_msgs::Twist> velocity_sub("/wheel/velocity",
+                                                   &getTwist);
 
 int main() {
   nh.getHardware()->setBaud(115200);
@@ -69,8 +70,8 @@ int main() {
       RotaryInc(PA_14, PA_15, DRIVE_ROTARY_RANGE, DRIVE_ROTARY_MULTI),
       RotaryInc(PC_2, PC_3, DRIVE_ROTARY_RANGE, DRIVE_ROTARY_MULTI)};
   PidVelocity drive_speed[NUM_WHEEL] = {
-      PidVelocity(0.00014, 0, 0), PidVelocity(0.00014, 0, 0),
-      PidVelocity(0.00014, 0, 0), PidVelocity(0.00014, 0, 0)};
+      PidVelocity(0.00014, 0, 0, 0), PidVelocity(0.00014, 0, 0, 0),
+      PidVelocity(0.00014, 0, 0, 0), PidVelocity(0.00014, 0, 0, 0)};
 
   /* 計測輪 */
   constexpr int MEASURE_ROTARY_RANGE = 256, MEASURE_ROTARY_MULTI = 22;
@@ -84,7 +85,7 @@ int main() {
       RotaryInc(PA_9, PA_8, MEASURE_ROTARY_RANGE, MEASURE_ROTARY_MULTI)};
 
   I2C i2c(PB_3, PB_10);
-  GY521 gyro(i2c, 2, 1000, 1.012);
+  /* GY521 gyro(i2c, 2, 1000, 1.012); */
 
   /* 余剰PWMピン */
   /* constexpr PinName OTHER_PWM_PIN[3][3] = { */
@@ -92,7 +93,7 @@ int main() {
 
   /* 何のピンなんやろ */
   DigitalOut run_led(LED1);
-  DigitalIn calibration_switch(PC_13);
+  DigitalIn calibration_switch(PC_13); //青色のボタン
   run_led = 1;
 
   /* ==========ここより上にしかパラメータは存在しません========== */
@@ -106,19 +107,18 @@ int main() {
   robot_pose.x = 0;
   robot_pose.y = 0;
   while (true) {
-    nh.spinOnce();
     if (main_loop.read() > 1.0 / MAIN_FREQUENCY) {
+      nh.spinOnce();
       double delta_t = main_loop.read();
       main_loop.reset();
 
       if (topic_loop.read() > 1.0 / TOPIC_FREQUENCY) {
-        run_led = 1;
-        /* run_led = !run_led; */
+        run_led = !run_led;
         topic_loop.reset();
         robot_pose_pub.publish(&robot_pose);
       }
-      gyro.updata();
-      double robot_yaw = gyro.yaw / 180 * M_PI;
+      /* gyro.updata(); */
+      double robot_yaw = 0; // gyro.yaw / 180 * M_PI;
 
       double robot_velocity[NUM_AXIS] = {
           goal_twist.linear.x * cos(robot_yaw) -

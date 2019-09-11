@@ -45,6 +45,7 @@ LIBRARY_DIR := /home/$(USER)/arrc/nucleo_utility/library
 # Project settings
 ###############################################################################
 # Objects and Paths
+
 OBJECTS += four_omuni.o
 OBJECTS += $(LIBRARY_DIR)/arrc/gy521.o
 OBJECTS += $(LIBRARY_DIR)/arrc/rotary_inc.o
@@ -179,8 +180,7 @@ OBJECTS += $(LIBRARY_DIR)/ros_lib_kinetic/time.o
  SYS_OBJECTS += $(LIBRARY_DIR)/mbed/TARGET_NUCLEO_F446RE/TOOLCHAIN_GCC_ARM/us_ticker.o
 
 INCLUDE_PATHS += -I../
-INCLUDE_PATHS += -I../.
-INCLUDE_PATHS += -I//usr/src/mbed-sdk
+INCLUDE_PATHS += -I$(LIBRARY_DIR)//usr/src/mbed-sdk
 INCLUDE_PATHS += -I$(LIBRARY_DIR)/mbed
 INCLUDE_PATHS += -I$(LIBRARY_DIR)/mbed/TARGET_NUCLEO_F446RE/TOOLCHAIN_GCC_ARM
 INCLUDE_PATHS += -I$(LIBRARY_DIR)/mbed/drivers
@@ -241,8 +241,7 @@ CC      = arm-none-eabi-gcc
 CPP     = arm-none-eabi-g++
 LD      = arm-none-eabi-gcc
 ELF2BIN = arm-none-eabi-objcopy
-PREPROC = arm-none-eabi-cpp -E -P -Wl,--gc-sections -Wl,--wrap,main -Wl,--wrap,_malloc_r -Wl,--wrap,_free_r -Wl,--wrap,_realloc_r -Wl,--wrap,_memalign_r -Wl,--wrap,_calloc_r -Wl,--wrap,exit -Wl,--wrap,atexit -Wl,-n -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=softfp
-# PREPROC = arm-none-eabi-cpp -E -P -Wl,--gc-sections -Wl,--wrap,main -Wl,--wrap,_malloc_r -Wl,--wrap,_free_r -Wl,--wrap,_realloc_r -Wl,--wrap,_memalign_r -Wl,--wrap,_calloc_r -Wl,--wrap,exit -Wl,--wrap,atexit -Wl,-n -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -DMBED_ROM_START=0x8000000 -DMBED_ROM_SIZE=0x80000 -DMBED_RAM_START=0x20000000 -DMBED_RAM_SIZE=0x20000 -DMBED_BOOT_STACK_SIZE=4096
+PREPROC = arm-none-eabi-cpp -E -P -Wl,--gc-sections -Wl,--wrap,main -Wl,--wrap,_malloc_r -Wl,--wrap,_free_r -Wl,--wrap,_realloc_r -Wl,--wrap,_memalign_r -Wl,--wrap,_calloc_r -Wl,--wrap,exit -Wl,--wrap,atexit -Wl,-n -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -DMBED_ROM_START=0x8000000 -DMBED_ROM_SIZE=0x80000 -DMBED_RAM_START=0x20000000 -DMBED_RAM_SIZE=0x20000 -DMBED_BOOT_STACK_SIZE=4096
 
 
 C_FLAGS += -std=gnu11
@@ -479,7 +478,7 @@ ASM_FLAGS += -I$(LIBRARY_DIR)/ros_lib_kinetic/turtle_actionlib
 ASM_FLAGS += -I$(LIBRARY_DIR)/ros_lib_kinetic/turtlesim
 ASM_FLAGS += -I$(LIBRARY_DIR)/ros_lib_kinetic/visualization_msgs
 ASM_FLAGS += -include
-# ASM_FLAGS += /filer/workspace_data/exports/4/47b0da34d92a695ff281f06ca9b28289/$(PROJECT)/mbed_config.h
+ASM_FLAGS += /filer/workspace_data/exports/4/47b0da34d92a695ff281f06ca9b28289/$(PROJECT)/mbed_config.h
 ASM_FLAGS += -x
 ASM_FLAGS += assembler-with-cpp
 ASM_FLAGS += -c
@@ -503,8 +502,8 @@ ASM_FLAGS += -mthumb
 ASM_FLAGS += -mfpu=fpv4-sp-d16
 ASM_FLAGS += -mfloat-abi=softfp
 
-LD_FLAGS :=-Wl,--gc-sections -Wl,--wrap,main -Wl,--wrap,_malloc_r -Wl,--wrap,_free_r -Wl,--wrap,_realloc_r -Wl,--wrap,_memalign_r -Wl,--wrap,_calloc_r -Wl,--wrap,exit -Wl,--wrap,atexit -Wl,-n -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=softfp
-# LD_FLAGS :=-Wl,--gc-sections -Wl,--wrap,main -Wl,--wrap,_malloc_r -Wl,--wrap,_free_r -Wl,--wrap,_realloc_r -Wl,--wrap,_memalign_r -Wl,--wrap,_calloc_r -Wl,--wrap,exit -Wl,--wrap,atexit -Wl,-n -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -DMBED_ROM_START=0x8000000 -DMBED_ROM_SIZE=0x80000 -DMBED_RAM_START=0x20000000 -DMBED_RAM_SIZE=0x20000 -DMBED_BOOT_STACK_SIZE=4096 
+
+LD_FLAGS :=-Wl,--gc-sections -Wl,--wrap,main -Wl,--wrap,_malloc_r -Wl,--wrap,_free_r -Wl,--wrap,_realloc_r -Wl,--wrap,_memalign_r -Wl,--wrap,_calloc_r -Wl,--wrap,exit -Wl,--wrap,atexit -Wl,-n -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -DMBED_ROM_START=0x8000000 -DMBED_ROM_SIZE=0x80000 -DMBED_RAM_START=0x20000000 -DMBED_RAM_SIZE=0x20000 -DMBED_BOOT_STACK_SIZE=4096 
 LD_SYS_LIBS :=-Wl,--start-group -lstdc++ -lsupc++ -lm -lc -lgcc -lnosys -lmbed -Wl,--end-group
 
 # Tools and Flags
@@ -541,6 +540,7 @@ all: $(PROJECT).bin $(PROJECT).hex size
 	+@$(call MAKEDIR,$(dir $@))
 	+@echo "Compile: $(notdir $<)"
 	@$(CPP) $(CXX_FLAGS) $(INCLUDE_PATHS) -o $@ $<
+
 
 $(PROJECT).link_script.ld: $(LINKER_SCRIPT)
 	@$(PREPROC) $< -o $@
