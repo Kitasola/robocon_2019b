@@ -12,7 +12,7 @@
 using namespace arrc;
 
 constexpr int NUM_WHEEL = 4;
-constexpr double M_PI = 3.14159;
+/* constexpr double M_PI = 3.14159; */
 constexpr float MAX_PWM_RATIO = 0.98;
 constexpr float MIN_PWM_RATIO = 0;
 inline bool spinMotor(int id, double pwm);
@@ -93,6 +93,7 @@ int main() {
   /* 何のピンなんやろ */
   DigitalOut run_led(LED1);
   DigitalIn calibration_switch(PC_13);
+  run_led = 1;
 
   /* ==========ここより上にしかパラメータは存在しません========== */
   nh.advertise(robot_pose_pub);
@@ -111,7 +112,8 @@ int main() {
       main_loop.reset();
 
       if (topic_loop.read() > 1.0 / TOPIC_FREQUENCY) {
-        run_led = !run_led;
+        run_led = 1;
+        /* run_led = !run_led; */
         topic_loop.reset();
         robot_pose_pub.publish(&robot_pose);
       }
