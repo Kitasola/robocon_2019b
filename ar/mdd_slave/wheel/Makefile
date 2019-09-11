@@ -40,7 +40,7 @@ VPATH = ..
 # Project settings
 
 PROJECT := wheel
-LIBRARY_DIR := /home/hokusai/nucleo_library
+LIBRARY_DIR := /home/$(USER)/arrc/nucleo_library/library
 
 # Project settings
 ###############################################################################
