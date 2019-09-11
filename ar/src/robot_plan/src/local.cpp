@@ -37,6 +37,12 @@ public:
   }
   void getGoalVelocity(const geometry_msgs::Twist &msg) { goal_velocity = msg; }
   void getRobotPose(const geometry_msgs::Pose2D &msg) { current_point = msg; }
+  /* void getRobotPose(const geometry_msgs::Pose &msgs) { */
+  /* current_point.x = msgs.position.x; */
+  /* current_point.y = msgs.position.y; */
+  /* double x = msgs.orientation.x, w = msgs.orientation.w; */
+  /* current_point.theta = atan2(2 * x * w, x * x - w * w); */
+  /* } */
 
   void control() {
     if (hypot(goal_point.x - current_point.x, goal_point.y - current_point.y) <
