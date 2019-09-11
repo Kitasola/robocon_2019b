@@ -11,12 +11,12 @@ inline double pow2(double x) { return x * x; }
 struct AccelMap {
   int position;
   double velocity;
-}
+};
 
 class SVelocity {
 
 public:
-  SVelocity(ros::NodeHandle *n, const std::string username, int rate) {
+  SVelocity(ros::NodeHandle *n, const std::string username, int user_rate) {
     velocity_pub =
         n->advertise<geometry_msgs::Twist>(username + "/velocity", 1);
     reach_goal_pub =
@@ -27,7 +27,7 @@ public:
                                      &SVelocity::getGoalVelocity, this);
     robot_pose_sub =
         n->subscribe("robot_pose", 1, &SVelocity::getRobotPose, this);
-    rate_ = rate;
+    rate = user_rate;
     loop_rate = new ros::Rate(rate);
   }
 
@@ -44,10 +44,41 @@ public:
       std_msgs::Bool msgs;
       msgs.data = true;
       reach_goal_pub.publish(msgs);
+      return;
+    }
+    for (int i = 0; i < 2; ++i) {
+      int search_id_min = map_id[i] - MAP_SEARCH_RANGE;
+      int search_id_max = map_id[i] + MAP_SEARCH_RANGE;
+      if (search_id_min < 0) {
+        search_id_min = 0;
+      }
+      if (search_id_max > map_id_max[i]) {
+        search_id_max = map_id_max[i];
+      }
+
+      double dummy_current_point;
+      if (i == 0) {
+        dummy_current_point = current_point.x;
+      } else {
+        dummy_current_point = current_point.y;
+      }
+      int shortest_distance = INT_MAX;
+      double dummy_velocity;
+      for (int j = search_id_min; j < search_id_max; ++j) {
+        if (shortest_distance >
+            (dummy_current_point - velocity_map[i].at(j).position)) {
+          shortest_distance =
+              dummy_current_point - velocity_map[i].at(j).position;
+          dummy_velocity = velocity_map[i].at(j).velocity;
+        }
+      }
+      if (i == 0) {
+        send_twist.linear.x = dummy_velocity;
+      } else {
+        send_twist.linear.y = dummy_velocity;
+      }
     }
 
-    /* send_twist.linear.x = velocity_map; */
-    /* send_twist.linear.x = velocity_map; */
     send_twist.angular.z = -moment.control(goal_point.theta * 180 / M_PI,
                                            current_point.theta * 180 / M_PI);
     velocity_pub.publish(send_twist);
@@ -109,7 +140,7 @@ public:
                                                  << ", " << const_time[i]
                                                  << ", " << decel_time[i]);
       start_point = current_point;
-      double delta_t = 1.0 / rate_;
+      double delta_t = 1.0 / rate;
       double dummy_start;
       if (i == 0) {
         dummy_start = start_point.x;
@@ -136,23 +167,26 @@ public:
         } else {
           data.position =
               -accel_max[i] * pow2(accel_time[i]) / (8 * pow2(M_PI)) *
-                  (cos(2 * M_PI / accel_time[i] * (time - const_time[i]) - 1) -
+                  cos(2 * M_PI / accel_time[i] * (time - const_time[i]) - 1) -
               accel_max[i] * pow2(time) / 2 + velocity_final[i] * time +
               velocity_max[i] * (const_time[i] - accel_time[i]) +
               2 * velocity_max[i] * (velocity_max[i] - velocity_first[i]) /
                   accel_max[i];
-          data.velocity = -accel_max[i] * accel_time[i] / (4 * M_PI) *
-                              sin(2 * M_PI / accel_time[i] * (time - const_time[i])) +
-                          -accel_max[i] * time / 2 + velocity_final[i];
+          data.velocity =
+              -accel_max[i] * accel_time[i] / (4 * M_PI) *
+                  sin(2 * M_PI / accel_time[i] * (time - const_time[i])) +
+              -accel_max[i] * time / 2 + velocity_final[i];
         }
         data.position += dummy_start;
-        velocity_map[0].push_back(data);
+        velocity_map[i].push_back(data);
       }
+      map_id[i] = 0;
+      map_id_max[i] = velocity_map[i].size();
     }
   }
 
 private:
-  int rate_ = 0;
+  int rate = 0;
   ros::Rate *loop_rate;
   geometry_msgs::Pose2D current_point = {}, goal_point = {}, start_point = {};
   ros::Subscriber goal_point_sub, robot_pose_sub, goal_velocity_sub;
@@ -163,6 +197,9 @@ private:
                           ACCEL_MAX = 1500;
   constexpr static double ERROR_DISTANCE_MAX = 10;
   std::vector<AccelMap> velocity_map[2];
+  constexpr static int MAP_SEARCH_RANGE = 5;
+  int map_id[2] = {};
+  int map_id_max[2] = {};
 
   arrc::PidVelocity moment{10, 0, 0};
 };
