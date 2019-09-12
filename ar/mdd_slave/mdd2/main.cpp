@@ -89,6 +89,12 @@ bool setTwoAccel(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
+int two_hight_current[2] = {};
+bool checkTwoRegister(int cmd, int rx_data, int &tx_data) {
+  tx_data = two_hight_current[rx_data] / 10;
+  return true;
+}
+
 DigitalOut arm_solenoid[2] = {DigitalOut(PB_6), DigitalOut(PA_11)};
 DigitalOut arm_led[2] = {DigitalOut(PB_3), DigitalOut(PB_4)};
 bool solenoid(int cmd, int rx_data, int &tx_data) {
@@ -110,7 +116,7 @@ int main() {
     motor_led[0] = new DigitalOut(MOTOR_PIN[0][2]);
     slave.addCMD(2, spinMotor);
   }
-  if (PORT_FUNCTION[1] == 0) {
+  if (PORT_FUNCTION[1] == 1) {
     rotary[0] = new RotaryInc(ENCODER_PIN[0][0], ENCODER_PIN[0][1], RANGE, 1);
   }
   for (int i = 2; i < NUM_PORT; ++i) {
@@ -134,6 +140,7 @@ int main() {
   slave.addCMD(30, setTwoHigh);
   slave.addCMD(31, setTwoVelocity);
   slave.addCMD(32, setTwoAccel);
+  slave.addCMD(33, checkTwoRegister);
   slave.addCMD(40, solenoid);
   while (true) {
     float delta_t = time.read();
@@ -141,9 +148,8 @@ int main() {
     constexpr int NUM_TWO_REGISTER = 2;
     AnalogIn two_register[NUM_TWO_REGISTER] = {AnalogIn(PB_0),
                                                AnalogIn(PA_0)}; // right, left
-    constexpr float TWO_REGISTER_MULTI = 10; // mmへの変換倍率
+    constexpr float TWO_REGISTER_MULTI = 210.0 / 255 * 720; // mmへの変換倍率
     constexpr int TOW_STAGE_OFFSET = 0;
-    int two_hight_current[NUM_TWO_REGISTER] = {};
     static int two_hight_prev[NUM_TWO_REGISTER] = {};
     int two_velocity[NUM_TWO_REGISTER] = {};
     PidVelocity two_motor[NUM_TWO_REGISTER] = {PidVelocity(0, 0, 0, 0),
