@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- 足回りMDDとのシリアル通信用 -->
+  <include file="$(find rosserial_server)/launch/socket.launch"/>
+  <node name="serial_node" pkg="rosserial_server" type="serial_node">
+    <param name="_port" value="/dev/ttyACM0"/>
+    <param name="_baud" value="115200"/> 
+  </node>
+
+  <node name="local_planner" pkg="robot_plan" type="local_planner"/>
+  <node name="motion_planner" pkg="robot_plan" type="motion_planner"/>
+
+</launch>
