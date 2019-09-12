@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 <launch>
+  <machine name="ar" address="arberry" user="ubuntu" password="akashiakashi"/>
+
   <!-- 足回りMDDとのシリアル通信用 -->
   <include file="$(find rosserial_server)/launch/socket.launch"/>
   <node name="serial_node" pkg="rosserial_server" type="serial_node">
