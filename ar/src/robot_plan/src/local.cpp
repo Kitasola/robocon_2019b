@@ -76,6 +76,7 @@ public:
           shortest_distance =
               abs(dummy_current_point - velocity_map[i].at(j).position);
           dummy_velocity = velocity_map[i].at(j).velocity;
+          map_id[i] = j;
         }
       }
       if (i == 0) {
@@ -195,8 +196,8 @@ public:
               accel_max[i] * time / 2 + velocity_final[i];
         }
         data.position += dummy_start;
-        ROS_INFO_STREAM(delta_t * j << ", " << data.position << ", "
-                                    << data.velocity);
+        /* ROS_INFO_STREAM(delta_t * j << ", " << data.position << ", " */
+        /*                             << data.velocity); */
         velocity_map[i].push_back(data);
       }
       map_id[i] = 0;
