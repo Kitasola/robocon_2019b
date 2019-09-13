@@ -40,14 +40,14 @@ VPATH = ..
 # Project settings
 
 PROJECT := servo
-LIBRARY_DIR := /home/$(USER)/arrc/nucleo_utility/library
+LIBRARY_DIR := /home/$(USER)/arrc/nucleo_utility/library/l432kc
 
 # Project settings
 ###############################################################################
 # Objects and Paths
 
 OBJECTS += main.o
-OBJECTS += $(LIBRARY_DIR)/arrc/gy521.o
+# OBJECTS += $(LIBRARY_DIR)/arrc/gy521.o
 OBJECTS += $(LIBRARY_DIR)/arrc/rotary_inc.o
 OBJECTS += $(LIBRARY_DIR)/arrc/scrp_slave.o
 OBJECTS += $(LIBRARY_DIR)/ros_lib_kinetic/BufferedSerial/Buffer/MyBuffer.o
@@ -335,12 +335,12 @@ C_FLAGS += -mcpu=cortex-m4
 C_FLAGS += -mthumb
 C_FLAGS += -mfpu=fpv4-sp-d16
 C_FLAGS += -mfloat-abi=softfp
-C_FLAGS += -DMBED_ROM_START=0x8000000
-C_FLAGS += -DMBED_ROM_SIZE=0x40000
-C_FLAGS += -DMBED_RAM_START=0x20000000
-C_FLAGS += -DMBED_RAM_SIZE=0xc000
-C_FLAGS += -DMBED_RAM1_START=0x10000000
-C_FLAGS += -DMBED_RAM1_SIZE=0x4000
+# C_FLAGS += -DMBED_ROM_START=0x8000000
+# C_FLAGS += -DMBED_ROM_SIZE=0x40000
+# C_FLAGS += -DMBED_RAM_START=0x20000000
+# C_FLAGS += -DMBED_RAM_SIZE=0xc000
+# C_FLAGS += -DMBED_RAM1_START=0x10000000
+# C_FLAGS += -DMBED_RAM1_SIZE=0x4000
 
 CXX_FLAGS += -std=gnu++14
 CXX_FLAGS += -fno-rtti

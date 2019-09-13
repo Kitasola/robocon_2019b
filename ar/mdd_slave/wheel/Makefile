@@ -40,7 +40,7 @@ VPATH = ..
 # Project settings
 
 PROJECT := wheel
-LIBRARY_DIR := /home/$(USER)/arrc/nucleo_utility/library
+LIBRARY_DIR := /home/$(USER)/arrc/nucleo_utility/library/f446re
 
 # Project settings
 ###############################################################################
