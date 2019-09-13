@@ -19,8 +19,7 @@ public:
   SVelocity(ros::NodeHandle *n, const std::string username, int user_rate) {
     velocity_pub =
         n->advertise<geometry_msgs::Twist>(username + "/velocity", 1);
-    reach_goal_pub =
-        n->advertise<geometry_msgs::Twist>(username + "/reach_goal", 1);
+    reach_goal_pub = n->advertise<std_msgs::Bool>(username + "/reach_goal", 1);
     goal_point_sub = n->subscribe(username + "/goal_point", 1,
                                   &SVelocity::getGoalPoint, this);
     goal_velocity_sub = n->subscribe(username + "/goal_velocity", 1,
@@ -218,6 +217,6 @@ int main(int argc, char **argv) {
 
   while (ros::ok()) {
     ros::spinOnce();
-    /* controller.control(); */
+    controller.control();
   }
 }
