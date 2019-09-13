@@ -51,10 +51,11 @@ private:
 int main(int argc, char **argv) {
   ros::init(argc, argv, "motion_planner");
   ros::NodeHandle n;
-  Ptp controller(&n, "wheel");
+  Ptp planner(&n, "wheel");
 
   constexpr double FREQ = 300;
   ros::Rate loop_rate(FREQ);
+  planner.addGoal(1000, 1000, 0);
 
   while (ros::ok()) {
     ros::spinOnce();
