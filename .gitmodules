@@ -1,0 +1,3 @@
+[submodule "other/remote_emergency_contorller"]
+	path = other/remote_emergency_contorller
+	url = git@github.com:kus0-glasses/IM920_arduino.git
