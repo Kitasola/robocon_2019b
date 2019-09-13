@@ -7,9 +7,10 @@
 #include <vector>
 
 inline double pow2(double x) { return x * x; }
+double abs(double a) { return fabs(a); }
 
 struct AccelMap {
-  int position;
+  double position;
   double velocity;
 };
 
@@ -19,8 +20,7 @@ public:
   SVelocity(ros::NodeHandle *n, const std::string username, int user_rate) {
     velocity_pub =
         n->advertise<geometry_msgs::Twist>(username + "/velocity", 1);
-    reach_goal_pub =
-        n->advertise<geometry_msgs::Twist>(username + "/reach_goal", 1);
+    reach_goal_pub = n->advertise<std_msgs::Bool>(username + "/reach_goal", 1);
     goal_point_sub = n->subscribe(username + "/goal_point", 1,
                                   &SVelocity::getGoalPoint, this);
     goal_velocity_sub = n->subscribe(username + "/goal_velocity", 1,
@@ -72,10 +72,11 @@ public:
       double dummy_velocity;
       for (int j = search_id_min; j < search_id_max; ++j) {
         if (shortest_distance >
-            (dummy_current_point - velocity_map[i].at(j).position)) {
+            abs((dummy_current_point - velocity_map[i].at(j).position))) {
           shortest_distance =
-              dummy_current_point - velocity_map[i].at(j).position;
+              abs(dummy_current_point - velocity_map[i].at(j).position);
           dummy_velocity = velocity_map[i].at(j).velocity;
+          map_id[i] = j;
         }
       }
       if (i == 0) {
@@ -98,8 +99,8 @@ public:
         atan2(goal_point.y - current_point.y, goal_point.x - current_point.x);
     double dummy_goal_velocity =
         hypot(goal_velocity.linear.x, goal_velocity.linear.y);
-    ROS_INFO_STREAM("Distance is " << dummy_distance << ", "
-                                   << angle * 180 / M_PI);
+    ROS_INFO_STREAM("Distance: " << dummy_distance << ", "
+                                 << "Direction: " << angle * 180 / M_PI);
 
     double dummy_velocity_max =
         ((VELOCITY_MIN + dummy_goal_velocity) / ACCEL_MAX +
@@ -125,26 +126,33 @@ public:
     double distance[2] = {dummy_distance * abs(cos(angle)),
                           dummy_distance * abs(sin(angle))};
     double accel_time[2] = {}, const_time[2] = {}, decel_time[2] = {};
-    int accel_polar[2] = {};
     for (int i = 0; i < 2; ++i) {
-      accel_time[i] =
-          2 * abs(velocity_max[i] - velocity_first[i]) / abs(accel_max[i]);
-      const_time[i] =
-          (distance[i] -
-           2 * velocity_max[i] *
-               (2 * velocity_max[i] - velocity_first[i] - velocity_final[i]) /
-               abs(accel_max[i])) /
-              velocity_max[i] +
-          accel_time[i];
-      decel_time[i] =
-          2 * abs(velocity_max[i] - velocity_final[i]) / accel_time[i] +
-          const_time[i];
+      if (distance[i] != 0) {
+        accel_time[i] =
+            2 * abs(velocity_max[i] - velocity_first[i]) / abs(accel_max[i]);
+        const_time[i] =
+            (distance[i] -
+             2 * velocity_max[i] *
+                 (2 * velocity_max[i] - velocity_first[i] - velocity_final[i]) /
+                 abs(accel_max[i])) /
+                velocity_max[i] +
+            accel_time[i];
+        decel_time[i] =
+            2 * abs(velocity_max[i] - velocity_final[i]) / abs(accel_max[i]) +
+            const_time[i];
+      } else {
+        accel_max[i] = const_time[i] = decel_time[i] = 0;
+      }
 
-      ROS_INFO_STREAM("Velocity Parameter is " << i << ", " << velocity_first[i]
-                                               << ", " << velocity_max[i]);
-      ROS_INFO_STREAM("Accel Time Parameter is " << i << ", " << accel_time[i]
-                                                 << ", " << const_time[i]
-                                                 << ", " << decel_time[i]);
+      ROS_INFO_STREAM("Axis Num: " << i);
+      ROS_INFO_STREAM("SVelocity Parameter: "
+                      << "v_0 = " << velocity_first[i] << ", "
+                      << "v_m = " << velocity_max[i] << ", "
+                      << "v_f = " << velocity_final[i] << ", "
+                      << "x = " << distance[i] << ", "
+                      << "a_m = " << accel_max[i]);
+      ROS_INFO_STREAM("Accel Time: " << accel_time[i] << ", " << const_time[i]
+                                     << ", " << decel_time[i]);
       start_point = current_point;
       double delta_t = 1.0 / rate;
       double dummy_start;
@@ -153,7 +161,7 @@ public:
       } else {
         dummy_start = start_point.y;
       }
-      for (int j = 0; j * delta_t < decel_time[i]; ++j) {
+      for (int j = 0; j * delta_t <= decel_time[i]; ++j) {
         double time = j * delta_t;
         AccelMap data;
         if (time < accel_time[i]) {
@@ -161,29 +169,35 @@ public:
               accel_max[i] * pow2(accel_time[i]) / (8 * pow2(M_PI)) *
                   (cos(2 * M_PI / accel_time[i] * time) - 1) +
               accel_max[i] * pow2(time) / 2 + velocity_first[i] * time;
-          data.velocity = accel_max[i] * accel_time[i] / (4 * M_PI) *
+          data.velocity = -accel_max[i] * accel_time[i] / (4 * M_PI) *
                               sin(2 * M_PI / accel_time[i] * time) +
                           accel_max[i] * time / 2 + velocity_first[i];
-        } else if (time * delta_t < const_time[i]) {
-          data.position = velocity_max[i] * (time - accel_time[i]) +
+        } else if (time < const_time[i]) {
+          time -= accel_time[i];
+          data.position = velocity_max[i] * time +
                           2 * velocity_max[i] *
                               (velocity_max[i] - velocity_first[i]) /
                               accel_max[i];
           data.velocity = velocity_max[i];
         } else {
+          time -= const_time[i];
           data.position =
-              -accel_max[i] * pow2(accel_time[i]) / (8 * pow2(M_PI)) *
-                  cos(2 * M_PI / accel_time[i] * (time - const_time[i]) - 1) -
+              accel_max[i] * pow2(decel_time[i] - const_time[i]) /
+                  (8 * pow2(M_PI)) *
+                  (cos(2 * M_PI / (decel_time[i] - const_time[i]) * time) - 1) +
               accel_max[i] * pow2(time) / 2 + velocity_final[i] * time +
               velocity_max[i] * (const_time[i] - accel_time[i]) +
               2 * velocity_max[i] * (velocity_max[i] - velocity_first[i]) /
                   accel_max[i];
           data.velocity =
-              -accel_max[i] * accel_time[i] / (4 * M_PI) *
-                  sin(2 * M_PI / accel_time[i] * (time - const_time[i])) +
-              -accel_max[i] * time / 2 + velocity_final[i];
+              velocity_max[i] +
+              accel_max[i] * (decel_time[i] - const_time[i]) / (4 * M_PI) *
+                  sin(2 * M_PI / (decel_time[i] - const_time[i]) * time) -
+              accel_max[i] * time / 2 + velocity_final[i];
         }
         data.position += dummy_start;
+        /* ROS_INFO_STREAM(delta_t * j << ", " << data.position << ", " */
+        /*                             << data.velocity); */
         velocity_map[i].push_back(data);
       }
       map_id[i] = 0;
@@ -199,7 +213,7 @@ private:
   ros::Publisher velocity_pub, reach_goal_pub;
   geometry_msgs::Twist send_twist, goal_velocity;
   double velocity_final_prev[2] = {};
-  constexpr static double VELOCITY_MIN = 500, VELOCITY_MAX = 1000,
+  constexpr static double VELOCITY_MIN = 500, VELOCITY_MAX = 2000,
                           ACCEL_MAX = 1500;
   constexpr static double ERROR_DISTANCE_MAX = 10;
   std::vector<AccelMap> velocity_map[2];
@@ -214,7 +228,7 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "local_planner");
   ros::NodeHandle n;
 
-  SVelocity controller(&n, "wheel/velocity", 300);
+  SVelocity controller(&n, "wheel", 300);
 
   while (ros::ok()) {
     ros::spinOnce();

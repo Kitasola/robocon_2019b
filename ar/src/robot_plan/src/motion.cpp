@@ -29,15 +29,18 @@ public:
     goal_point_list.push(dummy_goal);
   }
 
-  void checkReachGoal(const std_msgs::Bool &msg) {
+  bool is_reach_goal;
+  void checkReachGoal(const std_msgs::Bool &msg) { is_reach_goal = msg.data; }
+  void sendNextGoal() {
     using std::queue;
-    if (msg.data && !goal_point_list.empty()) {
+    if (!goal_point_list.empty()) {
       goal_point = goal_point_list.front();
       ROS_INFO_STREAM("Next Goal Point is " << goal_point.x << ", "
                                             << goal_point.y << ", "
                                             << goal_point.theta * 180 / M_PI);
       goal_point_list.pop();
       goal_point_pub.publish(goal_point);
+      is_reach_goal = false;
     }
   }
 
@@ -51,10 +54,12 @@ private:
 int main(int argc, char **argv) {
   ros::init(argc, argv, "motion_planner");
   ros::NodeHandle n;
-  Ptp controller(&n, "wheel");
+  Ptp planner(&n, "wheel");
 
   constexpr double FREQ = 300;
   ros::Rate loop_rate(FREQ);
+  planner.addGoal(1000, 1000, 0);
+  planner.sendNextGoal();
 
   while (ros::ok()) {
     ros::spinOnce();
