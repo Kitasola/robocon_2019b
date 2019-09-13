@@ -76,9 +76,14 @@ int main(int argc, char **argv) {
     std::exit(1);
   }
   ROS_INFO_STREAM("File Open Succeed.");
+  LogFormat data_prev = log_data.front();
   while (!log_data.empty()) {
     LogFormat data = log_data.front();
-    log << data.time << ", " << data.x << ", " << data.y << std::endl;
+    double velocity_x = (data.x - data_prev.x) / (data.time - data_prev.time);
+    double velocity_y = (data.y - data_prev.y) / (data.time - data_prev.time);
+    log << data.time << ", " << data.x << ", " << data.y << ", " << velocity_x
+        << ", " << velocity_y << std::endl;
+    data_prev = data;
     log_data.pop();
   }
 }
