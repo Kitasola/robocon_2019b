@@ -10,7 +10,7 @@ inline double pow2(double x) { return x * x; }
 double abs(double a) { return fabs(a); }
 
 struct AccelMap {
-  int position;
+  double position;
   double velocity;
 };
 
@@ -72,9 +72,9 @@ public:
       double dummy_velocity;
       for (int j = search_id_min; j < search_id_max; ++j) {
         if (shortest_distance >
-            (dummy_current_point - velocity_map[i].at(j).position)) {
+            abs((dummy_current_point - velocity_map[i].at(j).position))) {
           shortest_distance =
-              dummy_current_point - velocity_map[i].at(j).position;
+              abs(dummy_current_point - velocity_map[i].at(j).position);
           dummy_velocity = velocity_map[i].at(j).velocity;
         }
       }
@@ -152,51 +152,55 @@ public:
                       << "a_m = " << accel_max[i]);
       ROS_INFO_STREAM("Accel Time: " << accel_time[i] << ", " << const_time[i]
                                      << ", " << decel_time[i]);
-      /* start_point = current_point; */
-      /* double delta_t = 1.0 / rate; */
-      /* double dummy_start; */
-      /* if (i == 0) { */
-      /*   dummy_start = start_point.x; */
-      /* } else { */
-      /*   dummy_start = start_point.y; */
-      /* } */
-      /* for (int j = 0; j * delta_t < decel_time[i]; ++j) { */
-      /*   double time = j * delta_t; */
-      /*   AccelMap data; */
-      /*   if (time < accel_time[i]) { */
-      /*     data.position = */
-      /*         accel_max[i] * pow2(accel_time[i]) / (8 * pow2(M_PI)) * */
-      /*             (cos(2 * M_PI / accel_time[i] * time) - 1) + */
-      /*         accel_max[i] * pow2(time) / 2 + velocity_first[i] * time; */
-      /*     data.velocity = accel_max[i] * accel_time[i] / (4 * M_PI) * */
-      /*                         sin(2 * M_PI / accel_time[i] * time) + */
-      /*                     accel_max[i] * time / 2 + velocity_first[i]; */
-      /*   } else if (time * delta_t < const_time[i]) { */
-      /*     data.position = velocity_max[i] * (time - accel_time[i]) + */
-      /*                     2 * velocity_max[i] * */
-      /*                         (velocity_max[i] - velocity_first[i]) / */
-      /*                         accel_max[i]; */
-      /*     data.velocity = velocity_max[i]; */
-      /*   } else { */
-      /*     data.position = */
-      /*         -accel_max[i] * pow2(accel_time[i]) / (8 * pow2(M_PI)) * */
-      /*             cos(2 * M_PI / accel_time[i] * (time - const_time[i]) - 1)
-       * - */
-      /*         accel_max[i] * pow2(time) / 2 + velocity_final[i] * time + */
-      /*         velocity_max[i] * (const_time[i] - accel_time[i]) + */
-      /*         2 * velocity_max[i] * (velocity_max[i] - velocity_first[i]) /
-       */
-      /*             accel_max[i]; */
-      /*     data.velocity = */
-      /*         -accel_max[i] * accel_time[i] / (4 * M_PI) * */
-      /*             sin(2 * M_PI / accel_time[i] * (time - const_time[i])) + */
-      /*         -accel_max[i] * time / 2 + velocity_final[i]; */
-      /*   } */
-      /*   data.position += dummy_start; */
-      /*   velocity_map[i].push_back(data); */
-      /* } */
-      /* map_id[i] = 0; */
-      /* map_id_max[i] = velocity_map[i].size(); */
+      start_point = current_point;
+      double delta_t = 1.0 / rate;
+      double dummy_start;
+      if (i == 0) {
+        dummy_start = start_point.x;
+      } else {
+        dummy_start = start_point.y;
+      }
+      for (int j = 0; j * delta_t <= decel_time[i]; ++j) {
+        double time = j * delta_t;
+        AccelMap data;
+        if (time < accel_time[i]) {
+          data.position =
+              accel_max[i] * pow2(accel_time[i]) / (8 * pow2(M_PI)) *
+                  (cos(2 * M_PI / accel_time[i] * time) - 1) +
+              accel_max[i] * pow2(time) / 2 + velocity_first[i] * time;
+          data.velocity = -accel_max[i] * accel_time[i] / (4 * M_PI) *
+                              sin(2 * M_PI / accel_time[i] * time) +
+                          accel_max[i] * time / 2 + velocity_first[i];
+        } else if (time < const_time[i]) {
+          time -= accel_time[i];
+          data.position = velocity_max[i] * time +
+                          2 * velocity_max[i] *
+                              (velocity_max[i] - velocity_first[i]) /
+                              accel_max[i];
+          data.velocity = velocity_max[i];
+        } else {
+          time -= const_time[i];
+          data.position =
+              accel_max[i] * pow2(decel_time[i] - const_time[i]) /
+                  (8 * pow2(M_PI)) *
+                  (cos(2 * M_PI / (decel_time[i] - const_time[i]) * time) - 1) +
+              accel_max[i] * pow2(time) / 2 + velocity_final[i] * time +
+              velocity_max[i] * (const_time[i] - accel_time[i]) +
+              2 * velocity_max[i] * (velocity_max[i] - velocity_first[i]) /
+                  accel_max[i];
+          data.velocity =
+              velocity_max[i] +
+              accel_max[i] * (decel_time[i] - const_time[i]) / (4 * M_PI) *
+                  sin(2 * M_PI / (decel_time[i] - const_time[i]) * time) -
+              accel_max[i] * time / 2 + velocity_final[i];
+        }
+        data.position += dummy_start;
+        ROS_INFO_STREAM(delta_t * j << ", " << data.position << ", "
+                                    << data.velocity);
+        velocity_map[i].push_back(data);
+      }
+      map_id[i] = 0;
+      map_id_max[i] = velocity_map[i].size();
     }
   }
 
