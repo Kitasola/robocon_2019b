@@ -24,6 +24,8 @@ geometry_msgs::Twist goal_twist;
 void getTwist(const geometry_msgs::Twist &msgs) { goal_twist = msgs; }
 geometry_msgs::Pose2D robot_pose;
 ros::Publisher robot_pose_pub("/wheel/robot_pose", &robot_pose);
+geometry_msgs::Twist debug_velocity;
+ros::Publisher debug_velocity_pub("/wheel/debug_velocity", &debug_velocity);
 ros::Subscriber<geometry_msgs::Twist> velocity_sub("/wheel/velocity",
                                                    &getTwist);
 
@@ -85,7 +87,7 @@ int main() {
       RotaryInc(PA_9, PA_8, MEASURE_ROTARY_RANGE, MEASURE_ROTARY_MULTI)};
 
   I2C i2c(PB_3, PB_10);
-  /* GY521 gyro(i2c, 2, 1000, 1.012); */
+  GY521 gyro(i2c, 2, 1000, 1.012);
 
   /* 余剰PWMピン */
   /* constexpr PinName OTHER_PWM_PIN[3][3] = { */
@@ -98,6 +100,7 @@ int main() {
 
   /* ==========ここより上にしかパラメータは存在しません========== */
   nh.advertise(robot_pose_pub);
+  nh.advertise(debug_velocity_pub);
   nh.subscribe(velocity_sub);
 
   Timer main_loop, topic_loop;
@@ -116,9 +119,10 @@ int main() {
         run_led = !run_led;
         topic_loop.reset();
         robot_pose_pub.publish(&robot_pose);
+        debug_velocity_pub.publish(&debug_velocity);
       }
-      /* gyro.updata(); */
-      double robot_yaw = 0; // gyro.yaw / 180 * M_PI;
+      gyro.updata();
+      double robot_yaw = gyro.yaw / 180 * M_PI;
 
       double robot_velocity[NUM_AXIS] = {
           goal_twist.linear.x * cos(robot_yaw) -
@@ -132,12 +136,12 @@ int main() {
           drive_goal[i] += DRIVE_MATRIX[i][j] * robot_velocity[j];
         }
         spinMotor(i, drive_speed[i].control(drive_goal[i],
-                                            drive_rotary[i].getSpeed() *
+                                            -drive_rotary[i].getSpeed() *
                                                 DRIVE_WHEEL_DIAMETER * M_PI));
       }
 
       double robot_x =
-          measure_rotary[0].getDiff() * MEASURE_WHEEL_DIAMETER * M_PI / 2 -
+          -measure_rotary[0].getDiff() * MEASURE_WHEEL_DIAMETER * M_PI / 2 +
           measure_rotary[2].getDiff() * MEASURE_WHEEL_DIAMETER * M_PI / 2;
       double robot_y =
           -(-measure_rotary[1].getDiff()) * MEASURE_WHEEL_DIAMETER * M_PI / 2 +

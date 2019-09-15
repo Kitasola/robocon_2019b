@@ -21,8 +21,8 @@ void checkGlobalMessage(const std_msgs::String msg) {
 
 geometry_msgs::Pose2D wheel_robot_pose;
 void getPoseWheel(const geometry_msgs::Pose2D msgs) {
-  wheel_robot_pose.x = msgs.x * 1.0;
-  wheel_robot_pose.y = msgs.y * 1.0;
+  wheel_robot_pose.x = msgs.x * -1.0;
+  wheel_robot_pose.y = msgs.y * -1.0;
   wheel_robot_pose.theta = msgs.theta * 1.0;
 }
 
