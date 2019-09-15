@@ -13,16 +13,19 @@ struct LogFormat {
   double time;
   double x;
   double y;
+  double theta;
 };
 
 void checkGlobalMessage(const std_msgs::String msg) {
   std::string data = msg.data;
 }
 
+// MDDからは起動時からの相対位置が送信されるため絶対位置に変換する必要がある
+double FIRST_X = 5400, FIRST_Y = 1800;
 geometry_msgs::Pose2D wheel_robot_pose;
 void getPoseWheel(const geometry_msgs::Pose2D msgs) {
-  wheel_robot_pose.x = msgs.x * -1.0;
-  wheel_robot_pose.y = msgs.y * -1.0;
+  wheel_robot_pose.x = msgs.x * -1.0 + FIRST_X;
+  wheel_robot_pose.y = msgs.y * -1.0 + FIRST_Y;
   wheel_robot_pose.theta = msgs.theta * 1.0;
 }
 
@@ -63,6 +66,7 @@ int main(int argc, char **argv) {
     data.time = ros::Time::now().toSec() - start;
     data.x = robot_pose.x;
     data.y = robot_pose.y;
+    data.theta = robot_pose.theta;
     log_data.push(data);
 
     loop_rate.sleep();
@@ -76,14 +80,19 @@ int main(int argc, char **argv) {
     std::exit(1);
   }
   ROS_INFO_STREAM("File Open Succeed.");
+  LogFormat data_prev_prev = log_data.front();
   LogFormat data_prev = log_data.front();
   while (!log_data.empty()) {
     LogFormat data = log_data.front();
-    double velocity_x = (data.x - data_prev.x) / (data.time - data_prev.time);
-    double velocity_y = (data.y - data_prev.y) / (data.time - data_prev.time);
-    log << data.time << ", " << data.x << ", " << data.y << ", " << velocity_x
-        << ", " << velocity_y << std::endl;
+    double velocity_x = (data_prev.x - data_prev_prev.x) /
+                        (data_prev.time - data_prev_prev.time);
+    double velocity_y = (data_prev.y - data_prev_prev.y) /
+                        (data_prev.time - data_prev_prev.time);
+    log << data.time << ", " << data.x << ", " << data.y << ", " << data.theta
+        << ", " << velocity_x << ", " << velocity_y << std::endl;
+    data_prev_prev = data_prev;
     data_prev = data;
     log_data.pop();
   }
+  _
 }
