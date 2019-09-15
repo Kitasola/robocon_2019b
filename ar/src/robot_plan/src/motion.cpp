@@ -52,6 +52,9 @@ private:
   geometry_msgs::Pose2D goal_point = {};
 };
 
+using namespace ros;
+using Pi = Pigpiod;
+
 int main(int argc, char **argv) {
   ros::init(argc, argv, "motion_planner");
   ros::NodeHandle n;
@@ -59,8 +62,17 @@ int main(int argc, char **argv) {
 
   constexpr double FREQ = 300;
   ros::Rate loop_rate(FREQ);
-  /* planner.addGoal(1000, 1000, 0); */
+
+  // 座標追加
+  planner.addGoal(1000, 1000, 0);
   planner.sendNextGoal();
+
+  constexpr int START_PIN = 18;
+  Pi::gpio().set(18, IN, PULL_DOWN);
+
+  while (!Pi::gpio().read(START_PIN)) {
+    loop_rate.sleep();
+  };
 
   while (ros::ok()) {
     ros::spinOnce();
