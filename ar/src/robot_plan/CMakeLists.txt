@@ -118,14 +118,15 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ~/arrc/basic_utility/raspi/include
 )
+
+set(UTILITY ~/arrc/basic_utility/raspi/src)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/robot_plan.cpp
 # )
-set (CMAKE_CXX_STANDARD 11)
-set (UTILITY ~/arrc/arrc_utility/)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -137,7 +138,7 @@ set (UTILITY ~/arrc/arrc_utility/)
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/robot_plan_node.cpp)
 add_executable(local_planner src/local.cpp)
-add_executable(motion_planner src/motion.cpp)
+add_executable(motion_planner src/motion.cpp ${UTILITY}/pigpiod.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -158,6 +159,7 @@ target_link_libraries(local_planner
 )
 target_link_libraries(motion_planner
     ${catkin_LIBRARIES}
+    pigpiod_if2
 )
 
 #############
