@@ -28,7 +28,9 @@ public:
     robot_pose_sub =
         n->subscribe("robot_pose", 1, &SVelocity::getRobotPose, this);
     rate = user_rate;
-    loop_rate = new ros::Rate(rate);
+    AccelMap dummy = {};
+    velocity_map[0].push_back(dummy);
+    velocity_map[1].push_back(dummy);
   }
 
   void getGoalPoint(const geometry_msgs::Pose2D &msg) {
@@ -100,7 +102,6 @@ public:
     send_twist.angular.z = -moment.control(goal_point.theta * 180 / M_PI,
                                            current_point.theta * 180 / M_PI);
     velocity_pub.publish(send_twist);
-    loop_rate->sleep();
   }
 
   void setParam() {
@@ -219,16 +220,15 @@ public:
 
 private:
   int rate = 0;
-  ros::Rate *loop_rate;
   geometry_msgs::Pose2D current_point = {}, goal_point = {}, start_point = {};
   ros::Subscriber goal_point_sub, robot_pose_sub, goal_velocity_sub;
   ros::Publisher velocity_pub, reach_goal_pub;
   geometry_msgs::Twist send_twist, goal_velocity;
   double velocity_final_prev[2] = {};
-  constexpr static double VELOCITY_MIN = 500, VELOCITY_MAX = 2000,
-                          ACCEL_MAX = 1500;
+  constexpr static double VELOCITY_MIN = 600, VELOCITY_MAX = 3000,
+                          ACCEL_MAX = 5000;
   constexpr static double ERROR_DISTANCE_MAX = 20;
-  constexpr static double ROOT_FOLLOW = 20;
+  constexpr static double ROOT_FOLLOW = 3;
   std::vector<AccelMap> velocity_map[2];
   constexpr static int MAP_SEARCH_RANGE = 5;
   int map_id[2] = {};
@@ -241,10 +241,12 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "local_planner");
   ros::NodeHandle n;
 
-  SVelocity controller(&n, "wheel", 300);
+  SVelocity controller(&n, "wheel", 100);
 
+  ros::Rate loop_rate(100);
   while (ros::ok()) {
     ros::spinOnce();
     controller.control();
+    loop_rate.sleep();
   }
 }

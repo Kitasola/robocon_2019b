@@ -34,7 +34,7 @@ int main() {
   nh.initNode();
 
   constexpr double MAIN_FREQUENCY = 1000;
-  constexpr double TOPIC_FREQUENCY = 100;
+  constexpr double TOPIC_FREQUENCY = 300;
 
   constexpr double PWM_PERIOD = 2048;
 
@@ -110,8 +110,8 @@ int main() {
   robot_pose.x = 0;
   robot_pose.y = 0;
   while (true) {
-    if (main_loop.read() > 1.0 / MAIN_FREQUENCY) {
-      nh.spinOnce();
+    nh.spinOnce();
+    if (topic_loop.read() > 1.0 / MAIN_FREQUENCY) {
       double delta_t = main_loop.read();
       main_loop.reset();
 
@@ -139,6 +139,7 @@ int main() {
                                             -drive_rotary[i].getSpeed() *
                                                 DRIVE_WHEEL_DIAMETER * M_PI));
       }
+      debug_velocity = goal_twist;
 
       double robot_x =
           -measure_rotary[0].getDiff() * MEASURE_WHEEL_DIAMETER * M_PI / 2 +
@@ -151,7 +152,8 @@ int main() {
       robot_pose.y += robot_x * sin(field_yaw) + robot_y * cos(field_yaw);
       robot_pose.theta = field_yaw;
     } else {
-      wait(1.0 / MAIN_FREQUENCY / 10);
+      wait_ms(1.0 / MAIN_FREQUENCY / 2.0);
+      /* wait_ms(1000); */
     }
   }
 }
