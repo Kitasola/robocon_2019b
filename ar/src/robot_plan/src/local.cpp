@@ -111,8 +111,8 @@ public:
         atan2(goal_point.y - current_point.y, goal_point.x - current_point.x);
     double dummy_goal_velocity =
         hypot(goal_velocity.linear.x, goal_velocity.linear.y);
-    ROS_INFO_STREAM("Distance: " << dummy_distance << ", "
-                                 << "Direction: " << angle * 180 / M_PI);
+    /* ROS_INFO_STREAM("Distance: " << dummy_distance << ", " */
+    /*                              << "Direction: " << angle * 180 / M_PI); */
 
     double dummy_velocity_max =
         sqrt((pow2(VELOCITY_MIN) + pow2(dummy_goal_velocity) +
@@ -143,7 +143,7 @@ public:
     for (int i = 0; i < 2; ++i) {
       if (distance[i] > ERROR_DISTANCE_MAX) {
         accel_time[i] =
-            2 * abs(velocity_max[i] - velocity_first[i]) / abs(accel_max[i]);
+            2 * abs((velocity_max[i] - velocity_first[i]) / accel_max[i]);
         const_time[i] = (abs(distance[i]) -
                          (2 * pow2(velocity_max[i]) -
                           (pow2(velocity_first[i]) + pow2(velocity_final[i]))) /
@@ -157,15 +157,16 @@ public:
         accel_max[i] = const_time[i] = decel_time[i] = 0;
       }
 
-      ROS_INFO_STREAM("Axis Num: " << i);
-      ROS_INFO_STREAM("SVelocity Parameter: "
-                      << "v_0 = " << velocity_first[i] << ", "
-                      << "v_m = " << velocity_max[i] << ", "
-                      << "v_f = " << velocity_final[i] << ", "
-                      << "x = " << distance[i] << ", "
-                      << "a_m = " << accel_max[i]);
-      ROS_INFO_STREAM("Accel Time: " << accel_time[i] << ", " << const_time[i]
-                                     << ", " << decel_time[i]);
+      /* ROS_INFO_STREAM("Axis Num: " << i); */
+      /* ROS_INFO_STREAM("SVelocity Parameter: " */
+      /*                 << "v_0 = " << velocity_first[i] << ", " */
+      /*                 << "v_m = " << velocity_max[i] << ", " */
+      /*                 << "v_f = " << velocity_final[i] << ", " */
+      /*                 << "x = " << distance[i] << ", " */
+      /*                 << "a_m = " << accel_max[i]); */
+      /* ROS_INFO_STREAM("Accel Time: " << accel_time[i] << ", " <<
+       * const_time[i] */
+      /*                                << ", " << decel_time[i]); */
       start_point = current_point;
       double delta_t = 1.0 / rate;
       double dummy_start;
@@ -214,8 +215,8 @@ public:
                 accel_max[i] * time / 2 + velocity_max[i];
           }
           data.position += dummy_start;
-          ROS_INFO_STREAM(delta_t * j << ", " << data.position << ", "
-                                      << data.velocity);
+          /* ROS_INFO_STREAM(delta_t * j << ", " << data.position << ", " */
+          /*                             << data.velocity); */
           velocity_map[i].push_back(data);
         }
       } else {
@@ -223,7 +224,8 @@ public:
         data.position = 0;
         data.velocity = 0;
         data.position += dummy_start;
-        ROS_INFO_STREAM(0 << ", " << data.position << ", " << data.velocity);
+        /* ROS_INFO_STREAM(0 << ", " << data.position << ", " << data.velocity);
+         */
         velocity_map[i].push_back(data);
       }
       map_id[i] = 0;
