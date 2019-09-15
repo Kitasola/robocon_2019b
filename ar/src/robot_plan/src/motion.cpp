@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 
   constexpr double FREQ = 300;
   ros::Rate loop_rate(FREQ);
-  planner.addGoal(1000, 1000, 0);
+  /* planner.addGoal(1000, 1000, 0); */
   planner.sendNextGoal();
 
   while (ros::ok()) {
