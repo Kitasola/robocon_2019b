@@ -127,10 +127,13 @@ public:
                                 VELOCITY_MIN * sin(angle)};
     double velocity_final[2] = {goal_velocity.linear.x, goal_velocity.linear.y};
     for (int i = 0; i < 2; ++i) {
-      if (velocity_first[i] < velocity_final_prev[i]) {
+      if (velocity_first[i] > 0 && velocity_first[i] < velocity_final_prev[i]) {
         velocity_first[i] = velocity_final_prev[i];
-        velocity_final_prev[i] = velocity_final[i];
+      } else if (velocity_first[i] < 0 &&
+                 velocity_first[i] > velocity_final_prev[i]) {
+        velocity_first[i] = velocity_final_prev[i];
       }
+      velocity_final_prev[i] = velocity_final[i];
     }
     double accel_max[2] = {ACCEL_MAX * cos(angle), ACCEL_MAX * sin(angle)};
 
@@ -141,13 +144,12 @@ public:
       if (distance[i] > ERROR_DISTANCE_MAX) {
         accel_time[i] =
             2 * abs(velocity_max[i] - velocity_first[i]) / abs(accel_max[i]);
-        const_time[i] =
-            abs((distance[i] -
-                 (2 * pow2(velocity_max[i]) -
-                  (pow2(velocity_first[i]) + pow2(velocity_final[i]))) /
-                     accel_max[i]) /
-                velocity_max[i]) +
-            accel_time[i];
+        const_time[i] = (abs(distance[i]) -
+                         (2 * pow2(velocity_max[i]) -
+                          (pow2(velocity_first[i]) + pow2(velocity_final[i]))) /
+                             abs(accel_max[i])) /
+                            abs(velocity_max[i]) +
+                        accel_time[i];
         decel_time[i] =
             2 * abs((velocity_max[i] - velocity_final[i]) / accel_max[i]) +
             const_time[i];
