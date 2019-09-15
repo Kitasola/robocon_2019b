@@ -50,39 +50,50 @@ public:
       std_msgs::Bool msgs;
       msgs.data = true;
       reach_goal_pub.publish(msgs);
+      send_twist.linear.x = 0;
+      send_twist.linear.y = 0;
+      send_twist.angular.z = 0;
+      velocity_pub.publish(send_twist);
       return;
-    }
-    for (int i = 0; i < 2; ++i) {
-      int search_id_min = map_id[i] - MAP_SEARCH_RANGE;
-      int search_id_max = map_id[i] + MAP_SEARCH_RANGE;
-      if (search_id_min < 0) {
-        search_id_min = 0;
-      }
-      if (search_id_max > map_id_max[i]) {
-        search_id_max = map_id_max[i];
-      }
-
-      double dummy_current_point;
-      if (i == 0) {
-        dummy_current_point = current_point.x;
-      } else {
-        dummy_current_point = current_point.y;
-      }
-      int shortest_distance = INT_MAX;
-      double dummy_velocity;
-      for (int j = search_id_min; j < search_id_max; ++j) {
-        if (shortest_distance >
-            abs((dummy_current_point - velocity_map[i].at(j).position))) {
-          shortest_distance =
-              abs(dummy_current_point - velocity_map[i].at(j).position);
-          dummy_velocity = velocity_map[i].at(j).velocity;
-          map_id[i] = j;
+    } else {
+      for (int i = 0; i < 2; ++i) {
+        int search_id_min = map_id[i] - MAP_SEARCH_RANGE;
+        int search_id_max = map_id[i] + MAP_SEARCH_RANGE;
+        if (search_id_min < 0) {
+          search_id_min = 0;
         }
-      }
-      if (i == 0) {
-        send_twist.linear.x = dummy_velocity;
-      } else {
-        send_twist.linear.y = dummy_velocity;
+        if (search_id_max > map_id_max[i]) {
+          search_id_max = map_id_max[i];
+        }
+
+        double dummy_current_point;
+        if (i == 0) {
+          dummy_current_point = current_point.x;
+        } else {
+          dummy_current_point = current_point.y;
+        }
+        int shortest_distance = INT_MAX;
+        double dummy_velocity;
+        for (int j = search_id_min; j < search_id_max; ++j) {
+          if (shortest_distance >
+              abs((dummy_current_point - velocity_map[i].at(j).position))) {
+            shortest_distance =
+                abs(dummy_current_point - velocity_map[i].at(j).position);
+            dummy_velocity = velocity_map[i].at(j).velocity;
+            map_id[i] = j;
+          }
+        }
+        if (i == 0) {
+          send_twist.linear.x =
+              dummy_velocity +
+              ROOT_FOLLOW *
+                  (velocity_map[i].at(map_id[i]).position - current_point.x);
+        } else {
+          send_twist.linear.y =
+              dummy_velocity +
+              ROOT_FOLLOW *
+                  (velocity_map[i].at(map_id[i]).position - current_point.y);
+        }
       }
     }
 
@@ -160,6 +171,7 @@ public:
       } else {
         dummy_start = start_point.y;
       }
+      velocity_map[i].resize(0);
       for (int j = 0; j * delta_t <= decel_time[i]; ++j) {
         double time = j * delta_t;
         AccelMap data;
@@ -196,8 +208,8 @@ public:
               accel_max[i] * time / 2 + velocity_max[i];
         }
         data.position += dummy_start;
-        ROS_INFO_STREAM(delta_t * j << ", " << data.position << ", "
-                                    << data.velocity);
+        /* ROS_INFO_STREAM(delta_t * j << ", " << data.position << ", " */
+        /*                             << data.velocity); */
         velocity_map[i].push_back(data);
       }
       map_id[i] = 0;
@@ -215,7 +227,8 @@ private:
   double velocity_final_prev[2] = {};
   constexpr static double VELOCITY_MIN = 500, VELOCITY_MAX = 2000,
                           ACCEL_MAX = 1500;
-  constexpr static double ERROR_DISTANCE_MAX = 10;
+  constexpr static double ERROR_DISTANCE_MAX = 20;
+  constexpr static double ROOT_FOLLOW = 20;
   std::vector<AccelMap> velocity_map[2];
   constexpr static int MAP_SEARCH_RANGE = 5;
   int map_id[2] = {};
