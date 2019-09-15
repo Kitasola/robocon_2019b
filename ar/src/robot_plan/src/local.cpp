@@ -28,8 +28,12 @@ public:
     robot_pose_sub =
         n->subscribe("robot_pose", 1, &SVelocity::getRobotPose, this);
     rate = user_rate;
-    AccelMap dummy = {};
+    AccelMap dummy;
+    dummy.position = 5400;
+    dummy.velocity = 0;
     velocity_map[0].push_back(dummy);
+    dummy.position = 1800;
+    dummy.velocity = 0;
     velocity_map[1].push_back(dummy);
   }
 
