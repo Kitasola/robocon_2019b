@@ -32,6 +32,9 @@ ros::Subscriber<geometry_msgs::Twist> velocity_sub("/wheel/velocity",
 int main() {
   nh.getHardware()->setBaud(115200);
   nh.initNode();
+  nh.advertise(robot_pose_pub);
+  nh.advertise(debug_velocity_pub);
+  nh.subscribe(velocity_sub);
 
   constexpr double MAIN_FREQUENCY = 1000;
   constexpr double TOPIC_FREQUENCY = 300;
@@ -91,9 +94,6 @@ int main() {
       RotaryInc(PA_8, PA_9, MEASURE_ROTARY_RANGE, MEASURE_ROTARY_MULTI),
       RotaryInc(PA_6, PA_7, MEASURE_ROTARY_RANGE, MEASURE_ROTARY_MULTI)};
 
-  I2C i2c(PB_3, PB_10);
-  GY521 gyro(i2c, 2, 1000, 1.012);
-
   /* 余剰PWMピン */
   /* constexpr PinName OTHER_PWM_PIN[3][3] = { */
   /*     {PB_6, PB_7, PB_12}, {PB_8, PB_9, PC_7}, {PA_0, PA_1, PB_0}}; */
@@ -102,17 +102,21 @@ int main() {
   DigitalIn calibration_switch(PC_13); //青色のボタン
   run_led = 1;
 
-  /* ==========ここより上にしかパラメータは存在しません========== */
-  nh.advertise(robot_pose_pub);
-  nh.advertise(debug_velocity_pub);
-  nh.subscribe(velocity_sub);
+  I2C i2c(PB_3, PB_10);
+  // Need Calibration
+calibration:
+  GY521 gyro(i2c, 2, 1000, 1.012);
 
+  /* ==========ここより上にしかパラメータは存在しません========== */
+reset:
   Timer main_loop, topic_loop;
   main_loop.start();
   topic_loop.start();
 
+  // Reset Robot Pose
   robot_pose.x = 0;
   robot_pose.y = 0;
+  gyro.yaw = 0;
   while (true) {
     nh.spinOnce();
     if (topic_loop.read() > 1.0 / MAIN_FREQUENCY) {
@@ -125,9 +129,22 @@ int main() {
         robot_pose_pub.publish(&robot_pose);
         debug_velocity_pub.publish(&debug_velocity);
       }
+
+      // Interrput
+      switch ((int)goal_twist.angular.x) {
+      case 1:
+        goto reset;
+        break;
+      case 2:
+        goto calibration;
+        break;
+      }
+
+      // Move
       gyro.updata();
       double robot_yaw = gyro.yaw / 180 * M_PI;
 
+      // Exchange to Robot, from Field
       double robot_velocity[NUM_AXIS] = {
           goal_twist.linear.x * cos(robot_yaw) -
               goal_twist.linear.y * sin(robot_yaw),
@@ -145,11 +162,8 @@ int main() {
                          (drive_velocity[i] = drive_rotary[i].getSpeed() *
                                               DRIVE_WHEEL_DIAMETER * M_PI)));
       }
-      debug_velocity.linear.x = drive_velocity[0];
-      debug_velocity.linear.y = drive_velocity[1];
-      debug_velocity.linear.z = drive_velocity[2];
-      debug_velocity.angular.x = drive_velocity[3];
 
+      // Odometry
       double robot_x =
           measure_rotary[0].getDiff() * MEASURE_WHEEL_DIAMETER * M_PI / 2 -
           measure_rotary[2].getDiff() * MEASURE_WHEEL_DIAMETER * M_PI / 2;
@@ -160,6 +174,21 @@ int main() {
       robot_pose.x += robot_x * cos(field_yaw) - robot_y * sin(field_yaw);
       robot_pose.y += robot_x * sin(field_yaw) + robot_y * cos(field_yaw);
       robot_pose.theta = field_yaw;
+
+      // Debug
+      debug_velocity.angular.y = goal_twist.angular.y;
+      switch ((int)debug_velocity.angular.y) {
+        // Velocity
+      case 1:
+        debug_velocity.linear.x = drive_velocity[0];
+        debug_velocity.linear.y = drive_velocity[1];
+        debug_velocity.linear.z = drive_velocity[2];
+        debug_velocity.angular.x = drive_velocity[3];
+        break;
+      default:
+        debug_velocity = goal_twist;
+        break;
+      }
     } else {
       wait_ms(1.0 / MAIN_FREQUENCY / 2.0);
       /* wait_ms(1000); */
