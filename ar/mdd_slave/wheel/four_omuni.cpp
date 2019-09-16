@@ -114,8 +114,8 @@ int main() {
   robot_pose.x = 0;
   robot_pose.y = 0;
   while (true) {
+    nh.spinOnce();
     if (topic_loop.read() > 1.0 / MAIN_FREQUENCY) {
-      nh.spinOnce();
       double delta_t = main_loop.read();
       main_loop.reset();
 
