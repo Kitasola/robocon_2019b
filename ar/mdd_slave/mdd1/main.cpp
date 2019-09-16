@@ -6,7 +6,7 @@ ScrpSlave slave(PA_9, PA_10, PA_12, SERIAL_TX, SERIAL_RX, 0x0803e000);
 
 constexpr int NUM_PORT = 5;
 // 0: Motor, 1: Encoder, 2: Other
-constexpr int PORT_FUNCTION[NUM_PORT] = {2, 2, 2, 0, 0};
+constexpr int PORT_FUNCTION[NUM_PORT] = {0, 2, 2, 2, 0};
 
 constexpr int NUM_MOTOR_PORT = 4;
 constexpr int MAX_PWM = 250;
@@ -72,9 +72,10 @@ float servoDegreeToPulse(int degree) {
          MIN_SERVO_PULSE;
 }
 
+constexpr int OFFSET_ANGLE[2] = {5, 13};
 bool dryTowel(int cmd, int rx_data, int &tx_data) {
-  towel[0].pulsewidth(servoDegreeToPulse(rx_data));
-  towel[1].pulsewidth(servoDegreeToPulse(180 - rx_data));
+  towel[0].pulsewidth(servoDegreeToPulse(rx_data + OFFSET_ANGLE[0]));
+  towel[1].pulsewidth(servoDegreeToPulse(180 - rx_data + OFFSET_ANGLE[1]));
   return true;
 }
 
