@@ -128,12 +128,14 @@ int main(int argc, char **argv) {
   constexpr int START_PIN = 18;
   Pi::gpio().set(18, IN, PULL_DOWN);
 
-  while (ros::ok() && !Pi::gpio().read(START_PIN)) {
+  while (ros::ok()) {
+    if (Pi::gpio().read(START_PIN)) {
+      planner.sendNextGoal(goal_map.getPtp());
+      goal_map.next();
+      break;
+    }
     loop_rate.sleep();
-  };
-  ROS_INFO_STREAM("Push Start Switch");
-  planner.sendNextGoal(goal_map.getPtp());
-  goal_map.next();
+  }
 
   while (ros::ok()) {
     ros::spinOnce();
