@@ -19,10 +19,9 @@ public:
   bool is_reach_goal;
   void checkReachGoal(const std_msgs::Bool &msg) { is_reach_goal = msg.data; }
   void sendNextGoal(geometry_msgs::Pose2D goal_point) {
-    /* ROS_INFO_STREAM("Next Goal Point is " << goal_point.x << ", " */
-    /*                                       << goal_point.y << ", " */
-    /*                                       << goal_point.theta * 180 / M_PI);
-     */
+    ROS_INFO_STREAM("Next Goal Point is " << goal_point.x << ", "
+                                          << goal_point.y << ", "
+                                          << goal_point.theta * 180 / M_PI);
     goal_point_pub.publish(goal_point);
     is_reach_goal = false;
   }
@@ -57,6 +56,10 @@ struct GoalInfo {
 
 class GoalManager {
 public:
+  GoalManager() {
+    add(5400, 1800, 0);
+    restart();
+  }
   void add(GoalInfo goal) { map_.push_back(goal); }
   void add(int x, int y, int yaw, int action_type = 0, int action_value = 0,
            int velocity_x = 0, int velocity_y = 0) {
@@ -71,16 +74,22 @@ public:
     map_.push_back(dummy_goal);
   }
 
+  void show() {
+    for (x : map_) {
+      ROS_INFO_STREAM(x.x << ", " << x.y);
+    }
+  }
+
   void next() {
-    if (map_id_ < map_.size()) {
+    if (map_id_ < map_.size() - 1) {
       ++map_id_;
       now = map_.at(map_id_);
     }
   }
 
   void restart() {
-    map_id_ = -1;
-    next();
+    map_id_ = 0;
+    now = map_.at(map_id_);
   };
 
   void reset() { map_.resize(0); }
@@ -97,7 +106,7 @@ public:
 
 private:
   std::vector<GoalInfo> map_;
-  int map_id_;
+  int map_id_ = 0;
 };
 
 int main(int argc, char **argv) {
@@ -119,9 +128,10 @@ int main(int argc, char **argv) {
   constexpr int START_PIN = 18;
   Pi::gpio().set(18, IN, PULL_DOWN);
 
-  while (!Pi::gpio().read(START_PIN)) {
+  while (ros::ok() && !Pi::gpio().read(START_PIN)) {
     loop_rate.sleep();
   };
+  ROS_INFO_STREAM("Push Start Switch");
   planner.sendNextGoal(goal_map.getPtp());
   goal_map.next();
 
@@ -138,8 +148,8 @@ int main(int argc, char **argv) {
     }
 
     if (is_send_next_goal) {
-      goal_map.next();
       planner.sendNextGoal(goal_map.getPtp());
+      goal_map.next();
     }
 
     loop_rate.sleep();
