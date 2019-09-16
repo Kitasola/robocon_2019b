@@ -123,6 +123,7 @@ int main(int argc, char **argv) {
     loop_rate.sleep();
   };
   planner.sendNextGoal(goal_map.getPtp());
+  goal_map.next();
 
   while (ros::ok()) {
     ros::spinOnce();

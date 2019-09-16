@@ -29,10 +29,10 @@ public:
         n->subscribe("robot_pose", 1, &SVelocity::getRobotPose, this);
     rate = user_rate;
     AccelMap dummy;
-    dummy.position = 5400;
+    goal_point.x = dummy.position = 5400;
     dummy.velocity = 0;
     velocity_map[0].push_back(dummy);
-    dummy.position = 1800;
+    goal_point.y = dummy.position = 1800;
     dummy.velocity = 0;
     velocity_map[1].push_back(dummy);
   }
@@ -244,8 +244,8 @@ private:
   ros::Publisher velocity_pub, reach_goal_pub;
   geometry_msgs::Twist send_twist, goal_velocity;
   double velocity_final_prev[2] = {};
-  constexpr static double VELOCITY_MIN = 600, VELOCITY_MAX = 3000,
-                          ACCEL_MAX = 5000;
+  constexpr static double VELOCITY_MIN = 300, VELOCITY_MAX = 2000,
+                          ACCEL_MAX = 2000;
   constexpr static double ERROR_DISTANCE_MAX = 20;
   constexpr static double ROOT_FOLLOW = 3;
   std::vector<AccelMap> velocity_map[2];
@@ -253,7 +253,7 @@ private:
   int map_id[2] = {};
   int map_id_max[2] = {};
 
-  arrc::PidVelocity moment{10, 0, 0};
+  arrc::PidVelocity moment{5, 0, 0};
 };
 
 int main(int argc, char **argv) {
