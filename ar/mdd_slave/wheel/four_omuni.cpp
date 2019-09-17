@@ -36,8 +36,8 @@ int main() {
   nh.advertise(debug_velocity_pub);
   nh.subscribe(velocity_sub);
 
-  constexpr double MAIN_FREQUENCY = 1000;
-  constexpr double TOPIC_FREQUENCY = 300;
+  constexpr double MAIN_FREQUENCY = 100;
+  constexpr double TOPIC_FREQUENCY = 20;
 
   constexpr double PWM_PERIOD = 33;
 
@@ -71,20 +71,28 @@ int main() {
     g_drive_motor[i][1]->period_us(PWM_PERIOD);
     g_drive_led[i] = new DigitalOut(drive_led[i]);
   }
-  constexpr int DRIVE_ROTARY_RANGE = 512, DRIVE_ROTARY_MULTI = 4;
+  constexpr int DRIVE_ROTARY_RANGE = 256, DRIVE_ROTARY_MULTI = 1;
   constexpr double DRIVE_WHEEL_DIAMETER = 101.6; //, DRIVE_TURN_DADIUS = 100;
   RotaryInc drive_rotary[NUM_WHEEL] = {
       RotaryInc(PC_2, PC_3, DRIVE_ROTARY_RANGE, DRIVE_ROTARY_MULTI),
       RotaryInc(PA_14, PA_15, DRIVE_ROTARY_RANGE, DRIVE_ROTARY_MULTI),
       RotaryInc(PC_4, PA_13, DRIVE_ROTARY_RANGE, DRIVE_ROTARY_MULTI),
       RotaryInc(PC_10, PC_11, DRIVE_ROTARY_RANGE, DRIVE_ROTARY_MULTI)};
-  PidPosition drive_speed[NUM_WHEEL] = {PidPosition(0.00025, 0.000001, 0, 0.1),
-                                        PidPosition(0.00025, 0.000001, 0, 0.1),
-                                        PidPosition(0.00025, 0.000001, 0, 0.1),
-                                        PidPosition(0.00025, 0.000001, 0, 0.1)};
+  /* PidPosition drive_speed[NUM_WHEEL] = {PidPosition(0.00025, 0.000001, 0,
+   * 0.1), */
+  /*                                       PidPosition(0.00025, 0.000001, 0,
+   * 0.1), */
+  /*                                       PidPosition(0.00025, 0.000001, 0,
+   * 0.1), */
+  /*                                       PidPosition(0.00025, 0.000001, 0,
+   * 0.1)}; */
+  PidPosition drive_speed[NUM_WHEEL] = {PidPosition(0.00014, 0.000001, 0, 0.1),
+                                        PidPosition(0.00014, 0.000001, 0, 0.1),
+                                        PidPosition(0.00014, 0.000001, 0, 0.1),
+                                        PidPosition(0.00014, 0.000001, 0, 0.1)};
 
   /* 計測輪 */
-  constexpr int MEASURE_ROTARY_RANGE = 256, MEASURE_ROTARY_MULTI = 22;
+  constexpr int MEASURE_ROTARY_RANGE = 256, MEASURE_ROTARY_MULTI = 1;
   constexpr double MEASURE_WHEEL_DIAMETER =
       50.8 * 0.99; // , MEASURE_TURN_DADIUS = 100;
   // A, B逆にするとバグる

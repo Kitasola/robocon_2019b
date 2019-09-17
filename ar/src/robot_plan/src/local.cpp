@@ -260,9 +260,9 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "local_planner");
   ros::NodeHandle n;
 
-  SVelocity controller(&n, "wheel", 50);
+  SVelocity controller(&n, "wheel", 10);
 
-  ros::Rate loop_rate(50);
+  ros::Rate loop_rate(10);
   while (ros::ok()) {
     ros::spinOnce();
     controller.control();
