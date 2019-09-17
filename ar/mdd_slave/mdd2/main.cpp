@@ -148,21 +148,17 @@ int main() {
     constexpr int NUM_TWO_REGISTER = 2;
     AnalogIn two_register[NUM_TWO_REGISTER] = {AnalogIn(PB_0),
                                                AnalogIn(PA_0)}; // right, left
-    constexpr float TWO_REGISTER_MULTI = 210.0 / 255 * 720; // mmへの変換倍率
-    constexpr int TOW_STAGE_OFFSET = 0;
-    static int two_hight_prev[NUM_TWO_REGISTER] = {};
-    int two_velocity[NUM_TWO_REGISTER] = {};
-    PidVelocity two_motor[NUM_TWO_REGISTER] = {PidVelocity(0, 0, 0, 0),
-                                               PidVelocity(0, 0, 0, 0)};
+    constexpr float TWO_REGISTER_MULTI[NUM_TWO_REGISTER] = {
+        720 / (210.0 / 255), 720 / (210.0 / 255)}; // mmへの変換倍率
+    constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {0, 0};
+    PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(2, 0, 0, 0),
+                                               PidPosition(2, 0, 0, 0)};
 
     for (int i = 0; i < NUM_TWO_REGISTER; ++i) {
       two_hight_current[i] =
-          two_register[i].read() * TWO_REGISTER_MULTI - TOW_STAGE_OFFSET;
+          two_register[i].read() * TWO_REGISTER_MULTI[i] - TOW_STAGE_OFFSET[i];
       spinMotor(i + 2,
-                two_motor[i].control(
-                    two_max_velocity,
-                    (two_hight_current[i] - two_hight_prev[i]) / delta_t));
-      two_hight_prev[i] = two_hight_current[i];
+                two_motor[i].control(goal_two_hight, two_hight_current[i]));
     }
   }
 }
