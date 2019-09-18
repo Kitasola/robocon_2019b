@@ -1,18 +1,19 @@
-#include "pid.hpp"
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
 #include <gy521.hpp>
 #include <math.h>
 #include <mbed.h>
+#include <pid.hpp>
 #include <ros.h>
 #include <rotary_inc.hpp>
 #include <scrp_slave.hpp>
+#include <std_msgs/Float32.h>
 #include <tf.h>
 
 using namespace arrc;
 
 constexpr int NUM_WHEEL = 4;
-constexpr double M_PI = 3.14159;
+/* constexpr double M_PI = 3.14159; */
 constexpr float MAX_PWM_RATIO = 0.98;
 constexpr float MIN_PWM_RATIO = 0;
 inline bool spinMotor(int id, double pwm);
@@ -23,30 +24,44 @@ ros::NodeHandle nh;
 geometry_msgs::Twist goal_twist;
 void getTwist(const geometry_msgs::Twist &msgs) { goal_twist = msgs; }
 geometry_msgs::Pose2D robot_pose;
-ros::Publisher robot_pose_pub("wheel/robot_pose", &robot_pose);
-ros::Subscriber<geometry_msgs::Twist> velocity_sub("wheel/velocity", &getTwist);
+ros::Publisher robot_pose_pub("/wheel/robot_pose", &robot_pose);
+geometry_msgs::Twist debug_velocity;
+ros::Publisher debug_velocity_pub("/wheel/debug_velocity", &debug_velocity);
+ros::Subscriber<geometry_msgs::Twist> velocity_sub("/wheel/velocity",
+                                                   &getTwist);
+float robot_yaw = 0;
+void getYaw(const std_msgs::Float32 &msg) { robot_yaw = msg.data / 180 * M_PI; }
+ros::Subscriber<std_msgs::Float32> gyro_sub("/wheel/yaw", &getYaw);
 
 int main() {
   nh.getHardware()->setBaud(115200);
   nh.initNode();
+  nh.advertise(robot_pose_pub);
+  nh.advertise(debug_velocity_pub);
+  nh.subscribe(velocity_sub);
+  nh.subscribe(gyro_sub);
 
-  constexpr double MAIN_FREQUENCY = 1000;
-  constexpr double TOPIC_FREQUENCY = 100;
+  constexpr double MAIN_FREQUENCY = 100;
+  constexpr double TOPIC_FREQUENCY = 50;
 
-  constexpr double PWM_PERIOD = 2048;
+  constexpr double PWM_PERIOD = 50;
 
   /* 駆動輪 */
-  constexpr double INVERCE_ROOT_2 = 1 / sqrt(2);
+  constexpr double INVERCE_ROOT_2 = sqrt(2);
   constexpr int NUM_AXIS = 3;
   constexpr double DRIVE_MATRIX[4][3] = {
-      {INVERCE_ROOT_2, INVERCE_ROOT_2, 1},
-      {INVERCE_ROOT_2, -INVERCE_ROOT_2, 1},
-      {-INVERCE_ROOT_2, -INVERCE_ROOT_2, 1},
-      {-INVERCE_ROOT_2, INVERCE_ROOT_2, 1},
+      {INVERCE_ROOT_2, -INVERCE_ROOT_2, -1},
+      {-INVERCE_ROOT_2, -INVERCE_ROOT_2, -1},
+      {-INVERCE_ROOT_2, INVERCE_ROOT_2, -1},
+      {INVERCE_ROOT_2, INVERCE_ROOT_2, -1},
   };
   PinName drive_motor[NUM_WHEEL][2] = {
-      {PB_1, PA_11}, {PB_13, PB_14}, {PB_4, PB_5}, {PC_8, PC_9}};
-  PinName drive_led[NUM_WHEEL] = {PC_6, PB_2, PB_15, PA_10};
+      /* {PC_8, PC_9}, {PB_4, PB_5}, {PB_13, PB_14}, {PB_1, PA_11}}; */
+      {PC_9, PC_8},
+      {PB_5, PB_4},
+      {PB_14, PB_13},
+      {PA_11, PB_1}};
+  PinName drive_led[NUM_WHEEL] = {PA_10, PB_15, PC_6, PB_2};
   /* PwmOut drive_motor[NUM_WHEEL][2] = {{PwmOut(PB_1), PwmOut(PA_11)}, */
   /*                                     {PwmOut(PB_13), PwmOut(PB_14)}, */
   /*                                     {PwmOut(PB_4), PwmOut(PB_5)}, */
@@ -61,92 +76,127 @@ int main() {
     g_drive_motor[i][1]->period_us(PWM_PERIOD);
     g_drive_led[i] = new DigitalOut(drive_led[i]);
   }
-  constexpr int DRIVE_ROTARY_RANGE = 512, DRIVE_ROTARY_MULTI = 2;
+  constexpr int DRIVE_ROTARY_RANGE = 256, DRIVE_ROTARY_MULTI = 1;
   constexpr double DRIVE_WHEEL_DIAMETER = 101.6; //, DRIVE_TURN_DADIUS = 100;
   RotaryInc drive_rotary[NUM_WHEEL] = {
-      RotaryInc(PC_10, PC_11, DRIVE_ROTARY_RANGE, DRIVE_ROTARY_MULTI),
-      RotaryInc(PC_4, PA_13, DRIVE_ROTARY_RANGE, DRIVE_ROTARY_MULTI),
-      RotaryInc(PA_14, PA_15, DRIVE_ROTARY_RANGE, DRIVE_ROTARY_MULTI),
-      RotaryInc(PC_2, PC_3, DRIVE_ROTARY_RANGE, DRIVE_ROTARY_MULTI)};
-  PidVelocity drive_speed[NUM_WHEEL] = {
-      PidVelocity(0.00014, 0, 0), PidVelocity(0.00014, 0, 0),
-      PidVelocity(0.00014, 0, 0), PidVelocity(0.00014, 0, 0)};
+      RotaryInc(PC_2, PC_3, DRIVE_WHEEL_DIAMETER * M_PI, DRIVE_ROTARY_RANGE,
+                DRIVE_ROTARY_MULTI),
+      RotaryInc(PA_14, PA_15, DRIVE_WHEEL_DIAMETER * M_PI, DRIVE_ROTARY_RANGE,
+                DRIVE_ROTARY_MULTI),
+      RotaryInc(PC_4, PA_13, DRIVE_WHEEL_DIAMETER * M_PI, DRIVE_ROTARY_RANGE,
+                DRIVE_ROTARY_MULTI),
+      RotaryInc(PC_10, PC_11, DRIVE_WHEEL_DIAMETER * M_PI, DRIVE_ROTARY_RANGE,
+                DRIVE_ROTARY_MULTI)};
+  /* PidPosition drive_speed[NUM_WHEEL] = {PidPosition(0.00025, 0.000001, 0,
+   * 0.1), */
+  /*                                       PidPosition(0.00025, 0.000001, 0,
+   * 0.1), */
+  /*                                       PidPosition(0.00025, 0.000001, 0,
+   * 0.1), */
+  /*                                       PidPosition(0.00025, 0.000001, 0,
+   * 0.1)}; */
+  PidPosition drive_speed[NUM_WHEEL] = {PidPosition(0.00014, 0.000001, 0, 0.1),
+                                        PidPosition(0.00014, 0.000001, 0, 0.1),
+                                        PidPosition(0.00014, 0.000001, 0, 0.1),
+                                        PidPosition(0.00014, 0.000001, 0, 0.1)};
 
   /* 計測輪 */
-  constexpr int MEASURE_ROTARY_RANGE = 256, MEASURE_ROTARY_MULTI = 22;
+  constexpr int MEASURE_ROTARY_RANGE = 256, MEASURE_ROTARY_MULTI = 2;
   constexpr double MEASURE_WHEEL_DIAMETER =
       50.8 * 0.99; // , MEASURE_TURN_DADIUS = 100;
   // A, B逆にするとバグる
   RotaryInc measure_rotary[NUM_WHEEL] = {
-      RotaryInc(PA_12, PC_5, MEASURE_ROTARY_RANGE, MEASURE_ROTARY_MULTI),
-      RotaryInc(PC_0, PC_1, MEASURE_ROTARY_RANGE, MEASURE_ROTARY_MULTI),
-      RotaryInc(PA_6, PA_7, MEASURE_ROTARY_RANGE, MEASURE_ROTARY_MULTI),
-      RotaryInc(PA_9, PA_8, MEASURE_ROTARY_RANGE, MEASURE_ROTARY_MULTI)};
-
-  I2C i2c(PB_3, PB_10);
-  GY521 gyro(i2c, 2, 1000, 1.012);
+      RotaryInc(PC_0, PC_1, MEASURE_WHEEL_DIAMETER * M_PI, MEASURE_ROTARY_RANGE,
+                MEASURE_ROTARY_MULTI),
+      RotaryInc(PA_12, PC_5, MEASURE_WHEEL_DIAMETER * M_PI,
+                MEASURE_ROTARY_RANGE, MEASURE_ROTARY_MULTI),
+      RotaryInc(PA_8, PA_9, MEASURE_WHEEL_DIAMETER * M_PI, MEASURE_ROTARY_RANGE,
+                MEASURE_ROTARY_MULTI),
+      RotaryInc(PA_6, PA_7, MEASURE_WHEEL_DIAMETER * M_PI, MEASURE_ROTARY_RANGE,
+                MEASURE_ROTARY_MULTI)};
 
   /* 余剰PWMピン */
   /* constexpr PinName OTHER_PWM_PIN[3][3] = { */
   /*     {PB_6, PB_7, PB_12}, {PB_8, PB_9, PC_7}, {PA_0, PA_1, PB_0}}; */
 
-  /* 何のピンなんやろ */
   DigitalOut run_led(LED1);
-  DigitalIn calibration_switch(PC_13);
+  DigitalIn calibration_switch(PC_13); //青色のボタン
+  run_led = 1;
 
-  /* ==========ここより上にしかパラメータは存在しません========== */
-  nh.advertise(robot_pose_pub);
-  nh.subscribe(velocity_sub);
-
+/* ==========ここより上にしかパラメータは存在しません========== */
+reset:
   Timer main_loop, topic_loop;
   main_loop.start();
   topic_loop.start();
 
+  // Reset Robot Pose
   robot_pose.x = 0;
   robot_pose.y = 0;
   while (true) {
     nh.spinOnce();
-    if (main_loop.read() > 1.0 / MAIN_FREQUENCY) {
-      double delta_t = main_loop.read();
-      main_loop.reset();
+    /* if (topic_loop.read() > 1.0 / MAIN_FREQUENCY) { */
+    double delta_t = main_loop.read();
+    main_loop.reset();
 
-      if (topic_loop.read() > 1.0 / TOPIC_FREQUENCY) {
-        run_led = !run_led;
-        topic_loop.reset();
-        robot_pose_pub.publish(&robot_pose);
-      }
-      gyro.updata();
-      double robot_yaw = gyro.yaw / 180 * M_PI;
-
-      double robot_velocity[NUM_AXIS] = {
-          goal_twist.linear.x * cos(robot_yaw) -
-              goal_twist.linear.y * sin(robot_yaw),
-          goal_twist.linear.x * sin(robot_yaw) -
-              goal_twist.linear.y * cos(robot_yaw),
-          goal_twist.angular.z};
-      double drive_goal[NUM_WHEEL] = {};
-      for (int i = 0; i < NUM_WHEEL; ++i) {
-        for (int j = 0; j < NUM_AXIS; ++j) {
-          drive_goal[i] += DRIVE_MATRIX[i][j] * robot_velocity[j];
-        }
-        spinMotor(i, drive_speed[i].control(drive_goal[i],
-                                            drive_rotary[i].getSpeed() *
-                                                DRIVE_WHEEL_DIAMETER * M_PI));
-      }
-
-      double robot_x =
-          measure_rotary[0].getDiff() * MEASURE_WHEEL_DIAMETER * M_PI / 2 -
-          measure_rotary[2].getDiff() * MEASURE_WHEEL_DIAMETER * M_PI / 2;
-      double robot_y =
-          -(-measure_rotary[1].getDiff()) * MEASURE_WHEEL_DIAMETER * M_PI / 2 +
-          measure_rotary[3].getDiff() * MEASURE_WHEEL_DIAMETER * M_PI / 2;
-      double field_yaw = robot_yaw;
-      robot_pose.x += robot_x * cos(field_yaw) - robot_y * sin(field_yaw);
-      robot_pose.y += robot_x * sin(field_yaw) + robot_y * cos(field_yaw);
-      robot_pose.theta = field_yaw;
-    } else {
-      wait(1.0 / MAIN_FREQUENCY / 10);
+    run_led = !run_led;
+    if (topic_loop.read() > 1.0 / TOPIC_FREQUENCY) {
+      topic_loop.reset();
+      robot_pose_pub.publish(&robot_pose);
+      debug_velocity_pub.publish(&debug_velocity);
     }
+
+    // Interrput
+    switch ((int)goal_twist.angular.x) {
+    case 1:
+      goto reset;
+      break;
+    }
+
+    // Move
+    // Exchange to Robot, from Field
+    double robot_velocity[NUM_AXIS] = {goal_twist.linear.x * cos(robot_yaw) -
+                                           goal_twist.linear.y * sin(robot_yaw),
+                                       goal_twist.linear.x * sin(robot_yaw) +
+                                           goal_twist.linear.y * cos(robot_yaw),
+                                       goal_twist.angular.z};
+    double drive_goal[NUM_WHEEL] = {};
+    double drive_velocity[NUM_WHEEL] = {};
+    for (int i = 0; i < NUM_WHEEL; ++i) {
+      for (int j = 0; j < NUM_AXIS; ++j) {
+        drive_goal[i] += DRIVE_MATRIX[i][j] * robot_velocity[j];
+      }
+      spinMotor(i, drive_speed[i].control(
+                       drive_goal[i],
+                       (drive_velocity[i] = drive_rotary[i].getSpeed())));
+    }
+
+    // Odometry
+    double robot_x =
+        measure_rotary[0].diff() / 2 - measure_rotary[2].diff() / 2;
+    double robot_y =
+        -measure_rotary[1].diff() / 2 + measure_rotary[3].diff() / 2;
+    double field_yaw = robot_yaw;
+    robot_pose.x += robot_x * cos(field_yaw) - robot_y * sin(field_yaw);
+    robot_pose.y += robot_x * sin(field_yaw) + robot_y * cos(field_yaw);
+    robot_pose.theta = field_yaw;
+
+    // Debug
+    debug_velocity.angular.y = goal_twist.angular.y;
+    switch ((int)debug_velocity.angular.y) {
+      // Velocity
+    case 1:
+      debug_velocity.linear.x = drive_velocity[0];
+      debug_velocity.linear.y = drive_velocity[1];
+      debug_velocity.linear.z = drive_velocity[2];
+      debug_velocity.angular.x = drive_velocity[3];
+      break;
+    default:
+      debug_velocity = goal_twist;
+      break;
+    }
+    /* } else { */
+    /* wait_ms(1.0 / MAIN_FREQUENCY / 2.0); */
+    /* } */
   }
 }
 

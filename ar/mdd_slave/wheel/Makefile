@@ -40,7 +40,7 @@ VPATH = ..
 # Project settings
 
 PROJECT := wheel
-LIBRARY_DIR := /home/hokusai/nucleo_library
+LIBRARY_DIR := /home/$(USER)/arrc/nucleo_utility/library/f446re
 
 # Project settings
 ###############################################################################
@@ -244,7 +244,7 @@ ELF2BIN = arm-none-eabi-objcopy
 PREPROC = arm-none-eabi-cpp -E -P -Wl,--gc-sections -Wl,--wrap,main -Wl,--wrap,_malloc_r -Wl,--wrap,_free_r -Wl,--wrap,_realloc_r -Wl,--wrap,_memalign_r -Wl,--wrap,_calloc_r -Wl,--wrap,exit -Wl,--wrap,atexit -Wl,-n -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -DMBED_ROM_START=0x8000000 -DMBED_ROM_SIZE=0x80000 -DMBED_RAM_START=0x20000000 -DMBED_RAM_SIZE=0x20000 -DMBED_BOOT_STACK_SIZE=4096
 
 
-C_FLAGS += -std=c++14
+C_FLAGS += -std=gnu11
 C_FLAGS += -include
 C_FLAGS += mbed_config.h
 C_FLAGS += -D__MBED__=1
@@ -304,7 +304,7 @@ C_FLAGS += -DTARGET_NAME=NUCLEO_F446RE
 C_FLAGS += -DARM_MATH_CM4
 C_FLAGS += -include
 C_FLAGS += mbed_config.h
-C_FLAGS += -std=c++14
+C_FLAGS += -std=gnu11
 C_FLAGS += -c
 C_FLAGS += -Wall
 C_FLAGS += -Wextra
@@ -330,7 +330,7 @@ C_FLAGS += -DMBED_ROM_SIZE=0x80000
 C_FLAGS += -DMBED_RAM_START=0x20000000
 C_FLAGS += -DMBED_RAM_SIZE=0x20000
 
-CXX_FLAGS += -std=c++14
+CXX_FLAGS += -std=gnu++14
 CXX_FLAGS += -fno-rtti
 CXX_FLAGS += -Wvla
 CXX_FLAGS += -include
@@ -392,7 +392,7 @@ CXX_FLAGS += -DTARGET_NAME=NUCLEO_F446RE
 CXX_FLAGS += -DARM_MATH_CM4
 CXX_FLAGS += -include
 CXX_FLAGS += mbed_config.h
-CXX_FLAGS += -std=c++14
+CXX_FLAGS += -std=gnu++14
 CXX_FLAGS += -fno-rtti
 CXX_FLAGS += -Wvla
 CXX_FLAGS += -c
