@@ -7,6 +7,7 @@
 #include <ros.h>
 #include <rotary_inc.hpp>
 #include <scrp_slave.hpp>
+#include <std_msgs/Float32.h>
 #include <tf.h>
 
 using namespace arrc;
@@ -28,6 +29,9 @@ geometry_msgs::Twist debug_velocity;
 ros::Publisher debug_velocity_pub("/wheel/debug_velocity", &debug_velocity);
 ros::Subscriber<geometry_msgs::Twist> velocity_sub("/wheel/velocity",
                                                    &getTwist);
+float robot_yaw = 0;
+void getYaw(const std_msgs::Float32 &msg) { robot_yaw = msg.data; }
+ros::Subscriber<std_msgs::Float32> gyro_sub("/wheel/yaw", &getYaw);
 
 int main() {
   nh.getHardware()->setBaud(115200);
@@ -35,6 +39,7 @@ int main() {
   nh.advertise(robot_pose_pub);
   nh.advertise(debug_velocity_pub);
   nh.subscribe(velocity_sub);
+  nh.subscribe(gyro_sub);
 
   constexpr double MAIN_FREQUENCY = 100;
   constexpr double TOPIC_FREQUENCY = 50;
@@ -118,10 +123,6 @@ int main() {
   DigitalIn calibration_switch(PC_13); //青色のボタン
   run_led = 1;
 
-  I2C i2c(PB_3, PB_10);
-  // Need Calibration
-calibration:
-  Gy521 gyro(i2c, 2, 1000, 1.012);
 /* ==========ここより上にしかパラメータは存在しません========== */
 reset:
   Timer main_loop, topic_loop;
@@ -131,7 +132,6 @@ reset:
   // Reset Robot Pose
   robot_pose.x = 0;
   robot_pose.y = 0;
-  gyro.yaw = 0;
   while (true) {
     nh.spinOnce();
     /* if (topic_loop.read() > 1.0 / MAIN_FREQUENCY) { */
@@ -150,15 +150,9 @@ reset:
     case 1:
       goto reset;
       break;
-    case 2:
-      goto calibration;
-      break;
     }
 
     // Move
-    gyro.update();
-    double robot_yaw = gyro.yaw / 180 * M_PI;
-
     // Exchange to Robot, from Field
     double robot_velocity[NUM_AXIS] = {goal_twist.linear.x * cos(robot_yaw) -
                                            goal_twist.linear.y * sin(robot_yaw),
