@@ -141,16 +141,16 @@ int main(int argc, char **argv) {
   while (ros::ok()) {
     ros::spinOnce();
 
-    bool is_send_next_goal = false;
+    bool can_send_next_goal = false;
     if (planner.is_reach_goal) {
       switch (goal_map.now.action_type) {
       case 0:
-        is_send_next_goal = true;
+        can_send_next_goal = true;
         break;
       }
     }
 
-    if (is_send_next_goal) {
+    if (can_send_next_goal) {
       planner.sendNextGoal(goal_map.getPtp());
       goal_map.next();
     }
