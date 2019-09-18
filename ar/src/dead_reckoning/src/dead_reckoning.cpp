@@ -16,12 +16,19 @@ struct LogFormat {
   double theta;
 };
 
+bool starts_game = false;
+bool should_reset_point = false;
 void checkGlobalMessage(const std_msgs::String msg) {
-  std::string data = msg.data;
+  std::string mode = msg.data;
+  if (mode == "Game Start") {
+    starts_game = true;
+  } else if (mode == "Robot Pose Reset") {
+    should_reset_point = true;
+  }
 }
 
 // MDDからは起動時からの相対位置が送信されるため絶対位置に変換する必要がある
-double FIRST_X = 5400, FIRST_Y = 1800;
+constexpr double FIRST_X = 5400, FIRST_Y = 1800;
 geometry_msgs::Pose2D wheel_robot_pose;
 void getPoseWheel(const geometry_msgs::Pose2D msgs) {
   wheel_robot_pose.x = msgs.x * 1.0 + FIRST_X;
@@ -56,10 +63,19 @@ int main(int argc, char **argv) {
   double start = ros::Time::now().toSec();
   std::queue<LogFormat> log_data;
 
+  geometry_msgs::Pose2D offset_robot_pose;
   while (ros::ok()) {
     ros::spinOnce();
 
+    if (should_reset_point) {
+      offset_robot_pose = robot_pose;
+      should_reset_point = false;
+    }
     robot_pose = wheel_robot_pose;
+
+    robot_pose.x = robot_pose.x - offset_robot_pose.x;
+    robot_pose.y = robot_pose.y - offset_robot_pose.y;
+    robot_pose.theta = robot_pose.theta - offset_robot_pose.theta;
     robot_pose_pub.publish(robot_pose);
 
     LogFormat data;
