@@ -76,6 +76,11 @@ int main(int argc, char **argv) {
     robot_pose.x = robot_pose.x - offset_robot_pose.x;
     robot_pose.y = robot_pose.y - offset_robot_pose.y;
     robot_pose.theta = robot_pose.theta - offset_robot_pose.theta;
+    if (robot_pose.theta > M_PI) {
+      robot_pose.theta -= 2 * M_PI;
+    } else if (robot_pose.theta < -M_PI) {
+      robot_pose.theta += 2 * M_PI;
+    }
     robot_pose_pub.publish(robot_pose);
 
     LogFormat data;
