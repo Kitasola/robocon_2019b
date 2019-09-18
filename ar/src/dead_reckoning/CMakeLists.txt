@@ -118,7 +118,10 @@ catkin_package(
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
+  ~/arrc/basic_utility/raspi/include
 )
+
+set(UTILITY ~/arrc/basic_utility/raspi/src)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -135,6 +138,8 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/dead_reckoning_node.cpp)
 add_executable(dead_reckoning src/dead_reckoning.cpp)
+add_executable(gyro src/gyro.cpp ${UTILITY}/pigpiod.cpp ${UTILITY}/GY521.cpp
+  ${UTILITY}/i2c.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -152,6 +157,11 @@ add_executable(dead_reckoning src/dead_reckoning.cpp)
 # )
 target_link_libraries(dead_reckoning
   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(gyro
+  ${catkin_LIBRARIES}
+  pigpiod_if2
 )
 
 #############

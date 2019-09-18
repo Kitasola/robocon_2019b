@@ -30,7 +30,7 @@ ros::Publisher debug_velocity_pub("/wheel/debug_velocity", &debug_velocity);
 ros::Subscriber<geometry_msgs::Twist> velocity_sub("/wheel/velocity",
                                                    &getTwist);
 float robot_yaw = 0;
-void getYaw(const std_msgs::Float32 &msg) { robot_yaw = msg.data; }
+void getYaw(const std_msgs::Float32 &msg) { robot_yaw = msg.data / 180 * M_PI; }
 ros::Subscriber<std_msgs::Float32> gyro_sub("/wheel/yaw", &getYaw);
 
 int main() {
