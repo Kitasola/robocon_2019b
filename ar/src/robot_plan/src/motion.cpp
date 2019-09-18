@@ -5,6 +5,7 @@
 #include <pigpiod.hpp>
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/String.h>
 #include <vector>
 
 class Ptp {
@@ -113,8 +114,11 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "motion_planner");
   ros::NodeHandle n;
   Ptp planner(&n, "wheel");
+  ros::Publisher global_message_pub =
+      n.advertise<std_msgs::String>("global_message", 1);
+  std_msgs::String global_message;
 
-  constexpr double FREQ = 300;
+  constexpr double FREQ = 50;
   ros::Rate loop_rate(FREQ);
 
   // 座標追加
