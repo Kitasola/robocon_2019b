@@ -124,6 +124,7 @@ int main(int argc, char **argv) {
   goal_map.add(3600, 5250, 0);
   goal_map.add(3600, 5500, 0);
   goal_map.add(5400, 5500, 0);
+  goal_map.add(5400, 1800, 0);
 
   constexpr int START_PIN = 18;
   Pi::gpio().set(18, IN, PULL_DOWN);
