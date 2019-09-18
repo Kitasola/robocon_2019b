@@ -8,9 +8,9 @@
 ## 1. Branchについて
 [git-flow](https://qiita.com/KosukeSone/items/514dd24828b485c69a05)というモデルがあるのでそれを参考にします.
 * masterは常に安定して動くプログラムにする.
-* masterから分岐したdevelop/ar(自動機), develop/mr(手動機), develop/cs(コントロールステーション), develop/other(その他)を作成する. developから分岐したブランチで開発を進めていく.
+* masterから分岐したdevelop/ar(自動機), develop/mr(手動機), develop/other(その他)を作成する. developから分岐したブランチで開発を進めていく.
 * develop/*hoge*からfeature/*fuga*を作成する. featureで, は様々な機能の開発をする.
-* develop/*hoge*からrelease/*fuga*を作成する. releaseでは, featureをdevelopにマージした後の統合やデバッグを行う. releaseで動くことを確認した後, developにマージしてからmasterにマージする. ただし、単機能の場合はreleaseを作らなくても良い.
+* developではfeatureにマージした後の統合やデバッグを行う. developで動くことを確認してからmasterにマージする.
 
 とします.    
 > これは, ロボット間の兼ね合いを考えるのをなるべく少なくしつつ, 1つのリポジトリでBteamで使う全てのプログラムを集約させるためです.
