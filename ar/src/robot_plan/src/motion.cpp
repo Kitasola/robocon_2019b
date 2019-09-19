@@ -151,6 +151,8 @@ int main(int argc, char **argv) {
     }
     loop_rate.sleep();
   }
+  global_message.data = "Game Start";
+  global_message_pub.publish(global_message);
 
   while (ros::ok()) {
     ros::spinOnce();

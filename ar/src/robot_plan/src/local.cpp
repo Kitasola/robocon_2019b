@@ -247,7 +247,7 @@ private:
   constexpr static double VELOCITY_MIN = 600, VELOCITY_MAX = 3000,
                           ACCEL_MAX = 2500;
   constexpr static double ERROR_DISTANCE_MAX = 40;
-  constexpr static double ROOT_FOLLOW = 16;
+  constexpr static double ROOT_FOLLOW = 15;
   std::vector<AccelMap> velocity_map[2];
   constexpr static int MAP_SEARCH_RANGE = 5;
   int map_id[2] = {};
