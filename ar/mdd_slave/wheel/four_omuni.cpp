@@ -83,18 +83,9 @@ int main() {
                 DRIVE_ROTARY_MULTI),
       RotaryInc(PC_10, PC_11, DRIVE_WHEEL_DIAMETER * M_PI, DRIVE_ROTARY_RANGE,
                 DRIVE_ROTARY_MULTI)};
-  /* PidPosition drive_speed[NUM_WHEEL] = {PidPosition(0.00025, 0.000001, 0,
-   * 0.1), */
-  /*                                       PidPosition(0.00025, 0.000001, 0,
-   * 0.1), */
-  /*                                       PidPosition(0.00025, 0.000001, 0,
-   * 0.1), */
-  /*                                       PidPosition(0.00025, 0.000001, 0,
-   * 0.1)}; */
-  PidPosition drive_speed[NUM_WHEEL] = {PidPosition(0.00014, 0.000001, 0, 0.1),
-                                        PidPosition(0.00014, 0.000001, 0, 0.1),
-                                        PidPosition(0.00014, 0.000001, 0, 0.1),
-                                        PidPosition(0.00014, 0.000001, 0, 0.1)};
+  PidPosition drive_speed[NUM_WHEEL] = {
+      PidPosition(0.0003, 0.005, 0, 0.2), PidPosition(0.0003, 0.005, 0, 0.2),
+      PidPosition(0.0003, 0.005, 0, 0.2), PidPosition(0.0003, 0.005, 0, 0.2)};
 
   /* 計測輪 */
   constexpr int MEASURE_ROTARY_RANGE = 256, MEASURE_ROTARY_MULTI = 2;
