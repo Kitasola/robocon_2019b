@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
       n.advertise<geometry_msgs::Pose2D>("robot_pose", 1);
   geometry_msgs::Pose2D robot_pose;
 
-  constexpr int FREQ = 300;
+  constexpr int FREQ = 100;
   ros::Rate loop_rate(FREQ);
   double start = ros::Time::now().toSec();
   std::queue<LogFormat> log_data;
