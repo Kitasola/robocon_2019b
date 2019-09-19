@@ -246,8 +246,8 @@ private:
   double velocity_final_prev[2] = {};
   constexpr static double VELOCITY_MIN = 600, VELOCITY_MAX = 3000,
                           ACCEL_MAX = 2000;
-  constexpr static double ERROR_DISTANCE_MAX = 50;
-  constexpr static double ROOT_FOLLOW = 5;
+  constexpr static double ERROR_DISTANCE_MAX = 40;
+  constexpr static double ROOT_FOLLOW = 20;
   std::vector<AccelMap> velocity_map[2];
   constexpr static int MAP_SEARCH_RANGE = 5;
   int map_id[2] = {};
@@ -260,9 +260,10 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "local_planner");
   ros::NodeHandle n;
 
-  SVelocity controller(&n, "wheel", 10);
+  constexpr int FREQ = 20;
+  SVelocity controller(&n, "wheel", FREQ);
 
-  ros::Rate loop_rate(10);
+  ros::Rate loop_rate(FREQ);
   while (ros::ok()) {
     ros::spinOnce();
     controller.control();
