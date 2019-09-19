@@ -72,11 +72,11 @@ int main(int argc, char **argv) {
   while (ros::ok()) {
     ros::spinOnce();
 
+    robot_relative_pose = wheel_robot_pose;
     if (should_reset_point) {
       offset_robot_pose = robot_relative_pose;
       should_reset_point = false;
     }
-    robot_relative_pose = wheel_robot_pose;
 
     robot_relative_pose.x -= offset_robot_pose.x;
     robot_relative_pose.y -= offset_robot_pose.y;
