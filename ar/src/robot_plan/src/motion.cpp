@@ -129,10 +129,10 @@ int main(int argc, char **argv) {
   // 座標追加
   GoalManager goal_map;
   goal_map.add(5400, 5500, 0);
-  goal_map.add(3650, 5500, 0, 1, TWO_STAGE_HUNGER);
+  goal_map.add(3650, 5500, 0); //, 1, TWO_STAGE_HUNGER);
   // ハンガー前
-  goal_map.add(3650, 5250, 0, 3, TWO_STAGE_HUNGER);
-  goal_map.add(3650, 5250, 0, 1, TWO_STAGE_READY);
+  goal_map.add(3650, 4860, 0); //, 3, TWO_STAGE_HUNGER);
+  goal_map.add(3650, 4860, 0); //, 1, TWO_STAGE_READY);
   goal_map.add(3650, 5500, 0);
   goal_map.add(5400, 5500, 0);
   goal_map.add(5400, 1800, 0);

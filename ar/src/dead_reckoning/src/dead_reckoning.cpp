@@ -64,6 +64,10 @@ int main(int argc, char **argv) {
   std::queue<LogFormat> log_data;
 
   geometry_msgs::Pose2D offset_robot_pose;
+  offset_robot_pose.x = 0;
+  offset_robot_pose.y = 0;
+  offset_robot_pose.theta = 0;
+
   while (ros::ok()) {
     ros::spinOnce();
 

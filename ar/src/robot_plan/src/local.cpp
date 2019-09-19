@@ -253,7 +253,7 @@ private:
   int map_id[2] = {};
   int map_id_max[2] = {};
 
-  arrc::PidVelocity moment{5, 0, 0};
+  arrc::PidVelocity moment{10, 0, 0};
 };
 
 int main(int argc, char **argv) {
