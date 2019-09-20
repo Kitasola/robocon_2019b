@@ -22,18 +22,16 @@ print prev_finger
 command = {"stateFingerprint": prev_finger}
 now_finger = prev_finger
 while now_finger == prev_finger:
-  print "Wait ..."
-  time.sleep(1)
-  now_finger = json.loads(requests.post(camera_uri + 'osc/checkForUpdates', data=json.dumps(command), headers={'Content-Type': 'application/json'}).text)["stateFingerprint"]
+    print "Wait ..."
+    time.sleep(1)
+    now_finger = json.loads(requests.post(camera_uri + 'osc/checkForUpdates', data=json.dumps(command), headers={'Content-Type': 'application/json'}).text)["stateFingerprint"]
 
 # Save
 state = json.loads(requests.post(camera_uri + 'osc/state').text)
 file_uri = state["state"]["_latestFileUrl"]
 save_file = requests.get(file_uri)
 try:
-  with open(save_file, "wb") as out:
-    out.write(picture.content)
-    except KeyboardInterrupt:
-      break
-    except Exception as err:
-      print "%s" % (err)
+    with open(now_finger, "wb") as out:
+        out.write(save_file.content)
+except Exception as err:
+    print "%s" % (err)
