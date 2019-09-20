@@ -22,23 +22,24 @@ result = requests.post(camera_uri + 'osc/commands/execute', data=json.dumps(comm
 # Start Shooting Video
 command = {"name": "camera.startCapture"}
 result = requests.post(camera_uri + 'osc/commands/execute', data=json.dumps(command), headers={'Content-Type': 'application/json'})
-print "Satrt"
+print "Satrt Shooting"
 
 time.sleep(2)
 
 # Stop Shooting Video
 command = {"name": "camera.stopCapture"}
 result = requests.post(camera_uri + 'osc/commands/execute', data=json.dumps(command), headers={'Content-Type': 'application/json'})
-print "Finish"
+print "Finish Shooting"
 
 # Save
+print "Start Saving file"
 command = {"stateFingerprint": "FIG_0000"}
 now_finger = json.loads(requests.post(camera_uri + 'osc/checkForUpdates', data=json.dumps(command), headers={'Content-Type': 'application/json'}).text)["stateFingerprint"]
 state = json.loads(requests.post(camera_uri + 'osc/state').text)
 file_uri = state["state"]["_latestFileUrl"]
 save_file = requests.get(file_uri)
 try:
-    with open(now_finger, "wb") as out:
+    with open(now_finger + ".MP4", "wb") as out:
         out.write(save_file.content)
 except Exception as err:
     print "%s" % (err)
