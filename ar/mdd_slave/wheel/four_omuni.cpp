@@ -47,7 +47,7 @@ int main() {
   constexpr double PWM_PERIOD = 50; // 20 kHz
 
   /* 駆動輪 */
-  constexpr double INVERCE_ROOT_2 = sqrt(2);
+  constexpr double INVERCE_ROOT_2 = 1 / sqrt(2);
   constexpr int NUM_AXIS = 3;
   constexpr double DRIVE_MATRIX[4][3] = {
       {INVERCE_ROOT_2, -INVERCE_ROOT_2, -1},
