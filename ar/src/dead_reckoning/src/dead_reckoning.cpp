@@ -16,16 +16,22 @@ struct LogFormat {
   double theta;
 };
 
+bool starts_game = false;
+bool should_reset_point = false;
 void checkGlobalMessage(const std_msgs::String msg) {
-  std::string data = msg.data;
+  std::string mode = msg.data;
+  if (mode == "Game Start") {
+    starts_game = true;
+    should_reset_point = true;
+  } else if (mode == "Robot Pose Reset") {
+    should_reset_point = true;
+  }
 }
 
-// MDDからは起動時からの相対位置が送信されるため絶対位置に変換する必要がある
-double FIRST_X = 5400, FIRST_Y = 1800;
 geometry_msgs::Pose2D wheel_robot_pose;
 void getPoseWheel(const geometry_msgs::Pose2D msgs) {
-  wheel_robot_pose.x = msgs.x * 1.0 + FIRST_X;
-  wheel_robot_pose.y = msgs.y * 1.0 + FIRST_Y;
+  wheel_robot_pose.x = msgs.x * 1.0;
+  wheel_robot_pose.y = msgs.y * 1.0;
   wheel_robot_pose.theta = msgs.theta * 1.0;
 }
 
@@ -56,42 +62,71 @@ int main(int argc, char **argv) {
   double start = ros::Time::now().toSec();
   std::queue<LogFormat> log_data;
 
+  geometry_msgs::Pose2D offset_robot_pose;
+  constexpr double FIRST_X = 5400, FIRST_Y = 1800;
+  offset_robot_pose.x = 0;
+  offset_robot_pose.y = 0;
+  offset_robot_pose.theta = 0;
+
+  geometry_msgs::Pose2D robot_relative_pose;
   while (ros::ok()) {
     ros::spinOnce();
 
-    robot_pose = wheel_robot_pose;
+    robot_relative_pose = wheel_robot_pose;
+    if (should_reset_point) {
+      offset_robot_pose = robot_relative_pose;
+      should_reset_point = false;
+    }
+
+    robot_relative_pose.x -= offset_robot_pose.x;
+    robot_relative_pose.y -= offset_robot_pose.y;
+    robot_relative_pose.theta -= offset_robot_pose.theta;
+    if (robot_relative_pose.theta > M_PI) {
+      robot_relative_pose.theta -= 2 * M_PI;
+    } else if (robot_relative_pose.theta < -M_PI) {
+      robot_relative_pose.theta += 2 * M_PI;
+    }
+
+    // 相対位置を絶対位置に変換する
+    robot_pose = robot_relative_pose;
+    robot_pose.x += FIRST_X;
+    robot_pose.y += FIRST_Y;
     robot_pose_pub.publish(robot_pose);
 
-    LogFormat data;
-    data.time = ros::Time::now().toSec() - start;
-    data.x = robot_pose.x;
-    data.y = robot_pose.y;
-    data.theta = robot_pose.theta;
-    log_data.push(data);
+    if (starts_game) {
+      LogFormat data;
+      data.time = ros::Time::now().toSec() - start;
+      data.x = robot_pose.x;
+      data.y = robot_pose.y;
+      data.theta = robot_pose.theta;
+      log_data.push(data);
+    }
 
     loop_rate.sleep();
   }
 
-  std::ofstream log;
-  std::string log_dir = "/home/kusoelmo/arrc/robocon_2019b/ar/log/";
-  log.open(log_dir + "robot_pose_" + getDate() + ".csv", std::ios::out);
-  if (log.fail()) {
-    ROS_ERROR_STREAM("File Open Failed.");
-    std::exit(1);
-  }
-  ROS_INFO_STREAM("File Open Succeed.");
-  LogFormat data_prev_prev = log_data.front();
-  LogFormat data_prev = log_data.front();
-  while (!log_data.empty()) {
-    LogFormat data = log_data.front();
-    double velocity_x = (data_prev.x - data_prev_prev.x) /
-                        (data_prev.time - data_prev_prev.time);
-    double velocity_y = (data_prev.y - data_prev_prev.y) /
-                        (data_prev.time - data_prev_prev.time);
-    log << data.time << ", " << data.x << ", " << data.y << ", " << data.theta
-        << ", " << velocity_x << ", " << velocity_y << std::endl;
-    data_prev_prev = data_prev;
-    data_prev = data;
-    log_data.pop();
+  if (starts_game) {
+    std::ofstream log;
+    std::string log_dir = "/home/kusoelmo/arrc/robocon_2019b/ar/log/";
+    log.open(log_dir + "robot_pose_" + getDate() + ".csv", std::ios::out);
+    if (log.fail()) {
+      ROS_ERROR_STREAM("File Open Failed.");
+      std::exit(1);
+    }
+    ROS_INFO_STREAM("File Open Succeed.");
+    LogFormat data_prev_prev = log_data.front();
+    LogFormat data_prev = log_data.front();
+    while (!log_data.empty()) {
+      LogFormat data = log_data.front();
+      double velocity_x = (data_prev.x - data_prev_prev.x) /
+                          (data_prev.time - data_prev_prev.time);
+      double velocity_y = (data_prev.y - data_prev_prev.y) /
+                          (data_prev.time - data_prev_prev.time);
+      log << data.time << ", " << data.x << ", " << data.y << ", " << data.theta
+          << ", " << velocity_x << ", " << velocity_y << std::endl;
+      data_prev_prev = data_prev;
+      data_prev = data;
+      log_data.pop();
+    }
   }
 }

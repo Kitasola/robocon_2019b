@@ -9,11 +9,11 @@ ScrpSlave slave(PA_9, PA_10, PA_12, SERIAL_TX, SERIAL_RX, 0x0803e000);
 
 constexpr int NUM_PORT = 5;
 // 0: Motor, 1: Encoder, 2: Other
-constexpr int PORT_FUNCTION[NUM_PORT] = {2, 2, 0, 0, 2};
+constexpr int PORT_FUNCTION[NUM_PORT] = {2, 2, 0, 2, 0};
 
 constexpr int NUM_MOTOR_PORT = 4;
-constexpr int MAX_PWM = 250;
-constexpr float PERIOD = 1 / 4000.0;
+constexpr int MAX_PWM = 255;
+constexpr float PERIOD = 1 / 1000.0;
 constexpr PinName MOTOR_PIN[NUM_MOTOR_PORT][3] = {{PB_0, PB_1, PB_3},
                                                   {PA_1, PA_3, PB_4},
                                                   {PA_8, PA_7, PB_5},
@@ -44,12 +44,12 @@ bool spinMotor(int id, int value) {
     motor_pwm[id][1]->write(0);
     motor_led[id]->write(0);
   } else if (0 < value) {
-    motor_pwm[id][0]->write(map(value, -MAX_PWM, MAX_PWM, -1.0, 1.0));
+    motor_pwm[id][0]->write(map(value, -MAX_PWM, MAX_PWM, -0.95, 0.95));
     motor_pwm[id][1]->write(0);
     motor_led[id]->write(1);
   } else {
     motor_pwm[id][0]->write(0);
-    motor_pwm[id][1]->write(-map(value, -MAX_PWM, MAX_PWM, -1.0, 1.0));
+    motor_pwm[id][1]->write(-map(value, -MAX_PWM, MAX_PWM, -0.95, 0.95));
     motor_led[id]->write(1);
   }
   return true;
@@ -91,7 +91,7 @@ bool setTwoAccel(int cmd, int rx_data, int &tx_data) {
 
 int two_hight_current[2] = {};
 bool checkTwoRegister(int cmd, int rx_data, int &tx_data) {
-  tx_data = two_hight_current[rx_data] / 10;
+  tx_data = two_hight_current[rx_data];
   return true;
 }
 
@@ -148,17 +148,18 @@ int main() {
     constexpr int NUM_TWO_REGISTER = 2;
     AnalogIn two_register[NUM_TWO_REGISTER] = {AnalogIn(PB_0),
                                                AnalogIn(PA_0)}; // right, left
+    constexpr int TWO_STAGE_ID[NUM_TWO_REGISTER] = {1, 3};
     constexpr float TWO_REGISTER_MULTI[NUM_TWO_REGISTER] = {
         720 / (210.0 / 255), 720 / (210.0 / 255)}; // mmへの変換倍率
-    constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {0, 0};
+    constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {120, 126};
     PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(2, 0, 0, 0),
                                                PidPosition(2, 0, 0, 0)};
 
     for (int i = 0; i < NUM_TWO_REGISTER; ++i) {
       two_hight_current[i] =
           two_register[i].read() * TWO_REGISTER_MULTI[i] - TOW_STAGE_OFFSET[i];
-      spinMotor(i + 2,
-                two_motor[i].control(goal_two_hight, two_hight_current[i]));
+      spinMotor(TWO_STAGE_ID[i],
+                -two_motor[i].control(goal_two_hight, two_hight_current[i]));
     }
   }
 }

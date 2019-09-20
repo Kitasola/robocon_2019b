@@ -2,9 +2,11 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
+#include <motor_serial.hpp>
 #include <pigpiod.hpp>
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/String.h>
 #include <vector>
 
 class Ptp {
@@ -39,9 +41,6 @@ private:
   ros::Publisher goal_point_pub;
   geometry_msgs::Pose2D goal_point = {};
 };
-
-using namespace ros;
-using Pi = Pigpiod;
 
 struct GoalInfo {
   int x;
@@ -109,23 +108,38 @@ private:
   int map_id_ = 0;
 };
 
+using namespace ros;
+using Pi = Pigpiod;
+
 int main(int argc, char **argv) {
   ros::init(argc, argv, "motion_planner");
   ros::NodeHandle n;
   Ptp planner(&n, "wheel");
+  ros::Publisher global_message_pub =
+      n.advertise<std_msgs::String>("global_message", 1);
+  std_msgs::String global_message;
 
-  constexpr double FREQ = 300;
+  constexpr double FREQ = 50;
   ros::Rate loop_rate(FREQ);
 
+  // パラメータ
+  // 2段目昇降機構
+  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 100, TWO_STAGE_TOWEL = 100,
+                TWO_STAGE_READY = 0, TWO_STAGE_ERROR_MAX = 1; // cm
   // 座標追加
   GoalManager goal_map;
   goal_map.add(5400, 5500, 0);
-  goal_map.add(3600, 5500, 0);
-  goal_map.add(3600, 5250, 0);
-  goal_map.add(3600, 5500, 0);
+  goal_map.add(3650, 5500, 0); //, 1, TWO_STAGE_HUNGER);
+  // ハンガー前
+  goal_map.add(3650, 4860, 0); //, 3, TWO_STAGE_HUNGER);
+  goal_map.add(3650, 4860, 0); //, 1, TWO_STAGE_READY);
+  goal_map.add(3650, 5500, 0);
   goal_map.add(5400, 5500, 0);
   goal_map.add(5400, 1800, 0);
 
+  // RasPi
+  // MotorSerial
+  MotorSerial ms;
   constexpr int START_PIN = 18;
   Pi::gpio().set(18, IN, PULL_DOWN);
 
@@ -141,20 +155,34 @@ int main(int argc, char **argv) {
   while (ros::ok()) {
     ros::spinOnce();
 
-    bool is_send_next_goal = false;
+    bool can_send_next_goal = false;
     if (planner.is_reach_goal) {
       switch (goal_map.now.action_type) {
-      case 0:
-        is_send_next_goal = true;
+      case 0: {
+        can_send_next_goal = true;
         break;
       }
-    }
+      case 1: {
+        int height = ms.send(TWO_STAGE_ID, 30, goal_map.now.action_value);
+        can_send_next_goal = true;
+        break;
+      }
+      case 3: {
+        int height = ms.send(TWO_STAGE_ID, 30, goal_map.now.action_value);
+        if (height - TWO_STAGE_ERROR_MAX < goal_map.now.action_value &&
+            height + TWO_STAGE_ERROR_MAX < goal_map.now.action_value) {
+          can_send_next_goal = true;
+        }
+        break;
+      }
+      }
 
-    if (is_send_next_goal) {
-      planner.sendNextGoal(goal_map.getPtp());
-      goal_map.next();
-    }
+      if (can_send_next_goal) {
+        planner.sendNextGoal(goal_map.getPtp());
+        goal_map.next();
+      }
 
-    loop_rate.sleep();
+      loop_rate.sleep();
+    }
   }
 }

@@ -41,10 +41,10 @@ int main() {
   nh.subscribe(velocity_sub);
   nh.subscribe(gyro_sub);
 
-  constexpr double MAIN_FREQUENCY = 100;
+  /* constexpr double MAIN_FREQUENCY = 1000; */
   constexpr double TOPIC_FREQUENCY = 50;
 
-  constexpr double PWM_PERIOD = 50;
+  constexpr double PWM_PERIOD = 50; // 20 kHz
 
   /* 駆動輪 */
   constexpr double INVERCE_ROOT_2 = sqrt(2);
@@ -56,11 +56,7 @@ int main() {
       {INVERCE_ROOT_2, INVERCE_ROOT_2, -1},
   };
   PinName drive_motor[NUM_WHEEL][2] = {
-      /* {PC_8, PC_9}, {PB_4, PB_5}, {PB_13, PB_14}, {PB_1, PA_11}}; */
-      {PC_9, PC_8},
-      {PB_5, PB_4},
-      {PB_14, PB_13},
-      {PA_11, PB_1}};
+      {PC_9, PC_8}, {PB_5, PB_4}, {PB_14, PB_13}, {PA_11, PB_1}};
   PinName drive_led[NUM_WHEEL] = {PA_10, PB_15, PC_6, PB_2};
   /* PwmOut drive_motor[NUM_WHEEL][2] = {{PwmOut(PB_1), PwmOut(PA_11)}, */
   /*                                     {PwmOut(PB_13), PwmOut(PB_14)}, */
@@ -77,7 +73,7 @@ int main() {
     g_drive_led[i] = new DigitalOut(drive_led[i]);
   }
   constexpr int DRIVE_ROTARY_RANGE = 256, DRIVE_ROTARY_MULTI = 1;
-  constexpr double DRIVE_WHEEL_DIAMETER = 101.6; //, DRIVE_TURN_DADIUS = 100;
+  constexpr double DRIVE_WHEEL_DIAMETER = 101.6;
   RotaryInc drive_rotary[NUM_WHEEL] = {
       RotaryInc(PC_2, PC_3, DRIVE_WHEEL_DIAMETER * M_PI, DRIVE_ROTARY_RANGE,
                 DRIVE_ROTARY_MULTI),
@@ -102,9 +98,7 @@ int main() {
 
   /* 計測輪 */
   constexpr int MEASURE_ROTARY_RANGE = 256, MEASURE_ROTARY_MULTI = 2;
-  constexpr double MEASURE_WHEEL_DIAMETER =
-      50.8 * 0.99; // , MEASURE_TURN_DADIUS = 100;
-  // A, B逆にするとバグる
+  constexpr double MEASURE_WHEEL_DIAMETER = 50.8 * 0.99;
   RotaryInc measure_rotary[NUM_WHEEL] = {
       RotaryInc(PC_0, PC_1, MEASURE_WHEEL_DIAMETER * M_PI, MEASURE_ROTARY_RANGE,
                 MEASURE_ROTARY_MULTI),
@@ -123,13 +117,11 @@ int main() {
   DigitalIn calibration_switch(PC_13); //青色のボタン
   run_led = 1;
 
-/* ==========ここより上にしかパラメータは存在しません========== */
-reset:
+  /* ==========ここより上にしかパラメータは存在しません========== */
   Timer main_loop, topic_loop;
   main_loop.start();
   topic_loop.start();
 
-  // Reset Robot Pose
   robot_pose.x = 0;
   robot_pose.y = 0;
   while (true) {
@@ -143,13 +135,6 @@ reset:
       topic_loop.reset();
       robot_pose_pub.publish(&robot_pose);
       debug_velocity_pub.publish(&debug_velocity);
-    }
-
-    // Interrput
-    switch ((int)goal_twist.angular.x) {
-    case 1:
-      goto reset;
-      break;
     }
 
     // Move
