@@ -2,6 +2,7 @@ import time
 import requests
 import json
 
+# Setting
 camera_uri = 'http://192.168.1.1:80/'
 
 # Check Battery
