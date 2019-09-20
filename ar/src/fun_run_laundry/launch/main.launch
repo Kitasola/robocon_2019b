@@ -16,5 +16,6 @@
   <node name="motion_planner" pkg="robot_plan" type="motion_planner"/>
   <node name="dead_reckoning" pkg="dead_reckoning" type="dead_reckoning"/>
   <node name="gyro" pkg="dead_reckoning" type="gyro"/>
+  <node name="robot_logger" pkg="fun_run_laundry" type="robot_logger"/>
 
 </launch>
