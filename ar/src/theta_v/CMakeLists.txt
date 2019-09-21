@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(fun_run_laundry)
+project(theta_v)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+# add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -104,7 +104,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES fun_run_laundry
+#  LIBRARIES theta_v
 #  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
@@ -122,7 +122,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/fun_run_laundry.cpp
+#   src/${PROJECT_NAME}/theta_v.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -133,8 +133,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/fun_run_laundry_node.cpp)
-add_executable(robot_logger src/logger.cpp)
+# add_executable(${PROJECT_NAME}_node src/theta_v_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -150,9 +149,6 @@ add_executable(robot_logger src/logger.cpp)
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-target_link_libraries(robot_logger
-  ${catkin_LIBRARIES}
-)
 
 #############
 ## Install ##
@@ -201,7 +197,7 @@ target_link_libraries(robot_logger
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_fun_run_laundry.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_theta_v.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
