@@ -22,9 +22,9 @@ result = requests.post(camera_uri + 'osc/commands/execute', data=json.dumps(comm
 # Start Shooting Video
 command = {"name": "camera.startCapture"}
 result = requests.post(camera_uri + 'osc/commands/execute', data=json.dumps(command), headers={'Content-Type': 'application/json'})
-print "Satrt Shooting"
+print "Start Shooting"
 
-time.sleep(2)
+time.sleep(15)
 
 # Stop Shooting Video
 command = {"name": "camera.stopCapture"}
