@@ -9,10 +9,11 @@ ScrpSlave slave(PA_9, PA_10, PA_12, SERIAL_TX, SERIAL_RX, 0x0803e000);
 
 constexpr int NUM_PORT = 5;
 // 0: Motor, 1: Encoder, 2: Other
-constexpr int PORT_FUNCTION[NUM_PORT] = {2, 2, 0, 2, 0};
+constexpr int PORT_FUNCTION[NUM_PORT] = {2, 2, 2, 0, 0};
 
 constexpr int NUM_MOTOR_PORT = 4;
 constexpr int MAX_PWM = 255;
+constexpr double MAX_PWM_MBED = 0.95;
 constexpr float PERIOD = 1 / 1000.0;
 constexpr PinName MOTOR_PIN[NUM_MOTOR_PORT][3] = {{PB_0, PB_1, PB_3},
                                                   {PA_1, PA_3, PB_4},
@@ -39,18 +40,29 @@ float map(float value, float from_low, float from_high, float to_low,
 }
 
 bool spinMotor(int id, int value) {
+  DigitalOut motor_led = DigitalOut(MOTOR_PIN[id][2]);
   if (value == 0) {
-    motor_pwm[id][0]->write(0);
-    motor_pwm[id][1]->write(0);
-    motor_led[id]->write(0);
+    DigitalOut motor_off[2] = {DigitalOut(MOTOR_PIN[id][0]),
+                               DigitalOut(MOTOR_PIN[id][1])};
+    motor_off[0].write(0);
+    motor_off[1].write(0);
+    motor_led.write(0);
   } else if (0 < value) {
-    motor_pwm[id][0]->write(map(value, -MAX_PWM, MAX_PWM, -0.95, 0.95));
-    motor_pwm[id][1]->write(0);
-    motor_led[id]->write(1);
+    PwmOut motor_on(MOTOR_PIN[id][0]);
+    motor_on.period(PERIOD);
+    DigitalOut motor_off(MOTOR_PIN[id][1]);
+
+    motor_on.write(map(value, -MAX_PWM, MAX_PWM, -MAX_PWM_MBED, MAX_PWM_MBED));
+    motor_off.write(0);
+    motor_led.write(1);
   } else {
-    motor_pwm[id][0]->write(0);
-    motor_pwm[id][1]->write(-map(value, -MAX_PWM, MAX_PWM, -0.95, 0.95));
-    motor_led[id]->write(1);
+    PwmOut motor_on(MOTOR_PIN[id][1]);
+    motor_on.period(PERIOD);
+    DigitalOut motor_off(MOTOR_PIN[id][0]);
+
+    motor_off.write(0);
+    motor_on.write(-map(value, -MAX_PWM, MAX_PWM, -MAX_PWM_MBED, MAX_PWM_MBED));
+    motor_led.write(1);
   }
   return true;
 }
@@ -63,6 +75,20 @@ bool safe(int cmd, int rx_data, int &tx_data) {
   for (int i = 0; i < 4; ++i) {
     spinMotor(i, 0);
   }
+  return true;
+}
+
+PwmOut towel[2] = {PwmOut(PA_3), PwmOut(PA_1)};
+constexpr float MIN_SERVO_PULSE = 0.5e-3;
+constexpr float MAX_SERVO_PULSE = 2.4e-3;
+float servoDegreeToPulse(int degree) {
+  return map(degree, 0, 180, MIN_SERVO_PULSE, MAX_SERVO_PULSE);
+}
+
+constexpr int OFFSET_ANGLE[2] = {5, 13};
+bool dryTowel(int cmd, int rx_data, int &tx_data) {
+  towel[0].pulsewidth(servoDegreeToPulse(rx_data + OFFSET_ANGLE[0]));
+  towel[1].pulsewidth(servoDegreeToPulse(180 - rx_data + OFFSET_ANGLE[1]));
   return true;
 }
 
@@ -95,38 +121,26 @@ bool checkTwoRegister(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-DigitalOut arm_solenoid[2] = {DigitalOut(PB_6), DigitalOut(PA_11)};
-DigitalOut arm_led[2] = {DigitalOut(PB_3), DigitalOut(PB_4)};
-bool solenoid(int cmd, int rx_data, int &tx_data) {
-  arm_solenoid[0].write(rx_data % 10);
-  arm_led[0].write(rx_data % 10);
-  arm_solenoid[1].write((rx_data / 10) % 10);
-  arm_led[1].write((rx_data / 10) % 10);
-  return true;
-}
+/* DigitalOut arm_solenoid[2] = {DigitalOut(PB_6), DigitalOut(PA_11)}; */
+/* DigitalOut arm_led[2] = {DigitalOut(PB_3), DigitalOut(PB_4)}; */
+/* bool solenoid(int cmd, int rx_data, int &tx_data) { */
+/*   arm_solenoid[0].write(rx_data % 10); */
+/*   arm_led[0].write(rx_data % 10); */
+/*   arm_solenoid[1].write((rx_data / 10) % 10); */
+/*   arm_led[1].write((rx_data / 10) % 10); */
+/*   return true; */
+/* } */
 
 int main() {
-  Timer time;
-  time.start();
   if (PORT_FUNCTION[0] == 0) {
-    motor_pwm[0][0] = new PwmOut(MOTOR_PIN[0][0]);
-    motor_pwm[0][0]->period(PERIOD);
-    motor_pwm[0][1] = new PwmOut(MOTOR_PIN[0][1]);
-    motor_pwm[0][1]->period(PERIOD);
-    motor_led[0] = new DigitalOut(MOTOR_PIN[0][2]);
     slave.addCMD(2, spinMotor);
   }
-  if (PORT_FUNCTION[1] == 1) {
+  if (PORT_FUNCTION[1] == 0) {
     rotary[0] = new RotaryInc(ENCODER_PIN[0][0], ENCODER_PIN[0][1], RANGE, 1);
   }
   for (int i = 2; i < NUM_PORT; ++i) {
     switch (PORT_FUNCTION[i]) {
     case 0:
-      motor_pwm[i - 1][0] = new PwmOut(MOTOR_PIN[i - 1][0]);
-      motor_pwm[i - 1][0]->period(PERIOD);
-      motor_pwm[i - 1][1] = new PwmOut(MOTOR_PIN[i - 1][1]);
-      motor_pwm[i - 1][1]->period(PERIOD);
-      motor_led[i - 1] = new DigitalOut(MOTOR_PIN[i - 1][2]);
       slave.addCMD(i + 1, spinMotor);
       break;
     case 1:
@@ -137,18 +151,16 @@ int main() {
   }
   slave.addCMD(255, safe);
 
+  slave.addCMD(10, dryTowel);
   slave.addCMD(30, setTwoHigh);
   slave.addCMD(31, setTwoVelocity);
   slave.addCMD(32, setTwoAccel);
   slave.addCMD(33, checkTwoRegister);
-  slave.addCMD(40, solenoid);
   while (true) {
-    float delta_t = time.read();
-    time.reset();
     constexpr int NUM_TWO_REGISTER = 2;
     AnalogIn two_register[NUM_TWO_REGISTER] = {AnalogIn(PB_0),
                                                AnalogIn(PA_0)}; // right, left
-    constexpr int TWO_STAGE_ID[NUM_TWO_REGISTER] = {1, 3};
+    constexpr int TWO_STAGE_ID[NUM_TWO_REGISTER] = {2, 3};
     constexpr float TWO_REGISTER_MULTI[NUM_TWO_REGISTER] = {
         720 / (210.0 / 255), 720 / (210.0 / 255)}; // mmへの変換倍率
     constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {120, 126};
