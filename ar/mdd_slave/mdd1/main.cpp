@@ -64,21 +64,6 @@ bool safe(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-PwmOut towel[2] = {PwmOut(PA_3), PwmOut(PA_1)};
-constexpr float MIN_SERVO_PULSE = 0.5e-3;
-constexpr float MAX_SERVO_PULSE = 2.4e-3;
-float servoDegreeToPulse(int degree) {
-  return map(degree, 0, 180, MIN_SERVO_PULSE, MAX_SERVO_PULSE) +
-         MIN_SERVO_PULSE;
-}
-
-constexpr int OFFSET_ANGLE[2] = {5, 13};
-bool dryTowel(int cmd, int rx_data, int &tx_data) {
-  towel[0].pulsewidth(servoDegreeToPulse(rx_data + OFFSET_ANGLE[0]));
-  towel[1].pulsewidth(servoDegreeToPulse(180 - rx_data + OFFSET_ANGLE[1]));
-  return true;
-}
-
 DigitalIn hanger_limit[2] = {DigitalIn(PB_0), DigitalIn(PA_0)};
 bool serveHanger(int cmd, int rx_data, int &tx_data) {
   int speed = rx_data;
@@ -123,7 +108,6 @@ int main() {
   }
   slave.addCMD(255, safe);
 
-  slave.addCMD(10, dryTowel);
   slave.addCMD(20, serveHanger);
   while (true) {
   }
