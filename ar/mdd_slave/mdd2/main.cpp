@@ -19,8 +19,6 @@ constexpr PinName MOTOR_PIN[NUM_MOTOR_PORT][3] = {{PB_0, PB_1, PB_3},
                                                   {PA_1, PA_3, PB_4},
                                                   {PA_8, PA_7, PB_5},
                                                   {PB_6, PA_11, PB_7}};
-PwmOut *motor_pwm[NUM_MOTOR_PORT][2];
-DigitalOut *motor_led[NUM_MOTOR_PORT];
 
 constexpr int NUM_ENCODER_PORT = 4;
 constexpr int RANGE = 200;
@@ -117,7 +115,11 @@ bool setTwoAccel(int cmd, int rx_data, int &tx_data) {
 
 int two_hight_current[2] = {};
 bool checkTwoRegister(int cmd, int rx_data, int &tx_data) {
-  tx_data = two_hight_current[rx_data];
+  if (rx_data >= 10) {
+    tx_data = two_hight_current[rx_data - 10] / 10;
+  } else {
+    tx_data = two_hight_current[rx_data - 10] % 10;
+  }
   return true;
 }
 
