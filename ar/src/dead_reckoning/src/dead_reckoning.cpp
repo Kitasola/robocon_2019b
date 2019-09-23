@@ -3,12 +3,10 @@
 #include <std_msgs/String.h>
 #include <string>
 
-bool starts_game = false;
 bool should_reset_point = false;
 void checkGlobalMessage(const std_msgs::String msg) {
   std::string mode = msg.data;
   if (mode == "Game Start") {
-    starts_game = true;
     should_reset_point = true;
   } else if (mode == "Robot Pose Reset") {
     should_reset_point = true;
