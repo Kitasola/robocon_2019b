@@ -6,17 +6,16 @@ ScrpSlave slave(PA_9, PA_10, PA_12, SERIAL_TX, SERIAL_RX, 0x0803e000);
 
 constexpr int NUM_PORT = 5;
 // 0: Motor, 1: Encoder, 2: Other
-constexpr int PORT_FUNCTION[NUM_PORT] = {0, 2, 2, 2, 0};
+constexpr int PORT_FUNCTION[NUM_PORT] = {0, 2, 0, 2, 2};
 
 constexpr int NUM_MOTOR_PORT = 4;
 constexpr int MAX_PWM = 250;
+constexpr double MAX_PWM_MBED = 0.95;
 constexpr float PERIOD = 1 / 4000.0;
 constexpr PinName MOTOR_PIN[NUM_MOTOR_PORT][3] = {{PB_0, PB_1, PB_3},
                                                   {PA_1, PA_3, PB_4},
                                                   {PA_8, PA_7, PB_5},
                                                   {PB_6, PA_11, PB_7}};
-PwmOut *motor_pwm[NUM_MOTOR_PORT][2];
-DigitalOut *motor_led[NUM_MOTOR_PORT];
 
 constexpr int NUM_ENCODER_PORT = 4;
 constexpr int RANGE = 200;
@@ -31,26 +30,37 @@ float map(float value, float from_low, float from_high, float to_low,
   } else if (value < from_low) {
     value = from_low;
   }
-  return value * (to_high - to_low) / (from_high - from_low);
+  return (value - from_low) * (to_high - to_low) / (from_high - from_low) +
+         to_low;
 }
 
 bool spinMotor(int id, int value) {
+  DigitalOut motor_led = DigitalOut(MOTOR_PIN[id][2]);
   if (value == 0) {
-    motor_pwm[id][0]->write(0);
-    motor_pwm[id][1]->write(0);
-    motor_led[id]->write(0);
+    DigitalOut motor_off[2] = {DigitalOut(MOTOR_PIN[id][0]),
+                               DigitalOut(MOTOR_PIN[id][1])};
+    motor_off[0].write(0);
+    motor_off[1].write(0);
+    motor_led.write(0);
   } else if (0 < value) {
-    motor_pwm[id][0]->write(map(value, -MAX_PWM, MAX_PWM, -1.0, 1.0));
-    motor_pwm[id][1]->write(0);
-    motor_led[id]->write(1);
+    PwmOut motor_on(MOTOR_PIN[id][0]);
+    motor_on.period(PERIOD);
+    DigitalOut motor_off(MOTOR_PIN[id][1]);
+
+    motor_on.write(map(value, -MAX_PWM, MAX_PWM, -MAX_PWM_MBED, MAX_PWM_MBED));
+    motor_off.write(0);
+    motor_led.write(1);
   } else {
-    motor_pwm[id][0]->write(0);
-    motor_pwm[id][1]->write(-map(value, -MAX_PWM, MAX_PWM, -1.0, 1.0));
-    motor_led[id]->write(1);
+    PwmOut motor_on(MOTOR_PIN[id][1]);
+    motor_on.period(PERIOD);
+    DigitalOut motor_off(MOTOR_PIN[id][0]);
+
+    motor_off.write(0);
+    motor_on.write(-map(value, -MAX_PWM, MAX_PWM, -MAX_PWM_MBED, MAX_PWM_MBED));
+    motor_led.write(1);
   }
   return true;
 }
-
 bool spinMotor(int cmd, int rx_data, int &tx_data) {
   return spinMotor(cmd - 2, rx_data);
 }
@@ -80,11 +90,6 @@ bool serveHanger(int cmd, int rx_data, int &tx_data) {
 
 int main() {
   if (PORT_FUNCTION[0] == 0) {
-    motor_pwm[0][0] = new PwmOut(MOTOR_PIN[0][0]);
-    motor_pwm[0][0]->period(PERIOD);
-    motor_pwm[0][1] = new PwmOut(MOTOR_PIN[0][1]);
-    motor_pwm[0][1]->period(PERIOD);
-    motor_led[0] = new DigitalOut(MOTOR_PIN[0][2]);
     slave.addCMD(2, spinMotor);
   }
   if (PORT_FUNCTION[1] == 0) {
@@ -93,11 +98,6 @@ int main() {
   for (int i = 2; i < NUM_PORT; ++i) {
     switch (PORT_FUNCTION[i]) {
     case 0:
-      motor_pwm[i - 1][0] = new PwmOut(MOTOR_PIN[i - 1][0]);
-      motor_pwm[i - 1][0]->period(PERIOD);
-      motor_pwm[i - 1][1] = new PwmOut(MOTOR_PIN[i - 1][1]);
-      motor_pwm[i - 1][1]->period(PERIOD);
-      motor_led[i - 1] = new DigitalOut(MOTOR_PIN[i - 1][2]);
       slave.addCMD(i + 1, spinMotor);
       break;
     case 1:
