@@ -74,17 +74,10 @@ bool safe(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-DigitalIn hanger_limit[2] = {DigitalIn(PB_0), DigitalIn(PA_0)};
+int hanger_goal_speed = 0, hanger_current_speed = 0;
 bool serveHanger(int cmd, int rx_data, int &tx_data) {
-  int speed = rx_data;
-  if (speed > 0 && hanger_limit[0].read()) {
-    speed = 0;
-  } else if (speed < 0 && hanger_limit[1].read()) {
-    speed = 0;
-  }
-  tx_data = speed;
-  spinMotor(4, speed);
-  spinMotor(5, speed);
+  hanger_goal_speed = rx_data;
+  tx_data = hanger_current_speed;
   return true;
 }
 
@@ -108,7 +101,17 @@ int main() {
   }
   slave.addCMD(255, safe);
 
+  DigitalIn hanger_limit[2] = {DigitalIn(PA_8), DigitalIn(PB_6)}; // PullUp
+  for (int i = 0; i < 2; ++i) {
+    hanger_limit[i].mode(PullUp);
+  }
   slave.addCMD(20, serveHanger);
   while (true) {
+    hanger_current_speed = hanger_goal_speed;
+    if ((hanger_current_speed > 0 && hanger_limit[0].read() == 0) ||
+        (hanger_current_speed < 0 && hanger_limit[1].read() == 0)) {
+      hanger_current_speed = 0;
+    }
+    spinMotor(1, -hanger_current_speed);
   }
 }
