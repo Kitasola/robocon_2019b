@@ -123,6 +123,16 @@ bool checkTwoRegister(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
+int now[2] = {};
+bool checkTwoVelocity(int cmd, int rx_data, int &tx_data) {
+  if (rx_data >= 10) {
+    tx_data = now[rx_data - 10] / 10;
+  } else {
+    tx_data = now[rx_data] % 10;
+  }
+  return true;
+}
+
 /* DigitalOut arm_solenoid[2] = {DigitalOut(PB_6), DigitalOut(PA_11)}; */
 /* DigitalOut arm_led[2] = {DigitalOut(PB_3), DigitalOut(PB_4)}; */
 /* bool solenoid(int cmd, int rx_data, int &tx_data) { */
@@ -158,6 +168,7 @@ int main() {
   slave.addCMD(31, setTwoVelocity);
   slave.addCMD(32, setTwoAccel);
   slave.addCMD(33, checkTwoRegister);
+  slave.addCMD(34, checkTwoVelocity);
   while (true) {
     constexpr int NUM_TWO_REGISTER = 2;
     AnalogIn two_register[NUM_TWO_REGISTER] = {AnalogIn(PB_0),
@@ -165,15 +176,15 @@ int main() {
     constexpr int TWO_STAGE_ID[NUM_TWO_REGISTER] = {2, 3};
     constexpr float TWO_REGISTER_MULTI[NUM_TWO_REGISTER] = {
         720 / (210.0 / 255), 720 / (210.0 / 255)}; // mmへの変換倍率
-    constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {118, 119};
-    PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(1, 0, 0, 0),
-                                               PidPosition(1.5, 0, 0, 0)};
+    constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {121, 123};
+    PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(1.0, 0, 0, 0),
+                                               PidPosition(1.0, 0, 0, 0)};
 
     for (int i = 0; i < NUM_TWO_REGISTER; ++i) {
       two_hight_current[i] =
           two_register[i].read() * TWO_REGISTER_MULTI[i] - TOW_STAGE_OFFSET[i];
-      spinMotor(TWO_STAGE_ID[i],
-                -two_motor[i].control(goal_two_hight, two_hight_current[i]));
+      spinMotor(TWO_STAGE_ID[i], (now[i] = -two_motor[i].control(
+                                      goal_two_hight, two_hight_current[i])));
     }
   }
 }
