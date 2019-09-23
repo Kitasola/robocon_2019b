@@ -124,15 +124,18 @@ int main(int argc, char **argv) {
 
   // パラメータ
   // 2段目昇降機構
-  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 100, TWO_STAGE_TOWEL = 100,
+  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 70, TWO_STAGE_TOWEL = 100,
                 TWO_STAGE_READY = 0, TWO_STAGE_ERROR_MAX = 1; // cm
+
   // 座標追加
+  // add(int x, int y, int yaw, int action_type = 0, int action_value = 0, int
+  // velocity_x = 0, int velocity_y = 0)
   GoalManager goal_map;
   goal_map.add(5400, 5500, 0);
-  goal_map.add(3650, 5500, 0); //, 1, TWO_STAGE_HUNGER);
+  goal_map.add(3650, 5500, 0, 1, TWO_STAGE_HUNGER);
   // ハンガー前
-  goal_map.add(3650, 4860, 0); //, 3, TWO_STAGE_HUNGER);
-  goal_map.add(3650, 4860, 0); //, 1, TWO_STAGE_READY);
+  goal_map.add(3650, 4860, 0, 3, TWO_STAGE_HUNGER);
+  goal_map.add(3650, 4860, 0, 1, TWO_STAGE_READY);
   goal_map.add(3650, 5500, 0);
   goal_map.add(5400, 5500, 0);
   goal_map.add(5400, 1800, 0);
