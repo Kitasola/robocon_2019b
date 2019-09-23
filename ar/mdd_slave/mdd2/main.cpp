@@ -176,7 +176,7 @@ int main() {
     constexpr int TWO_STAGE_ID[NUM_TWO_REGISTER] = {2, 3};
     constexpr float TWO_REGISTER_MULTI[NUM_TWO_REGISTER] = {
         720 / (210.0 / 255), 720 / (210.0 / 255)}; // mmへの変換倍率
-    constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {121, 123};
+    constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {123, 127};
     PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(1.0, 0, 0, 0),
                                                PidPosition(1.0, 0, 0, 0)};
 
