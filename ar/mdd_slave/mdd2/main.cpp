@@ -118,7 +118,7 @@ bool checkTwoRegister(int cmd, int rx_data, int &tx_data) {
   if (rx_data >= 10) {
     tx_data = two_hight_current[rx_data - 10] / 10;
   } else {
-    tx_data = two_hight_current[rx_data - 10] % 10;
+    tx_data = two_hight_current[rx_data] % 10;
   }
   return true;
 }
@@ -165,9 +165,9 @@ int main() {
     constexpr int TWO_STAGE_ID[NUM_TWO_REGISTER] = {2, 3};
     constexpr float TWO_REGISTER_MULTI[NUM_TWO_REGISTER] = {
         720 / (210.0 / 255), 720 / (210.0 / 255)}; // mmへの変換倍率
-    constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {120, 126};
-    PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(2, 0, 0, 0),
-                                               PidPosition(2, 0, 0, 0)};
+    constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {118, 119};
+    PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(1, 0, 0, 0),
+                                               PidPosition(1.5, 0, 0, 0)};
 
     for (int i = 0; i < NUM_TWO_REGISTER; ++i) {
       two_hight_current[i] =
