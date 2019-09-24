@@ -1,0 +1,8 @@
+prefix=/home/tsuruhara/robocon_2019b/mr/devel
+
+Name: robot_calibration
+Description: Description of robot_calibration
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/tsuruhara/robocon_2019b/mr/devel/lib 
+Requires: 

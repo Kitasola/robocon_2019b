@@ -1,0 +1,8 @@
+prefix=/home/tsuruhara/robocon_2019b/mr/devel
+
+Name: robot_sensor
+Description: Description of robot_sensor
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/tsuruhara/robocon_2019b/mr/devel/lib 
+Requires: 

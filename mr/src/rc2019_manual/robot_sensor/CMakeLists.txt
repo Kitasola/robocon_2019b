@@ -135,7 +135,7 @@ set(UTILITY ~/arrc_utility/raspi/src/)
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(gyro src/gyro.cpp ~/arrc_utility/raspi/src/GY521.cpp ~/arrc_utility/raspi/src/i2c.cpp ~/arrc_utility/raspi/src/pigpiod.cpp)
+add_executable(gyro src/gyro.cpp ${UTILITY}/GY521.cpp ${UTILITY}/i2c.cpp ${UTILITY}/pigpiod.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

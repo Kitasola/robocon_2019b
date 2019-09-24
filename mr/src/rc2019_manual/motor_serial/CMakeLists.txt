@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(motor_serial)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -116,7 +116,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
   ~/arrc_utility/raspi/include
 )
@@ -126,7 +126,6 @@ include_directories(
 #   src/${PROJECT_NAME}/motor_serial.cpp
 # )
 
-set(CMAKE_CXX_STANDARD 11)
 set(UTILITY ~/arrc_utility/raspi/src/)
 
 ## Add cmake target dependencies of the library

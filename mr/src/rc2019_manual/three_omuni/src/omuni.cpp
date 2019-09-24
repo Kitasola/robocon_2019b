@@ -1,5 +1,5 @@
 #include<ros/ros.h>
-#include"/home/ubuntu/arrc_utility/raspi/include/pigpiod.hpp"
+#include"pigpiod.hpp"
 #include<cmath>
 #include"motor_serial/motor_serial.h"
 #include<iostream>

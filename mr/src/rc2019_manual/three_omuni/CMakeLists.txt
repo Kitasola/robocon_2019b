@@ -150,7 +150,7 @@ set(UTILITY ~/arrc_utility/raspi/src/)
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/three_omuni_node.cpp)
 #add_executable(omuni src/omuni.cpp)
-add_executable(omuni_pid src/omuni_pid.cpp ~/arrc_utility/raspi/src/rotary_inc.cpp ~/arrc_utility/raspi/src/pigpiod.cpp)
+add_executable(omuni_pid src/omuni_pid.cpp ${UTILITY}/rotary_inc.cpp ${UTILITY}/pigpiod.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use

@@ -1,4 +1,4 @@
-#include "/home/ubuntu/arrc_utility/raspi/include/motor_serial.hpp"
+#include "motor_serial.hpp"
 #include "motor_serial/motor_serial.h"
 #include<ros/ros.h>
 

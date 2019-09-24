@@ -1,5 +1,5 @@
 #include<ros/ros.h>
-#include"/home/ubuntu/arrc_utility/raspi/include/GY521.hpp"
+#include"GY521.hpp"
 #include<std_msgs/Float64.h>
 #include<std_msgs/String.h>
 

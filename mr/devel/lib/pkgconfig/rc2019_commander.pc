@@ -1,0 +1,8 @@
+prefix=/home/tsuruhara/robocon_2019b/mr/devel
+
+Name: rc2019_commander
+Description: Description of rc2019_commander
+Version: 0.0.0
+Cflags: -I/home/tsuruhara/robocon_2019b/mr/devel/include
+Libs: -L/home/tsuruhara/robocon_2019b/mr/devel/lib 
+Requires: roscpp rospy std_msgs message_runtime
