@@ -134,8 +134,8 @@ int main(int argc, char **argv) {
   goal_map.add(5400, 5500, 0);
   goal_map.add(3650, 5500, 0, 1, TWO_STAGE_HUNGER);
   // ハンガー前
-  goal_map.add(3650, 4860, 0, 3, TWO_STAGE_HUNGER);
-  goal_map.add(3650, 4860, 0, 1, TWO_STAGE_READY);
+  goal_map.add(3650, 5000, 0, 3, TWO_STAGE_HUNGER);
+  goal_map.add(3650, 5000, 0, 1, TWO_STAGE_READY);
   goal_map.add(3650, 5500, 0);
   goal_map.add(5400, 5500, 0);
   goal_map.add(5400, 1800, 0);
