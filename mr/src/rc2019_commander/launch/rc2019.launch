@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+    <machine name="ubuntu" address="ubuntu" env-loader="/home/ubuntu/catkin_ws/devel/env.sh" user="ubuntu" password="ubuntu"/>
+    <node machine="ubuntu" name="motor_serial" pkg="motor_serial" type="motor_serial"/>
+    <node machine="ubuntu" name="gyro" pkg="robot_sensor" type="gyro"/>
+    <node machine="ubuntu" name="calibration" pkg="robot_calibration" type="calibration"/>
+    <node machine="ubuntu" name="arm_position" pkg="robot_arm" type="arm_position"/>
+    <node machine="ubuntu" name="arm_angle" pkg="robot_arm" type="arm_angle" output="screen"/>
+    <node machine="ubuntu" name="arm_pid" pkg="robot_arm" type="arm_pid"/>
+    <node name="controller" pkg="rc2019_commander" type="controller"/>
+    <node name="joy_node" pkg="joy" type="joy_node"/>
+</launch>

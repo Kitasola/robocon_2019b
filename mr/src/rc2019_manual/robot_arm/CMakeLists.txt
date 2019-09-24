@@ -138,9 +138,9 @@ set(UTILITY ~/arrc_utility/raspi/src)
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(arm_angle src/arm_angle.cpp)
 add_executable(arm_position src/arm_position.cpp ~/arrc_utility/raspi/src/pigpiod.cpp)
-#add_executable(arm_pid src/arm_pid.cpp ~/arrc_utility/raspi/src/rotary_inc.cpp ~/arrc_utility/raspi/src/pigpiod.cpp)
+add_executable(arm_pid src/arm_pid.cpp ~/arrc_utility/raspi/src/rotary_inc.cpp ~/arrc_utility/raspi/src/pigpiod.cpp)
 #add_executable(arm_pid_custom src/arm_pid_custom.cpp ~/arrc_utility/raspi/src/rotary_inc.cpp ~/arrc_utility/raspi/src/pigpiod.cpp)
-add_executable(arm_rpm src/arm_rpm.cpp ~/arrc_utility/raspi/src/rotary_inc.cpp ~/arrc_utility/raspi/src/pigpiod.cpp)
+#add_executable(arm_rpm src/arm_rpm.cpp ~/arrc_utility/raspi/src/rotary_inc.cpp ~/arrc_utility/raspi/src/pigpiod.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -156,6 +156,10 @@ target_link_libraries(arm_angle
   pigpiod_if2
   ${catkin_LIBRARIES}
 )
+target_link_libraries(arm_pid
+  ${catkin_LIBRARIES}
+  pigpiod_if2
+)
 #target_link_libraries(arm_pid_custom
 #  ${catkin_LIBRARIES}
 #  pigpiod_if2
@@ -164,10 +168,10 @@ target_link_libraries(arm_position
   ${catkin_LIBRARIES}
   pigpiod_if2
 )
-target_link_libraries(arm_rpm
-  ${catkin_LIBRARIES}
-  pigpiod_if2
-)
+#target_link_libraries(arm_rpm
+#  ${catkin_LIBRARIES}
+#  pigpiod_if2
+#)
 
 #############
 ## Install ##
