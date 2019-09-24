@@ -12,7 +12,7 @@ constexpr int NUM_PORT = 5;
 constexpr int PORT_FUNCTION[NUM_PORT] = {2, 2, 2, 0, 0};
 
 constexpr int NUM_MOTOR_PORT = 4;
-constexpr int MAX_PWM = 255;
+constexpr int MAX_PWM = 250;
 constexpr double MAX_PWM_MBED = 0.95;
 constexpr float PERIOD = 1 / 1000.0;
 constexpr PinName MOTOR_PIN[NUM_MOTOR_PORT][3] = {{PB_0, PB_1, PB_3},
@@ -169,22 +169,23 @@ int main() {
   slave.addCMD(32, setTwoAccel);
   slave.addCMD(33, checkTwoRegister);
   slave.addCMD(34, checkTwoVelocity);
+  constexpr int NUM_TWO_REGISTER = 2;
+  AnalogIn two_register[NUM_TWO_REGISTER] = {AnalogIn(PB_0),
+                                             AnalogIn(PA_0)}; // right, left
+  constexpr int TWO_STAGE_ID[NUM_TWO_REGISTER] = {2, 3};
+  constexpr float TWO_REGISTER_MULTI[NUM_TWO_REGISTER] = {
+      720 / (210.0 / 255), 720 / (210.0 / 255)}; // mmへの変換倍率
+  constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {121, 123};
+  PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(0.2, 0, 0, 0),
+                                             PidPosition(0.2, 0, 0, 0)};
   while (true) {
-    constexpr int NUM_TWO_REGISTER = 2;
-    AnalogIn two_register[NUM_TWO_REGISTER] = {AnalogIn(PB_0),
-                                               AnalogIn(PA_0)}; // right, left
-    constexpr int TWO_STAGE_ID[NUM_TWO_REGISTER] = {2, 3};
-    constexpr float TWO_REGISTER_MULTI[NUM_TWO_REGISTER] = {
-        720 / (210.0 / 255), 720 / (210.0 / 255)}; // mmへの変換倍率
-    constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {123, 127};
-    PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(1.0, 0, 0, 0),
-                                               PidPosition(1.0, 0, 0, 0)};
 
     for (int i = 0; i < NUM_TWO_REGISTER; ++i) {
       two_hight_current[i] =
           two_register[i].read() * TWO_REGISTER_MULTI[i] - TOW_STAGE_OFFSET[i];
-      spinMotor(TWO_STAGE_ID[i], (now[i] = -two_motor[i].control(
-                                      goal_two_hight, two_hight_current[i])));
+      now[i] = two_motor[i].control(goal_two_hight, two_hight_current[i]);
+      spinMotor(TWO_STAGE_ID[i], -now[i]);
     }
+    dummy_current_two_hight = (two_hight_current[0] + two_hight_current[1]) / 2;
   }
 }
