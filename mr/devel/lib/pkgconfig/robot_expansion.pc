@@ -1,8 +1,0 @@
-prefix=/home/tsuruhara/robocon_2019b/mr/devel
-
-Name: robot_expansion
-Description: Description of robot_expansion
-Version: 0.0.0
-Cflags: 
-Libs: -L/home/tsuruhara/robocon_2019b/mr/devel/lib 
-Requires: 

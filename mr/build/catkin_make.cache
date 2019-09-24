@@ -1,2 +1,0 @@
-rc2019_commander:rc2019_manual/motor_serial:rc2019_manual/robot_arm:rc2019_manual/robot_calibration:rc2019_manual/robot_expansion:rc2019_manual/robot_sensor:rc2019_manual/three_omuni
--DCATKIN_DEVEL_PREFIX=/home/tsuruhara/robocon_2019b/mr/devel -DCMAKE_INSTALL_PREFIX=/home/tsuruhara/robocon_2019b/mr/install -G Unix Makefiles
