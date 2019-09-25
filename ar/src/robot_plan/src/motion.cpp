@@ -2,7 +2,7 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
-#include <motor_serial.hpp>
+#include <motor_serial/motor_serial.h>
 #include <pigpiod.hpp>
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
@@ -46,8 +46,7 @@ struct GoalInfo {
   int x;
   int y;
   int yaw; // degree あとでradに変換する
-  int action_type; // 0: 通過, 1: 2段目昇降, 2: ハンガー, 3: バスタオル, 4:
-                   // 3段目昇降, 5: シーツ
+  int action_type;
   int action_value; // 必要なら使う e.g. 高さ
   int velocity_x;
   int velocity_y;
@@ -111,6 +110,17 @@ private:
 using namespace ros;
 using Pi = Pigpiod;
 
+ros::ServiceClient motor_speed;
+int send(int id, int cmd, int data) {
+  motor_serial::motor_serial srv;
+  srv.request.id = id;
+  srv.request.cmd = cmd;
+  srv.request.data = data;
+  motor_speed.call(srv);
+  ROS_INFO_STREAM("response" << srv.response.data);
+  return srv.response.data;
+}
+
 int main(int argc, char **argv) {
   ros::init(argc, argv, "motion_planner");
   ros::NodeHandle n;
@@ -119,18 +129,24 @@ int main(int argc, char **argv) {
       n.advertise<std_msgs::String>("global_message", 1);
   std_msgs::String global_message;
 
-  constexpr double FREQ = 10;
+  motor_speed = n.serviceClient<motor_serial::motor_serial>("motor_speed");
+
+  constexpr double FREQ = 1, SWITCH_FREQ = 100;
   ros::Rate loop_rate(FREQ);
+  ros::Rate switch_rate(SWITCH_FREQ);
 
   // パラメータ
   // 2段目昇降機構
-  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 60, TWO_STAGE_TOWEL = 100,
+  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 70, TWO_STAGE_TOWEL = 100,
                 TWO_STAGE_READY = 0, TWO_STAGE_ERROR_MAX = 10; // cm
 
   // 座標追加
   // add(int x, int y, int yaw, int action_type = 0, int action_value = 0, int
   // velocity_x = 0, int velocity_y = 0)
+  // 0: 通過, 1: 2段目昇降, 2: ハンガー, 3: バスタオル, 4:
+  // 3段目昇降, 5: シーツ
   GoalManager goal_map;
+  goal_map.add(5400, 1800, 0, 1, TWO_STAGE_HUNGER);
   goal_map.add(5400, 5500, 0);
   goal_map.add(3650, 5500, 0, 1, TWO_STAGE_HUNGER);
   // ハンガー前
@@ -142,7 +158,6 @@ int main(int argc, char **argv) {
 
   // RasPi
   // MotorSerial
-  MotorSerial ms;
   constexpr int START_PIN = 18;
   Pi::gpio().set(18, IN, PULL_DOWN);
 
@@ -152,33 +167,39 @@ int main(int argc, char **argv) {
       goal_map.next();
       break;
     }
-    loop_rate.sleep();
+    switch_rate.sleep();
   }
   global_message.data = "Game Start";
   global_message_pub.publish(global_message);
 
+  bool changed_phase = true;
+  double start;
   while (ros::ok()) {
     ros::spinOnce();
+    double now = ros::Time::now().toSec();
 
     bool can_send_next_goal = false;
     if (planner.is_reach_goal) {
       switch (goal_map.now.action_type) {
       case 0: {
         can_send_next_goal = true;
+        changed_phase = true;
         break;
       }
       case 1: {
-        int height = ms.send(TWO_STAGE_ID, 30, goal_map.now.action_value);
-        can_send_next_goal = true;
+        if (changed_phase) {
+          changed_phase = false;
+          start = now;
+        }
+        send(TWO_STAGE_ID, 30, goal_map.now.action_value);
+        if (now - start > 0.5) {
+          can_send_next_goal = true;
+          changed_phase = true;
+        }
         break;
       }
       case 3: {
-        int height = ms.send(TWO_STAGE_ID, 33, 10);
-        ROS_INFO_STREAM("height" << height);
-        if (height > goal_map.now.action_value - TWO_STAGE_ERROR_MAX &&
-            height < goal_map.now.action_value + TWO_STAGE_ERROR_MAX) {
-          can_send_next_goal = true;
-        }
+        can_send_next_goal = true;
         break;
       }
       }
