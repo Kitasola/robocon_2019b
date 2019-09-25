@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-  <machine name="ar" address="arberry" env-loader="/home/ubuntu/arrc/robocon_2019b/devel/env.sh" user="ubuntu" password="akashiakashi"/>
+  <machine name="ar" address="arberry" env-loader="/home/ubuntu/arrc/robocon_2019b/ar/devel/env.sh" user="ubuntu" password="akashiakashi"/>
 
   <!-- 足回りMDDとのシリアル通信用 -->
   <!-- <node machine="ar" name="serial_node" pkg="rosserial_server" type="serial_node"> -->
