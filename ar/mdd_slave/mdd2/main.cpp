@@ -174,12 +174,13 @@ int main() {
                                              AnalogIn(PA_0)}; // right, left
   constexpr int TWO_STAGE_ID[NUM_TWO_REGISTER] = {2, 3};
   constexpr float TWO_REGISTER_MULTI[NUM_TWO_REGISTER] = {
-      720 / (210.0 / 255), 720 / (210.0 / 255)}; // mmへの変換倍率
-  constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {121, 123};
-  PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(0.2, 0, 0, 0),
-                                             PidPosition(0.2, 0, 0, 0)};
+      720 / (210.0 / 255) * 5 / 3.3,
+      720 / (210.0 / 255) * 5 / 3.3}; // mmへの変換倍率
+  constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {130, 131};
+  PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(1.0, 0, 0, 0),
+                                             PidPosition(1.0, 0, 0, 0)};
+  DigitalOut LED[2] = {DigitalOut(PB_3), DigitalOut(PB_4)};
   while (true) {
-
     for (int i = 0; i < NUM_TWO_REGISTER; ++i) {
       two_hight_current[i] =
           two_register[i].read() * TWO_REGISTER_MULTI[i] - TOW_STAGE_OFFSET[i];
