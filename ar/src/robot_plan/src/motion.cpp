@@ -121,7 +121,6 @@ int send(int id, int cmd, int data) {
   return srv.response.data;
 }
 
->>>>>>> develop/ar
 int main(int argc, char **argv) {
   ros::init(argc, argv, "motion_planner");
   ros::NodeHandle n;
@@ -137,13 +136,9 @@ int main(int argc, char **argv) {
 
   // パラメータ
   // 2段目昇降機構
-  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 70, TWO_STAGE_TOWEL = 100,
+  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 73, TWO_STAGE_TOWEL = 100,
                 TWO_STAGE_READY = 0, TWO_STAGE_ERROR_MAX = 10; // cm
-
-  // パラメータ
-  // 2段目昇降機構
-  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 100, TWO_STAGE_TOWEL = 100,
-                TWO_STAGE_READY = 0, TWO_STAGE_ERROR_MAX = 1; // cm
+  constexpr double TWO_STAGE_TIME = 0.05;
   // 座標追加
   // add(int x, int y, int yaw, int action_type = 0, int action_value = 0, int
   // velocity_x = 0, int velocity_y = 0)
@@ -196,7 +191,7 @@ int main(int argc, char **argv) {
           start = now;
         }
         send(TWO_STAGE_ID, 30, goal_map.now.action_value);
-        if (now - start > 0.5) {
+        if (now - start > goal_map.now.action_value * TWO_STAGE_TIME) {
           can_send_next_goal = true;
           changed_phase = true;
         }
