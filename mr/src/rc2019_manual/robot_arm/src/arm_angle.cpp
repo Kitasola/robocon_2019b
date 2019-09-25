@@ -2,6 +2,8 @@
 #include<cmath>
 #include<ros/ros.h>
 #include<std_msgs/Float64MultiArray.h>
+#include<motor_serial.hpp>
+#include"motor_serial/motor_serial.h"
 
 using std::cout;
 using std::endl;
@@ -25,7 +27,11 @@ int main(int argc, char **argv){
 	ros::Publisher robot_arm_pub = n.advertise<std_msgs::Float64MultiArray>("arm_angle", 10);
 	ros::Publisher check_pub = n.advertise<std_msgs::Float64MultiArray>("check", 10);
 	ros::Subscriber robot_arm_sub = n.subscribe("angle_info", 10, positionCallback);
+	ros::ServiceClient arm_client = n.ServiceClient<motor_serial::motor_serial>("robot_arm");
+
 	float angle_1 = 0, angle_2 = 0;
+	int ARM_ID[2] = {5, 5};
+	int ARM_CMD[2] = {61, 62};
 	angle_check.data.resize(2);
 	angle.data.resize(2);
 	ros::Rate loop_rate(100);
@@ -40,6 +46,12 @@ int main(int argc, char **argv){
 		//angle.data[1] = angle_1 - angle_2;
 		angle.data[0] = angle_1 - calibration_angle_1;
 		angle.data[1] = angle_2 - calibration_angle_2;
+		for(int i = 0; i < 2; ++i){
+			srv.request.id = (unsigned int)ARM_ID[i];
+			srv.request.cmd = (unsigned int)ARM_CMD[i];
+			srv.request.data = (int)angle.data[i];
+			arm_client.call(srv);
+		}
 		robot_arm_pub.publish(angle);
 		check_pub.publish(angle_check);
 		ros::spinOnce();
