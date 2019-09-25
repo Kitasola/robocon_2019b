@@ -12,7 +12,11 @@ constexpr int NUM_PORT = 5;
 constexpr int PORT_FUNCTION[NUM_PORT] = {2, 2, 2, 0, 0};
 
 constexpr int NUM_MOTOR_PORT = 4;
+<<<<<<< HEAD
 constexpr int MAX_PWM = 255;
+=======
+constexpr int MAX_PWM = 250;
+>>>>>>> develop/ar
 constexpr double MAX_PWM_MBED = 0.95;
 constexpr float PERIOD = 1 / 1000.0;
 constexpr PinName MOTOR_PIN[NUM_MOTOR_PORT][3] = {{PB_0, PB_1, PB_3},
@@ -123,6 +127,28 @@ bool checkTwoRegister(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
+<<<<<<< HEAD
+/* DigitalOut arm_solenoid[2] = {DigitalOut(PB_6), DigitalOut(PA_11)}; */
+/* DigitalOut arm_led[2] = {DigitalOut(PB_3), DigitalOut(PB_4)}; */
+/* bool solenoid(int cmd, int rx_data, int &tx_data) { */
+/*   arm_solenoid[0].write(rx_data % 10); */
+/*   arm_led[0].write(rx_data % 10); */
+/*   arm_solenoid[1].write((rx_data / 10) % 10); */
+/*   arm_led[1].write((rx_data / 10) % 10); */
+/*   return true; */
+/* } */
+=======
+int now[2] = {};
+bool checkTwoVelocity(int cmd, int rx_data, int &tx_data) {
+  if (rx_data >= 10) {
+    tx_data = now[rx_data - 10] / 10;
+  } else {
+    tx_data = now[rx_data] % 10;
+  }
+  return true;
+}
+>>>>>>> develop/ar
+
 /* DigitalOut arm_solenoid[2] = {DigitalOut(PB_6), DigitalOut(PA_11)}; */
 /* DigitalOut arm_led[2] = {DigitalOut(PB_3), DigitalOut(PB_4)}; */
 /* bool solenoid(int cmd, int rx_data, int &tx_data) { */
@@ -158,22 +184,25 @@ int main() {
   slave.addCMD(31, setTwoVelocity);
   slave.addCMD(32, setTwoAccel);
   slave.addCMD(33, checkTwoRegister);
+  slave.addCMD(34, checkTwoVelocity);
+  constexpr int NUM_TWO_REGISTER = 2;
+  AnalogIn two_register[NUM_TWO_REGISTER] = {AnalogIn(PB_0),
+                                             AnalogIn(PA_0)}; // right, left
+  constexpr int TWO_STAGE_ID[NUM_TWO_REGISTER] = {2, 3};
+  constexpr float TWO_REGISTER_MULTI[NUM_TWO_REGISTER] = {
+      720 / (210.0 / 255) * 5 / 3.3,
+      720 / (210.0 / 255) * 5 / 3.3}; // mmへの変換倍率
+  constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {130, 131};
+  PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(1.0, 0, 0, 0),
+                                             PidPosition(1.0, 0, 0, 0)};
+  DigitalOut LED[2] = {DigitalOut(PB_3), DigitalOut(PB_4)};
   while (true) {
-    constexpr int NUM_TWO_REGISTER = 2;
-    AnalogIn two_register[NUM_TWO_REGISTER] = {AnalogIn(PB_0),
-                                               AnalogIn(PA_0)}; // right, left
-    constexpr int TWO_STAGE_ID[NUM_TWO_REGISTER] = {2, 3};
-    constexpr float TWO_REGISTER_MULTI[NUM_TWO_REGISTER] = {
-        720 / (210.0 / 255), 720 / (210.0 / 255)}; // mmへの変換倍率
-    constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {118, 119};
-    PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(1, 0, 0, 0),
-                                               PidPosition(1.5, 0, 0, 0)};
-
     for (int i = 0; i < NUM_TWO_REGISTER; ++i) {
       two_hight_current[i] =
           two_register[i].read() * TWO_REGISTER_MULTI[i] - TOW_STAGE_OFFSET[i];
-      spinMotor(TWO_STAGE_ID[i],
-                -two_motor[i].control(goal_two_hight, two_hight_current[i]));
+      now[i] = two_motor[i].control(goal_two_hight, two_hight_current[i]);
+      spinMotor(TWO_STAGE_ID[i], -now[i]);
     }
+    dummy_current_two_hight = (two_hight_current[0] + two_hight_current[1]) / 2;
   }
 }
