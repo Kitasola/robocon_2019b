@@ -74,9 +74,9 @@ bool safe(int cmd, int rx_data, int &tx_data) {
 
 PwmOut rock_tray_servo(PA_3);
 constexpr int TARY_ROCK_ANGLE = 40, TARY_FREE_ANGLE = 0;
+constexpr double WAIT_TRAY_SERVO = 0.5;
 void rockTray(int degree) {
   rock_tray_servo.pulsewidth(map(degree, 0, 180, 0.5e-3, 2.4e-3));
-  return true;
 }
 bool rockTray(int cmd, int rx_data, int &tx_data) {
   rockTray(rx_data);
@@ -85,9 +85,9 @@ bool rockTray(int cmd, int rx_data, int &tx_data) {
 
 PwmOut hand_servo(PA_3);
 constexpr int HAND_CATCH_ANGLE = 0, HAND_RELEASE_ANGLE = 90;
+constexpr double WAIT_HAND_SERVO = 0.5;
 void actHand(int degree) {
   hand_servo.pulsewidth(map(degree, 0, 180, 0.5e-3, 2.4e-3));
-  return true;
 }
 bool actHand(int cmd, int rx_data, int &tx_data) {
   actHand(rx_data);
@@ -114,12 +114,15 @@ bool setTraySpeed(int cmd, int rx_data, int &tx_data) {
 
 bool loadTray(int cmd, int rx_data, int &tx_data) {
   if (rx_data == 1) {
+    phase = 0;
   } else if (rx_data == -1) {
   }
   return true;
 }
 
 int main() {
+  Timer time;
+  time.start();
   slave.addCMD(2, spinMotor);
   slave.addCMD(3, spinMotor);
   slave.addCMD(4, spinMotor);
@@ -141,12 +144,13 @@ int main() {
   constexpr int STROKE_MOTOR_ID = 1, STROKE_ENCODER_ID = 2;
   RotaryInc stroke_rotary(ENCODER_PIN[STROKE_ENCODER_ID][0],
                           ENCODER_PIN[STROKE_ENCODER_ID][1], 512, 1);
-  constexpr int MAX_STROKE_LENGTH = 350;
+  constexpr int MAX_STROKE_LENGTH = 350, MAX_STROKE_ERROR = 5;
+  constexpr int STROKE_LOAD_LENGTH = 320;
   int current_stroke = 0, stroke_offset = 0;
   constexpr double STROKE_DIAMETER = 100;
   PidPosition stroke(1.0, 0, 0, 0);
   DigitalIn stroke_reset(PA_1);
-  stroke_reset.mode(PULL_UP);
+  stroke_reset.mode(PullUp);
 
   while (true) {
     spinMotor(TRAY_MOTOR_ID, goal_tray_speed);
@@ -157,5 +161,34 @@ int main() {
       stroke_offset = current_stroke - MAX_STROKE_LENGTH;
     }
     spinMotor(STROKE_MOTOR_ID, stroke.control(goal_stroke, current_stroke));
+
+    switch (phase) {
+    case 0: {
+      goal_stroke = MAX_STROKE_LENGTH;
+      if (abs(goal_stroke - current_stroke) < STROKE_LOAD_LENGTH) {
+        rockTray(TARY_ROCK_ANGLE);
+        time.reset();
+        phase = 1;
+      }
+      break;
+    }
+    case 1: {
+      if (time.read() > WAIT_TRAY_SERVO) {
+        actHand(HAND_RELEASE_ANGLE);
+        time.read();
+        phase = 2;
+      }
+      break;
+    }
+    case 2: {
+      if (time.read() > WAIT_HAND_SERVO) {
+        goal_stroke = MAX_STROKE_LENGTH;
+        phase = 3;
+        break;
+      }
+    }
+    case 3: {
+    }
+    }
   }
 }
