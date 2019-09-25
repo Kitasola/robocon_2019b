@@ -13,7 +13,7 @@ std_msgs::Float64MultiArray angle_check;
 constexpr int A = 408;
 constexpr int B = 286;
 constexpr double calibration_angle_1 = M_PI / 2;
-constexpr double calibration_angle_2 = M_PI - (M_PI / 6);
+constexpr double calibration_angle_2 = M_PI - (M_PI / 3);
 
 float x, y;
 
@@ -41,12 +41,12 @@ int main(int argc, char **argv){
 		angle_calcurate(&angle_1, &angle_2);
 		ROS_INFO("angle_1 = %lf", angle_1 * (180 / M_PI));
 		ROS_INFO("angle_2 = %lf", angle_2 * (180 / M_PI));
-		angle_check.data[0] = x;
-		angle_check.data[1] = y;
 		//angle.data[0] = (M_PI / 2) - angle_1;
 		//angle.data[1] = angle_1 - angle_2;
-		angle.data[0] = angle_1 - calibration_angle_1;
-		angle.data[1] = angle_2 - calibration_angle_2;
+		angle.data[0] = (angle_1 - calibration_angle_1) * (M_PI / 180);
+		angle.data[1] = (angle_2 - calibration_angle_2) * (M_PI / 180);
+		angle_check.data[0] = angle.data[0];
+		angle_check.data[1] = angle.data[1];
 		for(int i = 0; i < 2; ++i){
 			srv.request.id = (unsigned int)ARM_ID[i];
 			srv.request.cmd = (unsigned int)ARM_CMD[i];
