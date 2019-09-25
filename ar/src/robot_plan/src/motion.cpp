@@ -119,13 +119,13 @@ int main(int argc, char **argv) {
       n.advertise<std_msgs::String>("global_message", 1);
   std_msgs::String global_message;
 
-  constexpr double FREQ = 50;
+  constexpr double FREQ = 10;
   ros::Rate loop_rate(FREQ);
 
   // パラメータ
   // 2段目昇降機構
-  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 70, TWO_STAGE_TOWEL = 100,
-                TWO_STAGE_READY = 0, TWO_STAGE_ERROR_MAX = 1; // cm
+  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 60, TWO_STAGE_TOWEL = 100,
+                TWO_STAGE_READY = 0, TWO_STAGE_ERROR_MAX = 10; // cm
 
   // 座標追加
   // add(int x, int y, int yaw, int action_type = 0, int action_value = 0, int
@@ -173,9 +173,10 @@ int main(int argc, char **argv) {
         break;
       }
       case 3: {
-        int height = ms.send(TWO_STAGE_ID, 30, goal_map.now.action_value);
-        if (height - TWO_STAGE_ERROR_MAX < goal_map.now.action_value &&
-            height + TWO_STAGE_ERROR_MAX < goal_map.now.action_value) {
+        int height = ms.send(TWO_STAGE_ID, 33, 10);
+        ROS_INFO_STREAM("height" << height);
+        if (height > goal_map.now.action_value - TWO_STAGE_ERROR_MAX &&
+            height < goal_map.now.action_value + TWO_STAGE_ERROR_MAX) {
           can_send_next_goal = true;
         }
         break;
