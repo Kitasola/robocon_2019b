@@ -43,8 +43,10 @@ int main(int argc, char **argv){
 		ROS_INFO("angle_2 = %lf", angle_2 * (180 / M_PI));
 		//angle.data[0] = (M_PI / 2) - angle_1;
 		//angle.data[1] = angle_1 - angle_2;
-		angle.data[0] = (angle_1 - calibration_angle_1) * (M_PI / 180);
-		angle.data[1] = (angle_2 - calibration_angle_2) * (M_PI / 180);
+		//angle_check.data[0] = angle_1 * (180 / M_PI);
+		//angle_check.data[1] = angle_2 * (180 / M_PI);
+		angle.data[0] = (angle_1 - calibration_angle_1) * (180 / M_PI);
+		angle.data[1] = (angle_2 - calibration_angle_2) * (180 / M_PI);
 		angle_check.data[0] = angle.data[0];
 		angle_check.data[1] = angle.data[1];
 		for(int i = 0; i < 2; ++i){
