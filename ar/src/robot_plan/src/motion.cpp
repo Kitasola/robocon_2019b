@@ -138,41 +138,54 @@ int main(int argc, char **argv) {
   // 2段目昇降機構
   constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 73, TWO_STAGE_TOWEL = 100,
                 TWO_STAGE_READY = 0, TWO_STAGE_ERROR_MAX = 10; // cm
-  constexpr double TWO_STAGE_TIME = 0.05;
+  constexpr double TWO_STAGE_TIME = 0.06;
+  // ハンガー
+  constexpr int HUNGER_ID = 1, HUNGER_SPEED = 200;
+  constexpr double HUNGER_WAIT_TIME = 1.0;
+
   // 座標追加
-  // add(int x, int y, int yaw, int action_type = 0, int action_value = 0, int
-  // velocity_x = 0, int velocity_y = 0)
-  // 0: 通過, 1: 2段目昇降, 2: ハンガー, 3: バスタオル, 4:
-  // 3段目昇降, 5: シーツ
+  // add(int x, int y, int yaw, int action_type = 0, int action_value = 0,
+  // int velocity_x = 0, int velocity_y = 0)
+  // 0: 通過, 1: 2段目昇降, 2: ハンガー, 3: バスタオル, 4: 3段目昇降, 5: シーツ,
+  // 10: 一定時間待機
   GoalManager goal_map;
-  goal_map.add(5400, 1800, 0, 1, TWO_STAGE_HUNGER);
-  goal_map.add(5400, 5500, 0);
-  goal_map.add(3650, 5500, 0, 1, TWO_STAGE_HUNGER);
-  // ハンガー前
-  goal_map.add(3650, 5000, 0, 3, TWO_STAGE_HUNGER);
-  goal_map.add(3650, 5000, 0, 1, TWO_STAGE_READY);
-  goal_map.add(3650, 5500, 0);
-  goal_map.add(5400, 5500, 0);
-  goal_map.add(5400, 1800, 0);
+  goal_map.add(5400, 5500, 0, 1,
+               TWO_STAGE_HUNGER); // Move: 小ポール横 -> Start: 昇降
+  goal_map.add(
+      3650, 5500, 0, 10,
+      TWO_STAGE_HUNGER *
+          TWO_STAGE_TIME); // Move: ハンガー前 -> Wait: 昇降完了タイマー
+  goal_map.add(
+      3650, 5000, 0, 2,
+      HUNGER_WAIT_TIME); // Move: ハンガー手前 -> Wait:ハンガー完了タイマー
+  goal_map.add(2850, 5000, 0, 2,
+               HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
+  goal_map.add(2050, 5000, 0, 2,
+               HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
+  goal_map.add(2050, 5500, 0, 1,
+               TWO_STAGE_READY); // Move: ハンガー前 -> Start: 昇降
+  goal_map.add(5400, 5500, 0);   // Move: 小ポール横
+  goal_map.add(5400, 5500, 0);   // Move: スタートゾーン
 
-  // RasPi
-  // MotorSerial
-  constexpr int START_PIN = 18;
-  Pi::gpio().set(18, IN, PULL_DOWN);
-
-  while (ros::ok()) {
-    if (Pi::gpio().read(START_PIN)) {
-      planner.sendNextGoal(goal_map.getPtp());
-      goal_map.next();
-      break;
-    }
-    switch_rate.sleep();
-  }
   global_message.data = "Game Start";
   global_message_pub.publish(global_message);
 
   bool changed_phase = true;
   double start;
+
+  // RasPi
+  constexpr int START_PIN = 18;
+  Pi::gpio().set(18, IN, PULL_DOWN);
+
+  while (ros::ok()) {
+    if (Pi::gpio().read(START_PIN)) {
+      goal_map.next();
+      planner.sendNextGoal(goal_map.getPtp());
+      break;
+    }
+    switch_rate.sleep();
+  }
+
   while (ros::ok()) {
     ros::spinOnce();
     double now = ros::Time::now().toSec();
@@ -186,12 +199,26 @@ int main(int argc, char **argv) {
         break;
       }
       case 1: {
-        if (changed_phase) {
-          changed_phase = false;
-          start = now;
-        }
+        start = now;
+        // 伸縮
         send(TWO_STAGE_ID, 30, goal_map.now.action_value);
-        if (now - start > goal_map.now.action_value * TWO_STAGE_TIME) {
+        can_send_next_goal = true;
+        changed_phase = true;
+        break;
+      }
+      case 2: {
+        if (changed_phase) {
+          // 伸ばす(取り付け)
+          send(HUNGER_ID, 20, HUNGER_SPEED);
+          start = now;
+          changed_phase = false;
+        }
+        // 取り付くまでタイマー待機
+        if (now - start > goal_map.now.action_value) {
+          // 縮める
+          send(HUNGER_ID, 20, -HUNGER_SPEED);
+          // 縮むまでタイマー待機
+        } else if (now - start > goal_map.now.action_value * 2) {
           can_send_next_goal = true;
           changed_phase = true;
         }
@@ -199,13 +226,21 @@ int main(int argc, char **argv) {
       }
       case 3: {
         can_send_next_goal = true;
+        changed_phase = true;
         break;
+      }
+      case 10: {
+        if (now - start > goal_map.now.action_value) {
+          can_send_next_goal = true;
+          changed_phase = true;
+          break;
+        }
       }
       }
 
       if (can_send_next_goal) {
-        planner.sendNextGoal(goal_map.getPtp());
         goal_map.next();
+        planner.sendNextGoal(goal_map.getPtp());
       }
 
       loop_rate.sleep();
