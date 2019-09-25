@@ -2,7 +2,6 @@
 #include<cmath>
 #include<ros/ros.h>
 #include<std_msgs/Float64MultiArray.h>
-#include<motor_serial.hpp>
 #include"motor_serial/motor_serial.h"
 
 using std::cout;
@@ -27,7 +26,9 @@ int main(int argc, char **argv){
 	ros::Publisher robot_arm_pub = n.advertise<std_msgs::Float64MultiArray>("arm_angle", 10);
 	ros::Publisher check_pub = n.advertise<std_msgs::Float64MultiArray>("check", 10);
 	ros::Subscriber robot_arm_sub = n.subscribe("angle_info", 10, positionCallback);
-	ros::ServiceClient arm_client = n.ServiceClient<motor_serial::motor_serial>("robot_arm");
+	ros::ServiceClient arm_client = n.serviceClient<motor_serial::motor_serial>("robot_arm");
+
+	motor_serial::motor_serial srv;
 
 	float angle_1 = 0, angle_2 = 0;
 	int ARM_ID[2] = {5, 5};

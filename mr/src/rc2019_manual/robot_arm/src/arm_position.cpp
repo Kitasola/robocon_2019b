@@ -38,7 +38,7 @@ int main(int argc, char **argv){
     ros::init(argc, argv, "arm_position");
     ros::NodeHandle n;
     ros::Subscriber position_sub = n.subscribe("controller_info", 10, controllerCallback);
-    ros::Subscriber calibration_sub = n.subscribe("calibration", 30, calibrationCallback);
+    //ros::Subscriber calibration_sub = n.subscribe("calibration", 30, calibrationCallback);
     ros::Publisher position_pub = n.advertise<std_msgs::Float64MultiArray>("angle_info", 10);
     //ros::Publisher calibration_pub = n.advertise<std_msgs::Bool>("z_calibration", 10);
     /*calibration = n.serviceClient<motor_serial::motor_serial>("arm_calibration");
