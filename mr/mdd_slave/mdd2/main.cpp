@@ -19,12 +19,8 @@ constexpr PinName MOTOR_PIN[NUM_MOTOR_PORT][3] = {{PB_0, PB_1, PB_3},
                                                   {PB_6, PA_11, PB_7}};
 
 constexpr int NUM_ENCODER_PORT = 4;
-constexpr int RANGE = 512;
 constexpr PinName ENCODER_PIN[NUM_ENCODER_PORT][2] = {
     {PA_0, PA_4}, {PA_1, PA_3}, {PA_8, PA_7}, {PB_6, PA_11}};
-constexpr int diameter = 101.6; //直径
-
-int goal_speed_3;
 
 float map(float value, float from_low, float from_high, float to_low,
           float to_high) {
