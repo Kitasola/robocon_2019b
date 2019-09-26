@@ -4,3 +4,9 @@ bool turn_right
 bool turn_left
 bool arm_data
 bool calibration
+bool expansion_up
+bool expansion_down
+bool speed_half
+bool loading
+bool shooting
+bool hand

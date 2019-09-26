@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<launch>
+  <machine name="ar" address="arberry" user="ubuntu" password="akashiakashi"/>
+
+  <!-- 足回りMDDとのシリアル通信用 -->
+  <!-- <node machine="ar" name="serial_node" pkg="rosserial_server" type="serial_node"> -->
+  <!--   <param name="_port" value="/dev/ttyACM0"/> -->
+  <!--   <param name="_baud" value="115200"/> --> 
+  <!-- </node> -->
+  <!-- <node name="wheel_controller" pkg="rosserial_python" type="serial_node.py"> -->
+  <!--   <param name="port" value="/dev/ttyACM0"/> -->
+  <!--   <param name="baud" value="115200"/> --> 
+  <!-- </node> -->
+
+  <node name="local_planner" pkg="robot_plan" type="local_planner"/>
+  <node name="motion_planner" pkg="robot_plan" type="motion_planner"/>
+  <node name="dead_reckoning" pkg="dead_reckoning" type="dead_reckoning"/>
+  <node name="gyro" pkg="dead_reckoning" type="gyro"/>
+
+</launch>
