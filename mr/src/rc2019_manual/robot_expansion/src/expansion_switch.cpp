@@ -5,19 +5,26 @@
 
 std_msgs::String change;
 
+constexpr int count_max = 4;
+
 void controller_callback(const three_omuni::button &button){
-	switch(&button.data[10]){
+    int count_dummy = 0;
+    static int count_now = 0;
+    count_prev > count_max ? count_now = 0; count_dummy = 0;
+    button.expansion != count_prev ? ++count_now : count_dummy = 0;
+    switch(count_now){
 		case 1:
-			change.data = fase1;
+			change.data = "fase1";
 			break;
-		case 2:
-			change.data = fase2;
-			break;
+        case 2:
+            change.data = "fase2";
+            break;
 		default:
-			change.data = fase1;
+			change.data = "fase3";
 			break;
 	}
-}		
+    count_prev = button.expansion;
+}
 
 int main(int argc, char **argv){
 	ros::init(argc, argv, "expansion_switch");
@@ -32,4 +39,4 @@ int main(int argc, char **argv){
 	}
 	return 0;
 }
- 
+

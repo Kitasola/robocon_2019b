@@ -38,11 +38,11 @@ int main(int argc, char **argv){
     ros::init(argc, argv, "arm_position");
     ros::NodeHandle n;
     ros::Subscriber position_sub = n.subscribe("controller_info", 10, controllerCallback);
-    //ros::Subscriber calibration_sub = n.subscribe("calibration", 30, calibrationCallback);
+    ros::Subscriber calibration_sub = n.subscribe("calibration", 30, calibrationCallback);
     ros::Publisher position_pub = n.advertise<std_msgs::Float64MultiArray>("angle_info", 10);
     //ros::Publisher calibration_pub = n.advertise<std_msgs::Bool>("z_calibration", 10);
-    /*calibration = n.serviceClient<motor_serial::motor_serial>("arm_calibration");
-
+    calibration = n.serviceClient<motor_serial::motor_serial>("arm_calibration");
+/*
     gpio_handle_ = Pigpiod::gpio().checkHandle();
     Pigpiod::gpio().set(pin_Z_1, ros::IN, ros::PULL_UP);
     Pigpiod::gpio().set(pin_Z_2, ros::IN, ros::PULL_UP);
@@ -95,6 +95,17 @@ void arm_pose(const int angle_goal){
             break;
     }
 }
+
+void calibrationCallback(const std_msgs::String &file_send){
+    if(file_send.data == "arm"){
+        srv.request.id = 5;
+        srv.request.cmd = 60;
+        srv.request.data = 1;
+        calibration.call(srv);
+        send_answer.data = "complete_arm";
+    }
+}
+
 /*
 void calibrationCallback(const std_msgs::String &file_send){
     if(file_send.data == "arm"){
