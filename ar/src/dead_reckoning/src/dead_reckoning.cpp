@@ -37,7 +37,10 @@ int main(int argc, char **argv) {
   ros::Rate loop_rate(FREQ);
 
   geometry_msgs::Pose2D offset_robot_pose;
-  constexpr double FIRST_X = 5400, FIRST_Y = 1800;
+  int start_x, start_y;
+  n.getParam("/ar/start_x", start_x);
+  n.getParam("/ar/start_y", start_y);
+
   offset_robot_pose.x = 0;
   offset_robot_pose.y = 0;
   offset_robot_pose.theta = 0;
@@ -63,8 +66,8 @@ int main(int argc, char **argv) {
 
     // 相対位置を絶対位置に変換する
     robot_pose = robot_relative_pose;
-    robot_pose.x += FIRST_X;
-    robot_pose.y += FIRST_Y;
+    robot_pose.x += start_x;
+    robot_pose.y += start_y;
     robot_pose_pub.publish(robot_pose);
 
     loop_rate.sleep();

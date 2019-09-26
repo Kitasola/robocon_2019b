@@ -12,6 +12,8 @@
   <!--   <param name="baud" value="115200"/> --> 
   <!-- </node> -->
 
+  <param name="/ar/start_x" value="5400"/>
+  <param name="/ar/start_y" value="1800"/>
   <node name="local_planner" pkg="robot_plan" type="local_planner"/>
   <node name="motion_planner" pkg="robot_plan" type="motion_planner"/>
   <node name="dead_reckoning" pkg="dead_reckoning" type="dead_reckoning"/>

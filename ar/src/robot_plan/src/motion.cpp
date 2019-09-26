@@ -56,6 +56,7 @@ class GoalManager {
 public:
   GoalManager() {
     add(5400, 1800, 0);
+
     restart();
   }
   void add(GoalInfo goal) { map_.push_back(goal); }
@@ -117,7 +118,6 @@ int send(int id, int cmd, int data) {
   srv.request.cmd = cmd;
   srv.request.data = data;
   motor_speed.call(srv);
-  ROS_INFO_STREAM("response" << srv.response.data);
   return srv.response.data;
 }
 
@@ -149,6 +149,10 @@ int main(int argc, char **argv) {
   // 0: 通過, 1: 2段目昇降, 2: ハンガー, 3: バスタオル, 4: 3段目昇降, 5: シーツ,
   // 10: 一定時間待機
   GoalManager goal_map;
+  int start_x, start_y;
+  n.getParam("/ar/start_x", start_x);
+  n.getParam("/ar/start_y", start_y);
+  goal_map.add(start_x, start_y, 0); // Move: スタートゾーン
   goal_map.add(5400, 5500, 0, 1,
                TWO_STAGE_HUNGER); // Move: 小ポール横 -> Start: 昇降
   goal_map.add(
