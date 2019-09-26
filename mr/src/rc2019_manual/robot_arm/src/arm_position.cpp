@@ -78,12 +78,12 @@ void controllerCallback(const three_omuni::button &button){
 void arm_pose(const int angle_goal){
     switch(angle_goal){
         case 1:
-            angle_data.data[0] = 300;
+            angle_data.data[0] = 400;
             angle_data.data[1] = 200;
             break;
         case 2:
-            angle_data.data[0] = 310;
-            angle_data.data[1] = 210;
+            angle_data.data[0] = 410;
+            angle_data.data[1] = 310;
             break;
         case 3:
             angle_data.data[0] = 320;
