@@ -24,7 +24,6 @@ constexpr int NUM_ENCODER_PORT = 4;
 constexpr int RANGE = 512;
 constexpr PinName ENCODER_PIN[NUM_ENCODER_PORT][2] = {
     {PA_0, PA_4}, {PA_1, PA_3}, {PA_8, PA_7}, {PB_6, PA_11}};
-RotaryInc *rotary[NUM_ENCODER_PORT];
 constexpr int diameter = 101.6; //直径
 
 int goal_speed_3;
@@ -112,10 +111,10 @@ int main() {
   slave.addCMD(20, loadTray);
 
   constexpr int TARY_MOTOR_ID = 0, MAX_TARY_MOTOR_SPEED = 100; // 下向き
-  DigitalIn slit(PA_2);
+  DigitalIn slit(PA_0);
   int current_slit = 0, prev_slit = 0;
   constexpr int LIGHT = 1, DARK = 0;
-  DigitalIn limit_lower(PA_1);
+  DigitalIn limit_lower(PB_6);
   int phase = 0, current_tray_point = 0;
   while (true) {
     prev_slit = current_slit;
