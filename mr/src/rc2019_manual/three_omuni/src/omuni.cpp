@@ -28,9 +28,9 @@ void change_speed(float speed, float angle, float *wheel_control){
     float speed_x = -1 * speed * cos(angle);
     float speed_y = speed * sin(angle);
     cout << speed_x << ", " << speed_y << endl;
-    wheel_control[0] = ((-1 * speed_x * cos(M_PI / 3)) + (speed_y * sin(M_PI / 3))) / 7; 
-    wheel_control[1] = (-1) * ((-1 * speed_x * cos(M_PI / 3)) - (speed_y * sin(M_PI / 3))) / 4;
-    wheel_control[2] = (-1) * speed_x / 4;
+    wheel_control[0] = ((-1 * speed_x * cos(M_PI / 3)) + (speed_y * sin(M_PI / 3))); 
+    wheel_control[1] = ((-1 * speed_x * cos(M_PI / 3)) - (speed_y * sin(M_PI / 3)));
+    wheel_control[2] = speed_x;
     cout << wheel_control[0] << ", " << wheel_control[1] << ", " << wheel_control[2] << endl;
 }
 
@@ -54,7 +54,7 @@ int main(int argc, char **argv){
         for(int i = 0; i < 3; ++i){
             srv.request.id = (unsigned int)WHEEL_ID[i];
 	    srv.request.cmd = (unsigned int)WHEEL_CMD[i];
-            srv.request.data = (int)(wheel_control[i] * 100);
+            srv.request.data = (int)wheel_control[i];
 	    motor_speed.call(srv); 
         }
 	msg.data = (int)srv.request.data;
