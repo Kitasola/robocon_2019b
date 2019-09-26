@@ -9,7 +9,7 @@ ScrpSlave slave(PA_9, PA_10, PA_12, SERIAL_TX, SERIAL_RX, 0x0803e000);
 
 constexpr int NUM_PORT = 5;
 // 0: Motor, 1: Encoder, 2: Other
-constexpr int PORT_FUNCTION[NUM_PORT] = {0, 2, 2, 0, 2};
+constexpr int PORT_FUNCTION[NUM_PORT] = {2, 2, 2, 0, 0};
 
 constexpr int NUM_MOTOR_PORT = 4;
 constexpr int MAX_PWM = 250;
@@ -26,22 +26,6 @@ constexpr PinName ENCODER_PIN[NUM_ENCODER_PORT][2] = {
     {PA_0, PA_4}, {PA_1, PA_3}, {PA_8, PA_7}, {PB_6, PA_11}};
 RotaryInc *rotary[NUM_ENCODER_PORT];
 double goal_degree[2] = {0.0};
-
-bool calibration_flag = false;
-bool start_flag = false;
-
-InterruptIn shoulder(PA_11, PullUp);
-InterruptIn elbow(PB_7, PullUp);
-
-bool flag_z_shoulder = false;
-bool flag_z_elbow = false;
-
-void riseShoulder(){
-    flag_z_shoulder = true;
-}
-void riseElbow(){
-    flag_z_elbow = true;
-}
 
 float map(float value, float from_low, float from_high, float to_low,
           float to_high) {
@@ -93,20 +77,16 @@ bool safe(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-bool calibration(int cmd, int rx_data, int &tx_data){
- if(rx_data == 1){
-   start_flag = true;
- }
- return true;
-}
-
+double shoulder;
 bool angleShoulder(int cmd, int rx_data, int &tx_data){
     goal_degree[0] = rx_data;
+    tx_data = shoulder;
     return true;
 }
-
+double elbow;
 bool angleElbow(int cmd, int rx_data, int &tx_data){
     goal_degree[1] = rx_data;
+    tx_data = elbow;
     return true;
 }
 
@@ -129,38 +109,18 @@ int main() {
     }
   }
   slave.addCMD(255, safe);
-  slave.addCMD(60, calibration);
+  //slave.addCMD(60, );
   slave.addCMD(61, angleShoulder);
   slave.addCMD(62, angleElbow);
-shoulder.rise(riseShoulder);
-elbow.rise(riseElbow);
+
   constexpr int two_motor[2] = {2, 3};
   double arm_angle[2];
 
-  while(calibration_flag == false){
-    if(start_flag == true){
-      if(flag_z_shoulder == false){
-        spinMotor(two_motor[0],30);
-      }else if(flag_z_shoulder == true){
-        spinMotor(two_motor[0],0);
-      }
-      if(flag_z_elbow == false){
-        spinMotor(two_motor[1],30);
-      }else if(flag_z_elbow == true){
-        spinMotor(two_motor[1],0);
-      }
-     if(flag_z_shoulder == true && flag_z_elbow == true){
-        calibration_flag = true;
-      }
-    }  
-  }
-
-    
   RotaryInc raw_shoulder(PA_0, PA_4, 512, 1);
   RotaryInc raw_elbow(PA_1, PA_3, 512, 1);
   while (true) {
-    arm_angle[0] = (360) * (-1) * raw_shoulder.getSum();
-    arm_angle[1] = (360) * (-1) * raw_elbow.getSum();
+    shoulder = arm_angle[0] = (360) * (-1) * raw_shoulder.getSum();
+    elbow = arm_angle[1] = (360) * (-1) * raw_elbow.getSum();
     PidPosition se_motor[2] = {PidPosition(1, 0, 0.4, 0),
                                PidPosition(1, 0, 0.4, 0)};
     for(int i = 0; i < 2; ++i){
