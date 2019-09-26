@@ -1,7 +1,7 @@
 #include <mbed.h>
+#include <pid.hpp>
 #include <rotary_inc.hpp>
 #include <scrp_slave.hpp>
-#include <pid.hpp>
 
 using namespace arrc;
 
@@ -79,8 +79,15 @@ bool safe(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-bool d3_speed(int cmd, int rx_data, int &tx_data){
-  goal_speed_3 = rx_data/100;
+int goal_tray_point = 0;
+bool loadTray(int cmd, int rx_data, int &tx_data) {
+  goal_tray_point = rx_data;
+  return true;
+}
+
+bool d3_speed(int cmd, int rx_data, int &tx_data) {
+  goal_speed_3 = rx_data / 100;
+  return true;
 }
 
 int main() {
@@ -102,20 +109,44 @@ int main() {
     }
   }
   slave.addCMD(255, safe);
-  slave.addCMD(72, d3_speed);
+  slave.addCMD(20, loadTray);
 
-  constexpr int motor_3 = 2;
-  
-  RotaryInc rotary_inc_3(PA_8, PA_7, 512, 1);
-  
-  double current_speed_3;
-
+  constexpr int TARY_MOTOR_ID = 0, MAX_TARY_MOTOR_SPEED = 100; // 下向き
+  DigitalIn slit(PA_2);
+  int current_slit = 0, prev_slit = 0;
+  constexpr int LIGHT = 1, DARK = 0;
+  DigitalIn limit_lower(PA_1);
+  int phase = 0, current_tray_point = 0;
   while (true) {
-    current_speed_3 = rotary_inc_3.getSpeed() * diameter * M_PI;
+    prev_slit = current_slit;
+    current_slit = slit.read();
 
-    PidPosition pid_3 = PidPosition(1, 0, 0, 0);
-    
-    spinMotor(motor_3,pid_3.control(goal_speed_3, current_speed_3));
-  
+    switch (phase) {
+    case 0:
+      if (current_slit == LIGHT && prev_slit == DARK) {
+        ++current_tray_point;
+      }
+      if (limit_lower.read() == 1) {
+        current_tray_point = 7;
+        goal_tray_point = 0;
+        phase = 1;
+      }
+      break;
+    case 1:
+      if (current_slit == DARK && prev_slit == LIGHT) {
+        --current_tray_point;
+      }
+      if (current_tray_point == 0) {
+        phase = 0;
+      }
+      break;
+    }
+    if (current_tray_point < goal_tray_point) {
+      spinMotor(TARY_MOTOR_ID, MAX_TARY_MOTOR_SPEED);
+    } else if (current_tray_point > goal_tray_point) {
+      spinMotor(TARY_MOTOR_ID, -MAX_TARY_MOTOR_SPEED);
+    } else {
+      spinMotor(TARY_MOTOR_ID, 0);
+    }
   }
 }
