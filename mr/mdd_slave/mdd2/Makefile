@@ -39,7 +39,7 @@ VPATH = ..
 ###############################################################################
 # Project settings
 
-PROJECT := arm
+PROJECT := mdd2
 LIBRARY_DIR := /home/$(USER)/nucleo_utility/library/l432kc
 
 # Project settings

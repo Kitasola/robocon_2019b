@@ -9,8 +9,6 @@ ScrpSlave slave(PA_9, PA_10, PA_12, SERIAL_TX, SERIAL_RX, 0x0803e000);
 
 constexpr int NUM_PORT = 5;
 // 0: Motor, 1: Encoder, 2: Other
-constexpr int PORT_FUNCTION[NUM_PORT] = {0, 2, 0, 2, 2};
-
 constexpr int NUM_MOTOR_PORT = 4;
 constexpr int MAX_PWM = 250;
 constexpr double MAX_PWM_MBED = 0.95;
@@ -79,33 +77,13 @@ bool safe(int cmd, int rx_data, int &tx_data) {
 }
 
 int load_mode;
-bool recoverMateria(int cmd, int rx_data, int &tx_data) {
-  load_mode = rx_date;
+bool loadLaundry(int cmd, int rx_data, int &tx_data) {
+  load_mode = rx_data;
   return true;
 }
 
-bool d3_speed(int cmd, int rx_data, int &tx_data) {
-  goal_speed_3 = rx_data / 100;
-}
-
 int main() {
-  if (PORT_FUNCTION[0] == 0) {
-    slave.addCMD(2, spinMotor);
-  }
-  if (PORT_FUNCTION[1] == 0) {
-    rotary[0] = new RotaryInc(ENCODER_PIN[0][0], ENCODER_PIN[0][1], RANGE, 1);
-  }
-  for (int i = 2; i < NUM_PORT; ++i) {
-    switch (PORT_FUNCTION[i]) {
-    case 0:
-      slave.addCMD(i + 1, spinMotor);
-      break;
-    case 1:
-      rotary[i - 1] =
-          new RotaryInc(ENCODER_PIN[i - 1][0], ENCODER_PIN[i - 1][1], RANGE, 1);
-      break;
-    }
-  }
+  slave.addCMD(4, spinMotor);
   slave.addCMD(255, safe);
   slave.addCMD(10, loadLaundry);
 
