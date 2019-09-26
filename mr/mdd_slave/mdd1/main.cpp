@@ -9,7 +9,7 @@ ScrpSlave slave(PA_9, PA_10, PA_12, SERIAL_TX, SERIAL_RX, 0x0803e000);
 
 constexpr int NUM_PORT = 5;
 // 0: Motor, 1: Encoder, 2: Other
-constexpr int PORT_FUNCTION[NUM_PORT] = {2, 2, 2, 0, 0};
+constexpr int PORT_FUNCTION[NUM_PORT] = {0, 2, 2, 2, 0};
 
 constexpr int NUM_MOTOR_PORT = 4;
 constexpr int MAX_PWM = 250;
@@ -25,7 +25,9 @@ constexpr int RANGE = 512;
 constexpr PinName ENCODER_PIN[NUM_ENCODER_PORT][2] = {
     {PA_0, PA_4}, {PA_1, PA_3}, {PA_8, PA_7}, {PB_6, PA_11}};
 RotaryInc *rotary[NUM_ENCODER_PORT];
-double goal_degree[2] = {0.0};
+constexpr int diameter = 101.6; //直径
+
+int goal_speed_1, goal_speed_2;
 
 float map(float value, float from_low, float from_high, float to_low,
           float to_high) {
@@ -77,17 +79,12 @@ bool safe(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-double shoulder;
-bool angleShoulder(int cmd, int rx_data, int &tx_data){
-    goal_degree[0] = rx_data;
-    tx_data = shoulder;
-    return true;
+bool d1_speed(int cmd, int rx_data, int &tx_data){
+  goal_speed_1 = rx_data/100;
 }
-double elbow;
-bool angleElbow(int cmd, int rx_data, int &tx_data){
-    goal_degree[1] = rx_data;
-    tx_data = elbow;
-    return true;
+
+bool d2_speed(int cmd, int rx_data, int &tx_data){
+  goal_speed_2 = rx_data/100;
 }
 
 int main() {
@@ -109,23 +106,26 @@ int main() {
     }
   }
   slave.addCMD(255, safe);
-  //slave.addCMD(60, );
-  slave.addCMD(61, angleShoulder);
-  slave.addCMD(62, angleElbow);
+  slave.addCMD(70, d1_speed);
+  slave.addCMD(71, d2_speed);
 
-  constexpr int two_motor[2] = {2, 3};
-  double arm_angle[2];
+  constexpr int motor_1 = 2;
+  constexpr int motor_2 = 3;
+  
+  RotaryInc rotary_inc_1(PB_0, PB_1, 512, 1);
+  RotaryInc rotary_inc_2(PA_8, PA_7, 512, 1);
+  
+  double current_speed_1, current_speed_2;
 
-  RotaryInc raw_shoulder(PA_0, PA_4, 512, 1);
-  RotaryInc raw_elbow(PA_1, PA_3, 512, 1);
   while (true) {
-    shoulder = arm_angle[0] = (360) * (-1) * raw_shoulder.getSum();
-    elbow = arm_angle[1] = (360) * (-1) * raw_elbow.getSum();
-    PidPosition se_motor[2] = {PidPosition(1, 0, 0.4, 0),
-                               PidPosition(1, 0, 0.4, 0)};
-    for(int i = 0; i < 2; ++i){
-      spinMotor(two_motor[i],
-        se_motor[i].control(goal_degree[i], arm_angle[i]));
-    }
+    current_speed_1 = rotary_inc_1.getSpeed() * diameter * M_PI;
+    current_speed_2 = rotary_inc_2.getSpeed() * diameter * M_PI;
+
+    PidPosition pid_1 = PidPosition(1, 0, 0, 0);
+    PidPosition pid_2 = PidPosition(1, 0, 0, 0);
+    
+    spinMotor(motor_1,pid_1.control(goal_speed_1, current_speed_1));
+    spinMotor(motor_2,pid_2.control(goal_speed_2, current_speed_2));
+  
   }
 }

@@ -18,7 +18,7 @@ std_msgs::Float64MultiArray angle_data;
 std_msgs::String send_answer;
 void controllerCallback(const three_omuni::button &button);
 void arm_pose(const int angle_now);
-//void calibrationCallback(const std_msgs::String &file_send);
+void calibrationCallback(const std_msgs::String &file_send);
 //static void calibrationFlag_1(int pi, unsigned int gpio, unsigned int edge, uint32_t tick);
 //static void calibrationFlag_2(int pi, unsigned int gpio, unsigned int edge, uint32_t tick);
 
@@ -38,11 +38,11 @@ int main(int argc, char **argv){
     ros::init(argc, argv, "arm_position");
     ros::NodeHandle n;
     ros::Subscriber position_sub = n.subscribe("controller_info", 10, controllerCallback);
-    //ros::Subscriber calibration_sub = n.subscribe("calibration", 30, calibrationCallback);
+    ros::Subscriber calibration_sub = n.subscribe("calibration", 30, calibrationCallback);
     ros::Publisher position_pub = n.advertise<std_msgs::Float64MultiArray>("angle_info", 10);
     //ros::Publisher calibration_pub = n.advertise<std_msgs::Bool>("z_calibration", 10);
-    /*calibration = n.serviceClient<motor_serial::motor_serial>("arm_calibration");
-
+    calibration = n.serviceClient<motor_serial::motor_serial>("arm_calibration");
+/*
     gpio_handle_ = Pigpiod::gpio().checkHandle();
     Pigpiod::gpio().set(pin_Z_1, ros::IN, ros::PULL_UP);
     Pigpiod::gpio().set(pin_Z_2, ros::IN, ros::PULL_UP);
@@ -53,14 +53,14 @@ int main(int argc, char **argv){
 
     while(ros::ok()){
         //std_msgs::Bool calibration;
-//        if(flag_calibration){
+        //if(flag_calibration){
             if(arm_count > motion_sum) arm_count = 0;
             position_pub.publish(angle_data);
             ROS_INFO("%d", (int)angle_data.data[0]);
-            //calibration.data = true;
-//        }else{
-            //calibration.data = false;
-//        }
+        //    calibration.data = true;
+        //}else{
+        //    calibration.data = false;
+        //}
         ros::spinOnce();
         loop_rate.sleep();
     }
@@ -78,12 +78,12 @@ void controllerCallback(const three_omuni::button &button){
 void arm_pose(const int angle_goal){
     switch(angle_goal){
         case 1:
-            angle_data.data[0] = 300;
+            angle_data.data[0] = 400;
             angle_data.data[1] = 200;
             break;
         case 2:
-            angle_data.data[0] = 310;
-            angle_data.data[1] = 210;
+            angle_data.data[0] = 410;
+            angle_data.data[1] = 310;
             break;
         case 3:
             angle_data.data[0] = 320;
@@ -95,6 +95,17 @@ void arm_pose(const int angle_goal){
             break;
     }
 }
+
+void calibrationCallback(const std_msgs::String &file_send){
+    if(file_send.data == "arm"){
+        srv.request.id = 5;
+        srv.request.cmd = 60;
+        srv.request.data = 1;
+        calibration.call(srv);
+        send_answer.data = "complete_arm";
+    }
+}
+
 /*
 void calibrationCallback(const std_msgs::String &file_send){
     if(file_send.data == "arm"){

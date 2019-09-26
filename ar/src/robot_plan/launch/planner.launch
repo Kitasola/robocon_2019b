@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node name="local_planner" pkg="robot_plan" type="local_planner"/>
+  <node name="motion_planner" pkg="robot_plan" type="motion_planner"/>
+
+</launch>
