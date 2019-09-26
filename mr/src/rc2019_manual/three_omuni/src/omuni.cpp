@@ -3,9 +3,9 @@
 #include<cmath>
 #include"motor_serial/motor_serial.h"
 #include<iostream>
-#include<three_omuni/button.h>
+#include"three_omuni/button.h"
 #include<std_msgs/Float64.h>
-
+#include<std_msgs/Int16.h>
 using std::cout;
 using std::endl;
 using std::cos;
@@ -40,14 +40,16 @@ int main(int argc, char **argv){
     ros::Subscriber controller_sub = n.subscribe("controller_info", 10, joy_callback);
     ros::Subscriber gyro_sub = n.subscribe("gyro_info", 10, gyro_callback);
     ros::ServiceClient motor_speed = n.serviceClient<motor_serial::motor_serial>("motor_info");
+    ros::Publisher check_pub = n.advertise<std_msgs::Int16>("check_wheel", 10);
     motor_serial::motor_serial srv;
     //this parameter will be dicided later
-    constexpr int WHEEL_ID[3] = {2, 2, 2};
-    constexpr int WHEEL_CMD[3] = {2, 3, 4};
+    constexpr int WHEEL_ID[3] = {1, 1, 4};
+    constexpr int WHEEL_CMD[3] = {2, 4, 4};
     float wheel_control[3] = {};
-    ros::Rate loop_rate(10);
+    ros::Rate loop_rate(100);
 
     while(ros::ok()){
+	std_msgs::Int16 msg;
         change_speed(robot_speed, robot_angle, wheel_control);
         for(int i = 0; i < 3; ++i){
             srv.request.id = (unsigned int)WHEEL_ID[i];
@@ -55,6 +57,8 @@ int main(int argc, char **argv){
             srv.request.data = (int)(wheel_control[i] * 100);
 	    motor_speed.call(srv); 
         }
+	msg.data = (int)srv.request.data;
+	check_pub.publish(msg);
         ros::spinOnce();
         loop_rate.sleep();
     }
