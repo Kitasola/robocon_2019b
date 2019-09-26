@@ -36,7 +36,7 @@ void controller_callback(const three_omuni::button &msg){
 }
 
 int main(int argc, char **argv){
-    ros::init(argc, argc, "expansion");
+    ros::init(argc, argv, "expansion");
     ros::NodeHandle n;
     ros::Subscriber expansion_sub = n.subscribe("expansion_switch_info", 10, expansionCallback);
     expansion_client = n.serviceClient<motor_serial::motor_serial>("robot_expansion");

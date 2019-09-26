@@ -18,7 +18,7 @@ std_msgs::Float64MultiArray angle_data;
 std_msgs::String send_answer;
 void controllerCallback(const three_omuni::button &button);
 void arm_pose(const int angle_now);
-//void calibrationCallback(const std_msgs::String &file_send);
+void calibrationCallback(const std_msgs::String &file_send);
 //static void calibrationFlag_1(int pi, unsigned int gpio, unsigned int edge, uint32_t tick);
 //static void calibrationFlag_2(int pi, unsigned int gpio, unsigned int edge, uint32_t tick);
 
@@ -53,14 +53,14 @@ int main(int argc, char **argv){
 
     while(ros::ok()){
         //std_msgs::Bool calibration;
-//        if(flag_calibration){
+        //if(flag_calibration){
             if(arm_count > motion_sum) arm_count = 0;
             position_pub.publish(angle_data);
             ROS_INFO("%d", (int)angle_data.data[0]);
-            //calibration.data = true;
-//        }else{
-            //calibration.data = false;
-//        }
+        //    calibration.data = true;
+        //}else{
+        //    calibration.data = false;
+        //}
         ros::spinOnce();
         loop_rate.sleep();
     }

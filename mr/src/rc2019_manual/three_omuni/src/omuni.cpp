@@ -52,7 +52,7 @@ int main(int argc, char **argv){
         for(int i = 0; i < 3; ++i){
             srv.request.id = (unsigned int)WHEEL_ID[i];
 	    srv.request.cmd = (unsigned int)WHEEL_CMD[i];
-            srv.request.data = (int)wheel_control[i];
+            srv.request.data = (int)(wheel_control[i] * 100);
 	    motor_speed.call(srv); 
         }
         ros::spinOnce();
