@@ -104,10 +104,6 @@ int main() {
         slave.addCMD(255, safe);
         slave.addCMD(70, d1_speed);
         slave.addCMD(71, d2_speed);
-        slave.addCMD(2,spinMotor);
-        slave.addCMD(5,spinMotor);
-        slave.addCMD(10, check);
-
         constexpr int motor_1 = 0;
         constexpr int motor_2 = 3;
 
