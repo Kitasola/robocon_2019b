@@ -73,7 +73,7 @@ bool safe(int cmd, int rx_data, int &tx_data) {
 }
 
 PwmOut rock_tray_servo(PB_6);
-constexpr int TARY_ROCK_ANGLE = 30, TARY_FREE_ANGLE = 0;
+constexpr int TARY_ROCK_ANGLE = 40, TARY_FREE_ANGLE = 0;
 constexpr double WAIT_TRAY_SERVO = 0.5;
 void rockTray(int degree) {
   rock_tray_servo.pulsewidth(map(degree, 0, 180, 0.5e-3, 2.4e-3));
@@ -155,17 +155,17 @@ int main() {
   RotaryInc stroke_rotary(ENCODER_PIN[STROKE_ENCODER_ID][0],
                           ENCODER_PIN[STROKE_ENCODER_ID][1], 256, 1);
   constexpr int MAX_STROKE_LENGTH = 370, MAX_STROKE_ERROR = 5;
-  constexpr int STROKE_LOAD_LENGTH = 320;
+  constexpr int STROKE_LOAD_LENGTH = 200;
   int current_stroke = 0, stroke_offset = -MAX_STROKE_LENGTH;
   constexpr double STROKE_DIAMETER = -42;
   PidPosition stroke(5.0, 0, 0, 0);
-  DigitalIn stroke_reset(PA_1);
+  DigitalIn stroke_reset(PA_5);
   stroke_reset.mode(PullUp);
   constexpr double WAIT_RELOAD_ROCK = 3, WAIT_RELOAD_CHARGE = 0.5;
-  constexpr int RELOAD_ROCK_SPEED = 10, RELOAD_CHARGE_SPEED = 100;
+  constexpr int RELOAD_ROCK_SPEED = 10, RELOAD_CHARGE_SPEED = 10;
   int reload_speed = 0;
   bool reload_mode = false;
-  DigitalOut shoot_rock(PA_5);
+  DigitalOut shoot_rock(PA_6);
 
   while (true) {
     check_stroke = current_stroke;
@@ -177,7 +177,7 @@ int main() {
       spinMotor(STROKE_MOTOR_ID, stroke.control(goal_stroke, current_stroke));
     } else {
       if (stroke_reset.read() == 1) {
-        stroke_offset = current_stroke - MAX_STROKE_LENGTH;
+        /* stroke_offset = current_stroke - MAX_STROKE_LENGTH; */
         reload_speed = 0;
       }
       spinMotor(STROKE_MOTOR_ID, reload_speed);
