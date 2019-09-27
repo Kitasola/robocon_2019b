@@ -73,7 +73,7 @@ bool safe(int cmd, int rx_data, int &tx_data) {
 }
 
 PwmOut rock_tray_servo(PB_6);
-constexpr int TARY_ROCK_ANGLE = 40, TARY_FREE_ANGLE = 0;
+constexpr int TARY_ROCK_ANGLE = 30, TARY_FREE_ANGLE = 0;
 constexpr double WAIT_TRAY_SERVO = 0.5;
 void rockTray(int degree) {
   rock_tray_servo.pulsewidth(map(degree, 0, 180, 0.5e-3, 2.4e-3));
@@ -85,7 +85,7 @@ bool rockTray(int cmd, int rx_data, int &tx_data) {
 }
 
 PwmOut hand_servo(PA_11);
-constexpr int HAND_CATCH_ANGLE = 0, HAND_RELEASE_ANGLE = 90;
+constexpr int HAND_CATCH_ANGLE = 170, HAND_RELEASE_ANGLE = 70;
 constexpr double WAIT_HAND_SERVO = 0.5;
 void actHand(int degree) {
   hand_servo.pulsewidth(map(degree, 0, 180, 780e-6, 2250e-6));
@@ -114,6 +114,12 @@ bool setTraySpeed(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
+int check_stroke;
+bool checkStroke(int cmd, int rx_data, int &tx_data) {
+  tx_data = check_stroke;
+  return true;
+}
+
 bool loadTray(int cmd, int rx_data, int &tx_data) {
   if (rx_data == 1) {
     phase = 0;
@@ -135,23 +141,24 @@ int main() {
   slave.addCMD(32, setStroke);
   slave.addCMD(33, rockTray);
   slave.addCMD(34, loadTray);
+  slave.addCMD(35, checkStroke);
   slave.addCMD(40, actHand);
   slave.addCMD(255, safe);
 
-  constexpr int TRAY_MOTOR_ID = 0, TRAY_ENCODER_ID = 1;
+  constexpr int TRAY_MOTOR_ID = 2, TRAY_ENCODER_ID = 1;
   /* RotaryInc tray_rotary(ENCODER_PIN[TRAY_ENCODER_ID][0], */
   /*                       ENCODER_PIN[TRAY_ENCODER_ID][1], 512, 1); */
   /* PidPosition tray_speed(1.0, 0, 0, 0); */
   int current_tray_speed = 0;
 
-  constexpr int STROKE_MOTOR_ID = 1, STROKE_ENCODER_ID = 2;
+  constexpr int STROKE_MOTOR_ID = 0, STROKE_ENCODER_ID = 0;
   RotaryInc stroke_rotary(ENCODER_PIN[STROKE_ENCODER_ID][0],
-                          ENCODER_PIN[STROKE_ENCODER_ID][1], 512, 1);
-  constexpr int MAX_STROKE_LENGTH = 350, MAX_STROKE_ERROR = 5;
+                          ENCODER_PIN[STROKE_ENCODER_ID][1], 256, 1);
+  constexpr int MAX_STROKE_LENGTH = 370, MAX_STROKE_ERROR = 5;
   constexpr int STROKE_LOAD_LENGTH = 320;
-  int current_stroke = 0, stroke_offset = 0;
-  constexpr double STROKE_DIAMETER = 100;
-  PidPosition stroke(1.0, 0, 0, 0);
+  int current_stroke = 0, stroke_offset = -MAX_STROKE_LENGTH;
+  constexpr double STROKE_DIAMETER = -42;
+  PidPosition stroke(5.0, 0, 0, 0);
   DigitalIn stroke_reset(PA_1);
   stroke_reset.mode(PullUp);
   constexpr double WAIT_RELOAD_ROCK = 3, WAIT_RELOAD_CHARGE = 0.5;
@@ -161,6 +168,7 @@ int main() {
   DigitalOut shoot_rock(PA_5);
 
   while (true) {
+    check_stroke = current_stroke;
     spinMotor(TRAY_MOTOR_ID, goal_tray_speed);
 
     if (!reload_mode) {
