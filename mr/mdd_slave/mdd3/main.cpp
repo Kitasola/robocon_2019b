@@ -72,23 +72,24 @@ bool safe(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-PwmOut rock_tray_servo(PB_6);
-constexpr int TARY_ROCK_ANGLE = 40, TARY_FREE_ANGLE = 0;
+PwmOut rock_tray_servo(PA_1);
+constexpr int TARY_ROCK_ANGLE = 50, TARY_FREE_ANGLE = 10;
 constexpr double WAIT_TRAY_SERVO = 0.5;
 void rockTray(int degree) {
-  rock_tray_servo.pulsewidth(map(degree, 0, 180, 0.5e-3, 2.4e-3));
+  rock_tray_servo.pulsewidth(map(degree, 0, 180, 0.9e-3, 2.1e-3));
   /* rock_tray_servo.pulsewidth(map(degree, 0, 180, 780e-6, 2250e-6)); */
+  /* rock_tray_servo.pulsewidth(map(degree, 0, 180, 900e-6, 2100e-6)); */
 }
 bool rockTray(int cmd, int rx_data, int &tx_data) {
   rockTray(rx_data);
   return true;
 }
 
-PwmOut hand_servo(PA_11);
+PwmOut hand_servo(PA_3);
 constexpr int HAND_CATCH_ANGLE = 170, HAND_RELEASE_ANGLE = 70;
 constexpr double WAIT_HAND_SERVO = 0.5;
 void actHand(int degree) {
-  hand_servo.pulsewidth(map(degree, 0, 180, 780e-6, 2250e-6));
+  hand_servo.pulsewidth(map(degree, 0, 180, 0.9e-3, 2.25e-3));
 }
 bool actHand(int cmd, int rx_data, int &tx_data) {
   actHand(rx_data);
@@ -132,10 +133,6 @@ bool loadTray(int cmd, int rx_data, int &tx_data) {
 int main() {
   Timer time;
   time.start();
-  slave.addCMD(2, spinMotor);
-  slave.addCMD(3, spinMotor);
-  slave.addCMD(4, spinMotor);
-  slave.addCMD(5, spinMotor);
   slave.addCMD(30, startShoot);
   slave.addCMD(31, setTraySpeed);
   slave.addCMD(32, setStroke);
@@ -145,7 +142,7 @@ int main() {
   slave.addCMD(40, actHand);
   slave.addCMD(255, safe);
 
-  constexpr int TRAY_MOTOR_ID = 2, TRAY_ENCODER_ID = 1;
+  constexpr int TRAY_MOTOR_ID = 2, TRAY_ENCODER_ID = 3;
   /* RotaryInc tray_rotary(ENCODER_PIN[TRAY_ENCODER_ID][0], */
   /*                       ENCODER_PIN[TRAY_ENCODER_ID][1], 512, 1); */
   /* PidPosition tray_speed(1.0, 0, 0, 0); */
@@ -155,13 +152,13 @@ int main() {
   RotaryInc stroke_rotary(ENCODER_PIN[STROKE_ENCODER_ID][0],
                           ENCODER_PIN[STROKE_ENCODER_ID][1], 256, 1);
   constexpr int MAX_STROKE_LENGTH = 370, MAX_STROKE_ERROR = 5;
-  constexpr int STROKE_LOAD_LENGTH = 200;
+  constexpr int STROKE_LOAD_LENGTH = 340;
   int current_stroke = 0, stroke_offset = -MAX_STROKE_LENGTH;
   constexpr double STROKE_DIAMETER = -42;
   PidPosition stroke(5.0, 0, 0, 0);
   DigitalIn stroke_reset(PA_5);
   stroke_reset.mode(PullUp);
-  constexpr double WAIT_RELOAD_ROCK = 3, WAIT_RELOAD_CHARGE = 0.5;
+  constexpr double WAIT_RELOAD_ROCK = 1, WAIT_RELOAD_CHARGE = 2.0;
   constexpr int RELOAD_ROCK_SPEED = 10, RELOAD_CHARGE_SPEED = 10;
   int reload_speed = 0;
   bool reload_mode = false;
@@ -183,86 +180,86 @@ int main() {
       spinMotor(STROKE_MOTOR_ID, reload_speed);
     }
 
-    switch (phase) {
-    case 0: {
-      goal_stroke = MAX_STROKE_LENGTH;
-      if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) {
-        rockTray(TARY_ROCK_ANGLE);
-        time.reset();
-        phase = 1;
-      }
-      break;
-    }
-    case 1: {
-      if (time.read() > WAIT_TRAY_SERVO) {
-        actHand(HAND_RELEASE_ANGLE);
-        time.reset();
-        phase = 2;
-      }
-      break;
-    }
-    case 2: {
-      if (time.read() > WAIT_HAND_SERVO) {
-        goal_stroke = MAX_STROKE_LENGTH;
-      }
-      break;
-    }
-    case 3: {
-      goal_tray_speed = goal_shoot_tray_speed;
-      if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) {
-        shoot_rock.write(1);
-        time.reset();
-        phase = 4;
-      }
-      break;
-    }
-    case 4: {
-      if (time.read() > WAIT_RELOAD_ROCK) {
-        reload_mode = true;
-        reload_speed = RELOAD_ROCK_SPEED;
-        goal_tray_speed = 0;
-        time.reset();
-        phase = 5;
-      }
-      break;
-    }
-    case 5: {
-      if (time.read() > WAIT_RELOAD_CHARGE) {
-        reload_speed = RELOAD_CHARGE_SPEED;
-        shoot_rock.write(1);
-        phase = 6;
-      }
-      break;
-    }
-    case 6: {
-      if (reload_speed == 0) {
-        reload_mode = false;
-        goal_stroke = STROKE_LOAD_LENGTH;
-      }
-      break;
-    }
-    case 7: {
-      if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) {
-        rockTray(TARY_FREE_ANGLE);
-        time.reset();
-        phase = 8;
-      }
-      break;
-    }
-    case 8: {
-      if (time.read() > WAIT_TRAY_SERVO) {
-        actHand(HAND_CATCH_ANGLE);
-        time.reset();
-        phase = 9;
-      }
-      break;
-    }
-    case 9: {
-      if (time.read() > WAIT_HAND_SERVO) {
-        goal_stroke = MAX_STROKE_LENGTH;
-      }
-      break;
-    }
-    }
+    /*     switch (phase) { */
+    /*     case 0: { */
+    /*       goal_stroke = MAX_STROKE_LENGTH; */
+    /*       if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) { */
+    /*         rockTray(TARY_ROCK_ANGLE); */
+    /*         time.reset(); */
+    /*         phase = 1; */
+    /*       } */
+    /*       break; */
+    /*     } */
+    /*     case 1: { */
+    /*       if (time.read() > WAIT_TRAY_SERVO) { */
+    /*         actHand(HAND_RELEASE_ANGLE); */
+    /*         time.reset(); */
+    /*         phase = 2; */
+    /*       } */
+    /*       break; */
+    /*     } */
+    /*     case 2: { */
+    /*       if (time.read() > WAIT_HAND_SERVO) { */
+    /*         goal_stroke = MAX_STROKE_LENGTH; */
+    /*       } */
+    /*       break; */
+    /*     } */
+    /*     case 3: { */
+    /*       goal_tray_speed = goal_shoot_tray_speed; */
+    /*       if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) { */
+    /*         shoot_rock.write(1); */
+    /*         time.reset(); */
+    /*         phase = 4; */
+    /*       } */
+    /*       break; */
+    /*     } */
+    /*     case 4: { */
+    /*       if (time.read() > WAIT_RELOAD_ROCK) { */
+    /*         reload_mode = true; */
+    /*         reload_speed = RELOAD_ROCK_SPEED; */
+    /*         goal_tray_speed = 0; */
+    /*         time.reset(); */
+    /*         phase = 5; */
+    /*       } */
+    /*       break; */
+    /*     } */
+    /*     case 5: { */
+    /*       if (time.read() > WAIT_RELOAD_CHARGE) { */
+    /*         reload_speed = RELOAD_CHARGE_SPEED; */
+    /*         shoot_rock.write(1); */
+    /*         phase = 6; */
+    /*       } */
+    /*       break; */
+    /*     } */
+    /*     case 6: { */
+    /*       if (reload_speed == 0) { */
+    /*         reload_mode = false; */
+    /*         goal_stroke = STROKE_LOAD_LENGTH; */
+    /*       } */
+    /*       break; */
+    /*     } */
+    /*     case 7: { */
+    /*       if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) { */
+    /*         rockTray(TARY_FREE_ANGLE); */
+    /*         time.reset(); */
+    /*         phase = 8; */
+    /*       } */
+    /*       break; */
+    /*     } */
+    /*     case 8: { */
+    /*       if (time.read() > WAIT_TRAY_SERVO) { */
+    /*         actHand(HAND_CATCH_ANGLE); */
+    /*         time.reset(); */
+    /*         phase = 9; */
+    /*       } */
+    /*       break; */
+    /*     } */
+    /*     case 9: { */
+    /*       if (time.read() > WAIT_HAND_SERVO) { */
+    /*         goal_stroke = MAX_STROKE_LENGTH; */
+    /*       } */
+    /*       break; */
+    /*     } */
+    /* } */
   }
 }
