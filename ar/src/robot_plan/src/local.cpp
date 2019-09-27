@@ -28,11 +28,14 @@ public:
     robot_pose_sub =
         n->subscribe("robot_pose", 1, &SVelocity::getRobotPose, this);
     rate = user_rate * MAP_SCOPE;
+    int start_x, start_y;
+    n->getParam("/ar/start_x", start_x);
+    n->getParam("/ar/start_y", start_y);
     AccelMap dummy;
-    goal_point.x = dummy.position = 5400;
+    goal_point.x = dummy.position = start_x;
     dummy.velocity = 0;
     velocity_map[0].push_back(dummy);
-    goal_point.y = dummy.position = 1800;
+    goal_point.y = dummy.position = start_y;
     dummy.velocity = 0;
     velocity_map[1].push_back(dummy);
     for (int i = 0; i < 2; ++i) {

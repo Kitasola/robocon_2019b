@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(robot_plan)
+project(three_omuni)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
@@ -8,10 +8,11 @@ add_compile_options(-std=c++11)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  geometry_msgs
   roscpp
+  rospy
   std_msgs
-  motor_serial
+  geometry_msgs
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -54,6 +55,10 @@ find_package(catkin REQUIRED COMPONENTS
 #   Message2.msg
 # )
 
+add_message_files(
+  FILES
+  button.msg
+)
 ## Generate services in the 'srv' folder
 # add_service_files(
 #   FILES
@@ -71,8 +76,12 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   geometry_msgs#   std_msgs
+#   std_msgs
 # )
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -104,9 +113,12 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-#  LIBRARIES robot_plan
-#  CATKIN_DEPENDS geometry_msgs roscpp std_msgs
+#  INCLUDE_DIRS include
+#  LIBRARIES three_omuni
+#  CATKIN_DEPENDS roscpp rospy std_msgs
+
+CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
+
 #  DEPENDS system_lib
 )
 
@@ -119,29 +131,26 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ~/arrc/basic_utility/raspi/include
+  ~/arrc_utility/raspi/include
 )
-
-set(UTILITY ~/arrc/basic_utility/raspi/src)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/robot_plan.cpp
+#   src/${PROJECT_NAME}/three_omuni.cpp
 # )
+
+set(UTILITY ~/arrc_utility/raspi/src/)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 # add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/robot_plan_node.cpp)
-add_executable(local_planner src/local.cpp)
-add_executable(motion_planner src/motion.cpp ${UTILITY}/pigpiod.cpp
-  ${UTILITY}/serial.cpp ${UTILITY}/motor_serial.cpp)
-
+# add_executable(${PROJECT_NAME}_node src/three_omuni_node.cpp)
+#add_executable(omuni src/omuni.cpp)
+add_executable(omuni_pid src/omuni_pid.cpp ${UTILITY}/rotary_inc.cpp ${UTILITY}/pigpiod.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -151,18 +160,20 @@ add_executable(motion_planner src/motion.cpp ${UTILITY}/pigpiod.cpp
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(motion_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#add_dependencies(omuni ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(omuni_pid ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-target_link_libraries(local_planner
-    ${catkin_LIBRARIES}
-)
-target_link_libraries(motion_planner
-    ${catkin_LIBRARIES}
-    pigpiod_if2
+#target_link_libraries(omuni
+#  ${catkin_LIBRARIES}
+#  pigpiod_if2
+#)
+target_link_libraries(omuni_pid
+  ${catkin_LIBRARIES}
+  pigpiod_if2
 )
 
 #############
@@ -205,7 +216,7 @@ target_link_libraries(motion_planner
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_robot_plan.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_three_omuni.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

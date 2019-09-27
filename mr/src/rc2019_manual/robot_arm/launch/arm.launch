@@ -1,0 +1,5 @@
+<launch>
+	<node name = "arm_angle" pkg = "robot_arm" type = "arm_angle"/>
+	<node name = "arm_pid" pkg = "robot_arm" type = "arm_pid"/>
+	<node name = "arm_position" pkg = "robot_arm" type = "arm_position" output = "screen"/>
+</launch>
