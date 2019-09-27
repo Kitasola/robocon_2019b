@@ -57,7 +57,7 @@ constexpr int MAX_ERROR_MODEL = 5;
 void checkModel(ModelParam model) {}
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "lidar_robot_detection");
+  ros::init(argc, argv, "lidar_detection_line");
   ros::NodeHandle n;
   ros::Subscriber scan_sub = n.subscribe("scan", 1, getLidarScan);
   ros::Publisher robot_pose_pub =
