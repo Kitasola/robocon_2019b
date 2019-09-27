@@ -17,7 +17,6 @@ struct Point {
   int x; // mm
   int y; // mm
 };
-Point LIDAR_POSITION = {6250, 5000}; // mm
 
 std::vector<Point> scan_data; // 相対位置
 void getLidarScan(const sensor_msgs::LaserScan msgs) {
@@ -72,12 +71,12 @@ ModelParam makeModel() {
   return result;
 }
 
-constexpr int MODEL_RADIUS = 720;
-constexpr int MAX_ERROR_MODEL = 5;
-constexpr int MIN_FIT_POINT = 100;
-void checkModel(ModelParam model) {
+constexpr int MODEL_RADIUS = 720, MAX_ERROR_MODEL = 5, MIN_FIT_POINT = 100,
+              MAX_LOOP_COUNT = 10;
+ModelParam checkModel() {
   int fit_point_count = 0;
-  while (fit_point_count > MIN_FIT_POINT) {
+  int loop_count = 0;
+  while (fit_point_count < MIN_FIT_POINT || loop_count < MAX_LOOP_COUNT) {
     fit_point_count = 0;
     ModelParam model = makeModel();
     for (point : scan_data) {
@@ -96,12 +95,16 @@ int main(int argc, char **argv) {
   ros::Publisher robot_pose_pub =
       n.advertise<geometry_msgs::Pose2D>("lidar/robot_pose", 1);
   geometry_msgs::Pose2D robot_pose;
+  Point LIDAR_POSITION = {6250, 5000}; // mm
 
   constexpr int FREQ = 20;
   ros::Rate loop_rate(FREQ);
   while (ros::ok()) {
     ros::spinOnce();
 
+    ModelParam robot_model = checkModel();
+    robot_pose.x = LIDAR_POSITION.x - robot_model.y;
+    robot_pose.y = LIDAR_POSITION.y + robot_model.x;
     robot_pose_pub.publish(robot_pose);
 
     loop_rate.sleep();
