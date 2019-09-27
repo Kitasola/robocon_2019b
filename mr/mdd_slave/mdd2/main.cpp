@@ -78,11 +78,23 @@ bool loadLaundry(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
+int goal_height;
+bool expansionRotary(int cmd, int rx_data, int &tx_data){
+  goal_height = rx_data;
+  return true;
+}
+
+bool resetHight(int cmd, int rx_data, int &tx_data){
+
+  return true;
+}
+
 int main() {
   slave.addCMD(4, spinMotor);
   slave.addCMD(255, safe);
   slave.addCMD(10, loadLaundry);
-
+  slave.addCMD(73, expansionRotary);
+  slave.addCMD(74, resetHight);
   // 洗濯物回収
   DigitalIn limit_front(PB_0);
   limit_front.mode(PullUp);
@@ -93,7 +105,18 @@ int main() {
   constexpr int MAX_LAUNDRY_SPEED = 100;
   int laundry_speed = 0;
 
+  constexpr int motor = 2;
+  double robot_height;
+  RotaryInc extension_rotary_inc(PA_0, PA_4, 512, 1);
+  PidPosition pid_rotary_inc = PidPostion(1, 0, 0, 0);
+
   while (true) {
+
+    robot_height = extension_rotary_inc.getSum()/512;
+
+    spinMotor(motor, pid_rotary_inc.control(goal_height, robot_height));
+
+
     switch (load_mode) {
     case -1:
       laundry_speed = -MAX_LAUNDRY_SPEED;
