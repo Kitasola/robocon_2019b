@@ -17,7 +17,7 @@ namespace akashi{
 }
 
 void joy_callback(const sensor_msgs::Joy &joy_msg){
-    stick_x = -1 * joy_msg.axes[0];
+    stick_x = joy_msg.axes[0];
     stick_y = joy_msg.axes[1];
     data.move_angle = atan2(stick_y, stick_x); //calculation in radians
     speed = hypot(stick_x, stick_y) * 255;//caululation of speed of movement direction of robot
@@ -64,7 +64,7 @@ void joy_control_fase2();
 int main(int argc, char **argv){
     ros::init(argc, argv, "manual_controller");
     ros::NodeHandle n;
-    ros::Publisher controller_pub = n.advertise<rc2019_commander::button>("controller_info", 30);
+    ros::Publisher controller_pub = n.advertise<rc2019_commander::button>("controller_info", 50);
     ros::Subscriber check_sub = n.subscribe("controller_check", 10, check_callback);
     ros::Subscriber joy_sub = n.subscribe("joy", 10, joy_callback);
     ros::Rate loop_rate(100);
