@@ -54,7 +54,7 @@ int main(int argc, char **argv){
     while(ros::ok()){
         //std_msgs::Bool calibration;
         //if(flag_calibration){
-            if(arm_count > motion_sum) arm_count = 0;
+            //if(arm_count > motion_sum) arm_count = 0;
             position_pub.publish(angle_data);
             ROS_INFO("%d", (int)angle_data.data[0]);
         //    calibration.data = true;
@@ -68,13 +68,23 @@ int main(int argc, char **argv){
 }
 
 void controllerCallback(const three_omuni::button &button){
+    if(button.arm_data_1){
+	angle_data.data[0] = 400;
+	angle_data.data[1] = 200;
+    }
+    if(button.arm_data_2){
+	angle_data.data[0] = 300;
+	angle_data.data[1] = 150;
+    }
+}
+/*
+void controllerCallback(const three_omuni::button &button){
     if(button.arm_data != count_prev){
         if(button.arm_data) ++arm_count;
     }
     count_prev = button.arm_data;
     arm_pose(arm_count);
 }
-
 void arm_pose(const int angle_goal){
     switch(angle_goal){
         case 1:
@@ -95,7 +105,7 @@ void arm_pose(const int angle_goal){
             break;
     }
 }
-
+*/
 void calibrationCallback(const std_msgs::String &file_send){
     if(file_send.data == "arm"){
         srv.request.id = 5;
