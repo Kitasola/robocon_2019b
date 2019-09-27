@@ -8,8 +8,6 @@ using namespace arrc;
 ScrpSlave slave(PA_9, PA_10, PA_12, SERIAL_TX, SERIAL_RX, 0x0803e000);
 
 constexpr int NUM_PORT = 5;
-// 0: Motor, 1: Encoder, 2: Other
-constexpr int PORT_FUNCTION[NUM_PORT] = {0, 2, 0, 2, 2};
 
 constexpr int NUM_MOTOR_PORT = 4;
 constexpr int MAX_PWM = 250;
@@ -26,7 +24,8 @@ constexpr PinName ENCODER_PIN[NUM_ENCODER_PORT][2] = {
     {PA_0, PA_4}, {PA_1, PA_3}, {PA_8, PA_7}, {PB_6, PA_11}};
 constexpr int diameter = 101.6; //直径
 
-int goal_speed_3;
+double goal_speed_3;
+double data;
 
 float map(float value, float from_low, float from_high, float to_low,
           float to_high) {
@@ -85,38 +84,34 @@ bool loadTray(int cmd, int rx_data, int &tx_data) {
 }
 
 bool d3_speed(int cmd, int rx_data, int &tx_data) {
-  goal_speed_3 = rx_data / 100;
+  goal_speed_3 = (double)rx_data/100;
+  tx_data = current_speed_3;
   return true;
 }
 
 int main() {
-  if (PORT_FUNCTION[0] == 0) {
-    slave.addCMD(2, spinMotor);
-  }
-  if (PORT_FUNCTION[1] == 0) {
-    rotary[0] = new RotaryInc(ENCODER_PIN[0][0], ENCODER_PIN[0][1], RANGE, 1);
-  }
-  for (int i = 2; i < NUM_PORT; ++i) {
-    switch (PORT_FUNCTION[i]) {
-    case 0:
-      slave.addCMD(i + 1, spinMotor);
-      break;
-    case 1:
-      rotary[i - 1] =
-          new RotaryInc(ENCODER_PIN[i - 1][0], ENCODER_PIN[i - 1][1], RANGE, 1);
-      break;
-    }
-  }
   slave.addCMD(255, safe);
   slave.addCMD(20, loadTray);
-
+  slave.addCMD(72, d3_speed);
   constexpr int TARY_MOTOR_ID = 0, MAX_TARY_MOTOR_SPEED = 100; // 下向き
   DigitalIn slit(PA_0);
   int current_slit = 0, prev_slit = 0;
   constexpr int LIGHT = 1, DARK = 0;
   DigitalIn limit_lower(PB_6);
   int phase = 0, current_tray_point = 0;
+  
+  constexpr int motor_3 = 1;
+  RotaryInc rotary_inc_3(PA_8, PA_7, 512, 1);
+  double current_speed_3;
+
+  PidPosition pid_3 = PidPosition(1, 0, 0.5, 0);
   while (true) {
+
+    get_speed_3 = rotary_inc_3.getSpeed();
+    current_speed_3 = get_speed_3 * diameter * M_PI / 1000;
+    data_3 = pid_3.control((double)goal_speed_3, current_speed_3);
+    spinMotor(motor_3, data_3);
+ 
     prev_slit = current_slit;
     current_slit = slit.read();
 
