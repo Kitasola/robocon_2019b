@@ -93,6 +93,7 @@ bool d3_speed(int cmd, int rx_data, int &tx_data) {
 
 int main() {
   slave.addCMD(255, safe);
+  slave.addCMD(3, spinMotor);
   slave.addCMD(20, loadTray);
   slave.addCMD(72, d3_speed);
   constexpr int TARY_MOTOR_ID = 0, MAX_TARY_MOTOR_SPEED = -100; // 下向き
@@ -104,18 +105,19 @@ int main() {
   limit_lower.mode(PullUp);
   int phase = 0, current_tray_point = 0;
 
-  constexpr int motor_3 = 1;
-  RotaryInc rotary_inc_3(PA_8, PA_7, 512, 1);
+  /* constexpr int motor_3 = 1; */
+  /* RotaryInc rotary_inc_3(PA_8, PA_7, 512, 1); */
 
-  PidPosition pid_3 = PidPosition(1, 0, 0.5, 0);
+  /* PidPosition pid_3 = PidPosition(1, 0, 0.5, 0); */
   while (true) {
 
-    double get_speed_3 = rotary_inc_3.getSpeed();
-    current_speed_3 = get_speed_3 * diameter * M_PI / 1000;
-    spinMotor(motor_3, pid_3.control((double)goal_speed_3, current_speed_3));
+    /*     double get_speed_3 = rotary_inc_3.getSpeed(); */
+    /*     current_speed_3 = get_speed_3 * diameter * M_PI / 1000; */
+    /*     spinMotor(motor_3, pid_3.control((double)goal_speed_3,
+     * current_speed_3)); */
 
-    prev_slit = current_slit;
-    current_slit = slit.read();
+    /*     prev_slit = current_slit; */
+    /*     current_slit = slit.read(); */
 
     switch (phase) {
     case 0:
