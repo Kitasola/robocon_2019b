@@ -12,11 +12,16 @@ using std::cos;
 
 float robot_angle = 0;
 float robot_speed = 0;
+float robot_rotation_right = 0;
+float robot_rotation_left = 0;
 float gyro_angle = 0;
 
 void joy_callback(const three_omuni::button &move_info){
     robot_angle = move_info.move_angle;
     robot_speed = move_info.move_speed;
+    robot_rotation_right = move_info.move_turn_right;
+    robot_rotation_left = move_info.move_turn_left;
+
     //cout << robot_angle << ":" << robot_speed << endl;
 }
 
@@ -24,13 +29,24 @@ void gyro_callback(const std_msgs::Float64 &gyro_info){
     gyro_angle = gyro_info.data;
 }
     
-void change_speed(float speed, float angle, float *wheel_control){
+void change_speed(float speed, float angle, float *wheel_control, float rotation_right, float rotation_left){
     float speed_x = -1 * speed * cos(angle);
     float speed_y = speed * sin(angle);
     cout << speed_x << ", " << speed_y << endl;
     wheel_control[0] = ((-1 * speed_x * cos(M_PI / 3)) + (speed_y * sin(M_PI / 3))); 
     wheel_control[1] = ((-1 * speed_x * cos(M_PI / 3)) - (speed_y * sin(M_PI / 3)));
     wheel_control[2] = speed_x;
+    if(rotation_right > 0){
+	wheel_control[0] = -rotation_right;
+	wheel_control[1] = -rotation_right;
+	wheel_control[2] = -rotation_right;
+    }
+    if(rotation_left > 0){
+	wheel_control[0] = rotation_left;
+	wheel_control[1] = rotation_left;
+	wheel_control[2] = rotation_left;
+    }
+
     cout << wheel_control[0] << ", " << wheel_control[1] << ", " << wheel_control[2] << endl;
 }
 
@@ -50,7 +66,7 @@ int main(int argc, char **argv){
 
     while(ros::ok()){
 	std_msgs::Int16 msg;
-        change_speed(robot_speed, robot_angle, wheel_control);
+        change_speed(robot_speed, robot_angle, wheel_control, robot_rotation_right, robot_rotation_left);
         for(int i = 0; i < 3; ++i){
             srv.request.id = (unsigned int)WHEEL_ID[i];
 	    srv.request.cmd = (unsigned int)WHEEL_CMD[i];
