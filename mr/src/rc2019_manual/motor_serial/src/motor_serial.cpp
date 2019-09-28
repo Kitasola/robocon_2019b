@@ -19,6 +19,7 @@ int main(int argc, char **argv){
 	ros::ServiceServer service_calibration = n.advertiseService("arm_calibration", motorSerialSend);
 	ros::ServiceServer service_expansion = n.advertiseService("robot_expansion", motorSerialSend);
 	ros::ServiceServer service_laundry = n.advertiseService("laundry_basket", motorSerialSend);
+	ros::ServiceServer service_shotting = n.advertiseService("shotting_cloths", motorSerialSend);
 	ROS_INFO_STREAM("Start MotorSerial");
 
 	ros::spin();

@@ -55,7 +55,7 @@ int main(int argc, char **argv){
             srv.request.id = (unsigned int)WHEEL_ID[i];
 	    srv.request.cmd = (unsigned int)WHEEL_CMD[i];
             srv.request.data = (int)wheel_control[i];
-	    motor_speed.call(srv); 
+	    motor_speed.call(srv);
         }
 	msg.data = (int)srv.request.data;
 	check_pub.publish(msg);
