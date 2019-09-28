@@ -136,7 +136,7 @@ int main(int argc, char **argv) {
 
   // パラメータ
   // 2段目昇降機構
-  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 73, TWO_STAGE_TOWEL = 100,
+  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 74, TWO_STAGE_TOWEL = 100,
                 TWO_STAGE_READY = 0, TWO_STAGE_ERROR_MAX = 10; // cm
   constexpr double TWO_STAGE_TIME = 0.06;
   // ハンガー
@@ -158,7 +158,8 @@ int main(int argc, char **argv) {
   goal_map.add(
       -3650, 5500, 0, 10,
       TWO_STAGE_HUNGER *
-          TWO_STAGE_TIME); // Move: ハンガー前 -> Wait: 昇降完了タイマー
+          TWO_STAGE_TIME); // Move: 小ポール横 -> Wait: 昇降完了タイマー
+  /* goal_map.add(-3650, 5500, 0); // Move: ハンガー前 */
   goal_map.add(
       -3650, 5000, 0, 2,
       HUNGER_WAIT_TIME); // Move: ハンガー手前 -> Wait:ハンガー完了タイマー
@@ -170,9 +171,6 @@ int main(int argc, char **argv) {
                TWO_STAGE_READY); // Move: ハンガー前 -> Start: 昇降
   goal_map.add(-5400, 5500, 0);  // Move: 小ポール横
   goal_map.add(-5400, 5500, 0);  // Move: スタートゾーン
-
-  global_message.data = "Game Start";
-  global_message_pub.publish(global_message);
 
   bool changed_phase = true;
   double start;
@@ -189,6 +187,8 @@ int main(int argc, char **argv) {
     }
     switch_rate.sleep();
   }
+  global_message.data = "Game Start";
+  global_message_pub.publish(global_message);
 
   while (ros::ok()) {
     ros::spinOnce();
@@ -218,7 +218,8 @@ int main(int argc, char **argv) {
           changed_phase = false;
         }
         // 取り付くまでタイマー待機
-        if (now - start > goal_map.now.action_value) {
+        if (now - start > goal_map.now.action_value &&
+            now - start <= goal_map.now.action_value * 2) {
           // 縮める
           send(HUNGER_ID, 20, -HUNGER_SPEED);
           // 縮むまでタイマー待機
