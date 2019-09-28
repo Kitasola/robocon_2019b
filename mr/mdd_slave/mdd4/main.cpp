@@ -22,7 +22,7 @@ constexpr int NUM_ENCODER_PORT = 4;
 constexpr int RANGE = 512;
 constexpr PinName ENCODER_PIN[NUM_ENCODER_PORT][2] = {
     {PA_0, PA_4}, {PA_1, PA_3}, {PA_8, PA_7}, {PB_6, PA_11}};
-constexpr int diameter = 101.6; //直径
+constexpr double diameter = 101.6; //直径
 
 double goal_speed_3;
 double data;
@@ -107,7 +107,7 @@ int main() {
   constexpr int motor_3 = 1;
   RotaryInc rotary_inc_3(PA_8, PA_7, 512, 1);
 
-  PidPosition pid_3 = PidPosition(1, 0, 0.5, 0);
+  PidPosition pid_3 = PidPosition(30, 0, 0, 0);
   while (true) {
 
     double get_speed_3 = rotary_inc_3.getSpeed();
