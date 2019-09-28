@@ -44,7 +44,7 @@ int main(int argc, char **argv){
     motor_serial::motor_serial srv;
     //this parameter will be dicided later
     constexpr int WHEEL_ID[3] = {1, 1, 4};
-    constexpr int WHEEL_CMD[3] = {2, 4, 4};
+    constexpr int WHEEL_CMD[3] = {2, 5, 3};
     float wheel_control[3] = {};
     ros::Rate loop_rate(100);
 
