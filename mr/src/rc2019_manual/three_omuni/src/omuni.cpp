@@ -15,13 +15,14 @@ float robot_speed = 0;
 float robot_rotation_right = 0;
 float robot_rotation_left = 0;
 float gyro_angle = 0;
+bool speed_half = false;
 
 void joy_callback(const three_omuni::button &move_info){
     robot_angle = move_info.move_angle;
     robot_speed = move_info.move_speed;
     robot_rotation_right = move_info.move_turn_right;
     robot_rotation_left = move_info.move_turn_left;
-
+    move_info.speed_half == true ? speed_half == true : speed_half == false;
     //cout << robot_angle << ":" << robot_speed << endl;
 }
 
@@ -68,6 +69,7 @@ int main(int argc, char **argv){
 	std_msgs::Int16 msg;
         change_speed(robot_speed, robot_angle, wheel_control, robot_rotation_right, robot_rotation_left);
         for(int i = 0; i < 3; ++i){
+	    if(speed_half)wheel_control[i] / 2;
             srv.request.id = (unsigned int)WHEEL_ID[i];
 	    srv.request.cmd = (unsigned int)WHEEL_CMD[i];
             srv.request.data = (int)wheel_control[i];
