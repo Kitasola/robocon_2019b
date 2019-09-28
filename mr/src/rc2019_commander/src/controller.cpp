@@ -17,8 +17,8 @@ namespace akashi{
 }
 
 void joy_callback(const sensor_msgs::Joy &joy_msg){
-    stick_x = joy_msg.axes[0];
-    stick_y = joy_msg.axes[1];
+    stick_x = joy_msg.axes[2];
+    stick_y = joy_msg.axes[3];
     data.move_angle = atan2(stick_y, stick_x); //calculation in radians
     speed = hypot(stick_x, stick_y) * 255;//caululation of speed of movement direction of robot
     if(speed > 255) speed = 255;
