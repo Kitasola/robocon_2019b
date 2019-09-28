@@ -22,6 +22,7 @@ struct LogFormat {
 
 bool starts_game = false;
 bool should_reset_point = false;
+std::queue<std::string> log_global_message;
 void checkGlobalMessage(const std_msgs::String msg) {
   std::string mode = msg.data;
   if (mode == "Game Start") {
@@ -30,6 +31,7 @@ void checkGlobalMessage(const std_msgs::String msg) {
   } else if (mode == "Robot Pose Reset") {
     should_reset_point = true;
   }
+  log_global_message.push(mode);
 }
 
 geometry_msgs::Pose2D robot_pose;
@@ -59,7 +61,7 @@ int main(int argc, char **argv) {
   constexpr int FREQ = 100;
   ros::Rate loop_rate(FREQ);
   double start = ros::Time::now().toSec();
-  std::queue<LogFormat> log_data;
+  std::queue<LogFormat> log_robot_pose;
 
   while (ros::ok()) {
     ros::spinOnce();
@@ -73,27 +75,41 @@ int main(int argc, char **argv) {
       data.v_x = robot_velocity.linear.x;
       data.v_y = robot_velocity.linear.y;
       data.v_theta = robot_velocity.angular.z;
-      log_data.push(data);
+      log_robot_pose.push(data);
     }
 
     loop_rate.sleep();
   }
 
   if (starts_game) {
-    std::ofstream log;
+    std::ofstream log_file_robot_pose, log_file_motion;
     std::string log_dir = "/home/kusoelmo/arrc/robocon_2019b/ar/log/latest/";
-    log.open(log_dir + "robot_pose" + getDate() + ".csv", std::ios::out);
-    if (log.fail()) {
-      ROS_ERROR_STREAM("File Open Failed.");
+    std::string date = getDate();
+    log_file_robot_pose.open(log_dir + "robot_pose" + date + ".csv",
+                             std::ios::out);
+    log_file_robot_pose.open(log_dir + "robot_pose" + date + ".csv",
+                             std::ios::out);
+    if (log_file_robot_pose.fail()) {
+      ROS_ERROR_STREAM("File(robot_pose) Open Failed.");
+      std::exit(1);
+    }
+    if (log_file_motion.fail()) {
+      ROS_ERROR_STREAM("File(motion) Open Failed.");
       std::exit(1);
     }
     ROS_INFO_STREAM("File Open Succeed.");
-    while (!log_data.empty()) {
-      LogFormat data = log_data.front();
-      log << data.time << ", " << data.x << ", " << data.y << ", " << data.theta
-          << ", " << data.v_x << ", " << data.v_y << ", " << data.v_theta
-          << std::endl;
-      log_data.pop();
+    while (!log_robot_pose.empty()) {
+      LogFormat data = log_robot_pose.front();
+      log_file_robot_pose << data.time << ", " << data.x << ", " << data.y
+                          << ", " << data.theta << ", " << data.v_x << ", "
+                          << data.v_y << ", " << data.v_theta << std::endl;
+      log_robot_pose.pop();
+    }
+    while (!log_global_message.empty()) {
+      if (log_global_message.front().find("Log")) {
+        log_file_motion << log_global_message.front() << std::endl;
+      }
+      log_global_message.pop();
     }
   }
 }

@@ -244,6 +244,11 @@ int main(int argc, char **argv) {
       }
 
       if (can_send_next_goal) {
+        // ログ取り用
+        global_message.data = "Log, Done, %d, %d, %d, %d", goal_map.now.x,
+        goal_map.now.y, goal_map.now.action_type, goal_map.now.action_value;
+        global_message_pub.publish(global_message);
+
         goal_map.next();
         planner.sendNextGoal(goal_map.getPtp());
       }
