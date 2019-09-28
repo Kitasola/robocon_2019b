@@ -11,11 +11,8 @@ constexpr int NUM_PORT = 5;
 // 0: Motor, 1: Encoder, 2: Other
 constexpr int PORT_FUNCTION[NUM_PORT] = {0, 2, 2, 2, 0};
 
-
-double current_speed_1, current_speed_2;
-
 constexpr int NUM_MOTOR_PORT = 4;
-constexpr int MAX_PWM = 250;
+constexpr int MAX_PWM = 1000;
 constexpr double MAX_PWM_MBED = 0.95;
 constexpr float PERIOD = 1 / 1000.0;
 constexpr PinName MOTOR_PIN[NUM_MOTOR_PORT][3] = {{PB_0, PB_1, PB_3},
@@ -24,15 +21,15 @@ constexpr PinName MOTOR_PIN[NUM_MOTOR_PORT][3] = {{PB_0, PB_1, PB_3},
         {PB_6, PA_11, PB_7}};
 
 constexpr int NUM_ENCODER_PORT = 4;
-constexpr int RANGE = 512;
+constexpr int RANGE = 1000;
 constexpr PinName ENCODER_PIN[NUM_ENCODER_PORT][2] = {
         {PA_0, PA_4}, {PA_1, PA_3}, {PA_8, PA_7}, {PB_6, PA_11}};
 
 RotaryInc rotary_inc_1(PA_0, PA_4, 512, 1);
 RotaryInc rotary_inc_2(PA_8, PA_7, 512, 1);
-constexpr int diameter = 101.6;
+constexpr double diameter = 101.6;
 
-int goal_speed_1, goal_speed_2;
+double goal_speed_1, goal_speed_2;
 double data_1,data_2;
 float map(float value, float from_low, float from_high, float to_low,
                 float to_high) {
@@ -83,16 +80,18 @@ bool safe(int cmd, int rx_data, int &tx_data) {
         }
         return true;
 }
+double current_speed_1,current_speed_2;
+double get_speed_1,get_speed_2;
 
 bool d1_speed(int cmd, int rx_data, int &tx_data){
-        goal_speed_1 = (double)rx_data/100;
-        tx_data = current_speed_2;
+        goal_speed_1 = (double)(rx_data) / 100.0;
+        //tx_data = get_speed_1;
         return true;
 }
 
 bool d2_speed(int cmd, int rx_data, int &tx_data){
-        goal_speed_2 = (double)rx_data/100;
-        tx_data = current_speed_2;
+        goal_speed_2 = (double)(rx_data) / 100.0;
+        //tx_data = get_speed_2;
         return true;
 }
 
@@ -102,32 +101,24 @@ bool check(int cmd, int rx_data, int &tx_data) {
 
 int main() {
         slave.addCMD(255, safe);
+        //slave.addCMD(70, d1_speed);
         slave.addCMD(70, d1_speed);
         slave.addCMD(71, d2_speed);
         constexpr int motor_1 = 0;
         constexpr int motor_2 = 3;
-
-        double current_speed_1, current_speed_2;
-        double get_speed_1,get_speed_2;
-
-        //get_speed_1 = rotary_inc_1.getSpeed();
-        //get_speed_2 = rotary_inc_2.getSpeed();
-        //current_speed_1 = get_speed_1 * diameter * M_PI / 1000;
-        //current_speed_2 = get_speed_2 * diameter * M_PI / 1000;
-
-        PidPosition pid_1 = PidPosition(2, 0, 0, 0);
-        PidPosition pid_2 = PidPosition(2, 0, 0, 0);
-        while (true) {
+        PidPosition pid_1 = PidPosition(0.1, 0, 0, 0);
+        PidPosition pid_2 = PidPosition(0.1, 0, 0, 0);
         
+        while (true) {
                 get_speed_1 = rotary_inc_1.getSpeed();
                 get_speed_2 = rotary_inc_2.getSpeed();
 
-                current_speed_1 = get_speed_1 * diameter * M_PI / 1000;
-                current_speed_2 = get_speed_2 * diameter * M_PI / 1000;
+                current_speed_1 = get_speed_1 * diameter * M_PI / 1000.0;
+                current_speed_2 = get_speed_2 * diameter * M_PI / 1000.0;
 
-                data_1 = pid_1.control((double)goal_speed_1, current_speed_1);
-                data_2 = pid_2.control((double)goal_speed_2, current_speed_2);
-
+                data_2 = pid_1.control(goal_speed_2, current_speed_2);
+                data_1 = pid_2.control(goal_speed_1, current_speed_1);
+       
                 spinMotor(motor_1,data_1);
                 spinMotor(motor_2,data_2);
 
