@@ -8,6 +8,7 @@ motor_serial::motor_serial srv;
 void controllerCallback(const three_omuni::button &button){
     static bool loading_flag_prev = false;
     static bool hand_flag_prev = false;
+    static int times = 0;
     if(button.loading){
         if(loading_flag_prev == false){
             srv.request.id = 3;
@@ -19,6 +20,12 @@ void controllerCallback(const three_omuni::button &button){
             srv.request.cmd = 34;
             srv.request.data = -1;
             loading_flag_prev = false;
+            shot.call(srv);
+            srv.request.id = 4;
+            srv.request.cmd = 20;
+            srv.request.data = times;
+            shot.call(srv);
+            ++times;
         }
     }
     if(button.shooting){
@@ -39,6 +46,7 @@ void controllerCallback(const three_omuni::button &button){
             hand_flag_prev = false;
         }
     }
+    if(times >= 8) times = 0;
 }
 int main(int argc, char **argv){
     ros::init(argc, argv, "shotting_cloths");
