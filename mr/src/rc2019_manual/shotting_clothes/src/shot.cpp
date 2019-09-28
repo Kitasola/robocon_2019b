@@ -1,14 +1,25 @@
 #include<ros/ros.h>
 #include<three_omuni/button.h>
 #include"motor_serial/motor_serial.h"
+#include<iostream>
+#include<mutex>
 
 ros::ServiceClient shot;
 motor_serial::motor_serial srv;
 
+void speedInit(){
+    srv.request.id = 3;
+    srv.request.cmd = 30;
+    srv.request.data = 200;
+    shot.call(srv);
+}
+
 void controllerCallback(const three_omuni::button &button){
-    static bool loading_flag_prev = false;
+    static bool loading_flag_prev = true;
     static bool hand_flag_prev = false;
     static int times = 0;
+    static std::once_flag flag;
+    std::call_once(flag, speedInit);
     if(button.loading){
         if(loading_flag_prev == false){
             srv.request.id = 3;
