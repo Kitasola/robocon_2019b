@@ -153,23 +153,23 @@ int main(int argc, char **argv) {
   n.getParam("/ar/start_x", start_x);
   n.getParam("/ar/start_y", start_y);
   goal_map.add(start_x, start_y, 0); // Move: スタートゾーン
-  goal_map.add(-5400, 5500, 0, 1,
+  goal_map.add(5400, 5500, 0, 1,
                TWO_STAGE_HUNGER); // Move: 小ポール横 -> Start: 昇降
   goal_map.add(
-      -3650, 5500, 0, 10,
+      3650, 5500, 0, 10,
       TWO_STAGE_HUNGER *
           TWO_STAGE_TIME); // Move: ハンガー前 -> Wait: 昇降完了タイマー
   goal_map.add(
-      -3650, 5000, 0, 2,
+      3650, 5000, 0, 2,
       HUNGER_WAIT_TIME); // Move: ハンガー手前 -> Wait:ハンガー完了タイマー
-  goal_map.add(-2850, 5000, 0, 2,
+  goal_map.add(2850, 5000, 0, 2,
                HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
-  goal_map.add(-2050, 5000, 0, 2,
+  goal_map.add(2050, 5000, 0, 2,
                HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
-  goal_map.add(-2050, 5500, 0, 1,
+  goal_map.add(2050, 5500, 0, 1,
                TWO_STAGE_READY); // Move: ハンガー前 -> Start: 昇降
-  goal_map.add(-5400, 5500, 0);  // Move: 小ポール横
-  goal_map.add(-5400, 5500, 0);  // Move: スタートゾーン
+  goal_map.add(5400, 5500, 0);   // Move: 小ポール横
+  goal_map.add(5400, 5500, 0);   // Move: スタートゾーン
 
   global_message.data = "Game Start";
   global_message_pub.publish(global_message);
