@@ -77,14 +77,16 @@ bool safe(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-int goal_tray_point = 0;
+int goal_tray_point = 0, current_point = 0;
 bool loadTray(int cmd, int rx_data, int &tx_data) {
   goal_tray_point = rx_data;
+  tx_data = current_point;
   return true;
 }
 
+double current_speed_3;
 bool d3_speed(int cmd, int rx_data, int &tx_data) {
-  goal_speed_3 = (double)rx_data/100;
+  goal_speed_3 = (double)rx_data / 100;
   tx_data = current_speed_3;
   return true;
 }
@@ -93,25 +95,25 @@ int main() {
   slave.addCMD(255, safe);
   slave.addCMD(20, loadTray);
   slave.addCMD(72, d3_speed);
-  constexpr int TARY_MOTOR_ID = 0, MAX_TARY_MOTOR_SPEED = 100; // 下向き
+  constexpr int TARY_MOTOR_ID = 0, MAX_TARY_MOTOR_SPEED = -100; // 下向き
   DigitalIn slit(PA_0);
+  slit.mode(PullUp);
   int current_slit = 0, prev_slit = 0;
   constexpr int LIGHT = 1, DARK = 0;
-  DigitalIn limit_lower(PB_6);
+  DigitalIn limit_lower(PA_11);
+  limit_lower.mode(PullUp);
   int phase = 0, current_tray_point = 0;
-  
+
   constexpr int motor_3 = 1;
   RotaryInc rotary_inc_3(PA_8, PA_7, 512, 1);
-  double current_speed_3;
 
   PidPosition pid_3 = PidPosition(1, 0, 0.5, 0);
   while (true) {
 
-    get_speed_3 = rotary_inc_3.getSpeed();
+    double get_speed_3 = rotary_inc_3.getSpeed();
     current_speed_3 = get_speed_3 * diameter * M_PI / 1000;
-    data_3 = pid_3.control((double)goal_speed_3, current_speed_3);
-    spinMotor(motor_3, data_3);
- 
+    spinMotor(motor_3, pid_3.control((double)goal_speed_3, current_speed_3));
+
     prev_slit = current_slit;
     current_slit = slit.read();
 
@@ -122,8 +124,10 @@ int main() {
       }
       if (limit_lower.read() == 1) {
         current_tray_point = 7;
-        goal_tray_point = 0;
-        phase = 1;
+        if (goal_tray_point == 8) {
+          goal_tray_point = 0;
+          phase = 1;
+        }
       }
       break;
     case 1:
@@ -142,5 +146,6 @@ int main() {
     } else {
       spinMotor(TARY_MOTOR_ID, 0);
     }
+    current_point = current_tray_point;
   }
 }
