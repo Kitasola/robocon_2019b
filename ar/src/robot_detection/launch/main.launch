@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+  <param name="/ar/start_x" value="-5600"/>
+  <param name="/ar/start_y" value="1950"/>
+  <node name="urg_node" pkg="urg_node" type="urg_node">
+    <param name="_ip_address" value="192.168.0.10" />
+  </node>
+  <node name="lidar_detection_robot" pkg="robot_detection" type="lidar_detection_circle"/>
+
+</launch>
