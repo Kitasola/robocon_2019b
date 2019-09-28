@@ -87,8 +87,7 @@ int main(int argc, char **argv) {
     std::string date = getDate();
     log_file_robot_pose.open(log_dir + "robot_pose" + date + ".csv",
                              std::ios::out);
-    log_file_robot_pose.open(log_dir + "robot_pose" + date + ".csv",
-                             std::ios::out);
+    log_file_motion.open(log_dir + "motion" + date + ".csv", std::ios::out);
     if (log_file_robot_pose.fail()) {
       ROS_ERROR_STREAM("File(robot_pose) Open Failed.");
       std::exit(1);
