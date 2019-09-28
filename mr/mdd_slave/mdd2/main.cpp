@@ -79,15 +79,12 @@ bool loadLaundry(int cmd, int rx_data, int &tx_data) {
 }
 
 int goal_height;
-bool expansionRotary(int cmd, int rx_data, int &tx_data){
+bool expansionRotary(int cmd, int rx_data, int &tx_data) {
   goal_height = rx_data;
   return true;
 }
 
-bool resetHight(int cmd, int rx_data, int &tx_data){
-
-  return true;
-}
+bool resetHight(int cmd, int rx_data, int &tx_data) { return true; }
 
 int main() {
   slave.addCMD(4, spinMotor);
@@ -96,30 +93,34 @@ int main() {
   slave.addCMD(73, expansionRotary);
   slave.addCMD(74, resetHight);
   // 洗濯物回収
-  DigitalIn limit_front(PB_0);
+  DigitalIn limit_front(PA_6);
   limit_front.mode(PullUp);
-  DigitalIn limit_back(PB_1);
+  DigitalIn limit_back(PA_5);
   limit_back.mode(PullUp);
-  DigitalIn limit_stand(PA_);
+  DigitalIn limit_stand(PB_0);
   limit_stand.mode(PullUp);
-  constexpr int MAX_LAUNDRY_SPEED = 100;
+  constexpr int LAUNDRY_SPEED = 200, LAUNDRY_DETECTION_SPEED = 1,
+                LAUNDRY_MOTOR_ID = 1;
+  constexpr double LAUNDRY_WAIT_DETECTION = 0.8;
+  Timer laundry_timer;
+  laundry_timer.start();
+  bool current_stand = false, prev_stand = false;
   int laundry_speed = 0;
 
   constexpr int motor = 2;
   double robot_height;
   RotaryInc extension_rotary_inc(PA_0, PA_4, 512, 1);
-  PidPosition pid_rotary_inc = PidPostion(1, 0, 0, 0);
+  PidPosition pid_rotary_inc = PidPosition(1, 0, 0, 0);
 
   while (true) {
 
-    robot_height = extension_rotary_inc.getSum()/512;
+    robot_height = extension_rotary_inc.getSum() / 512;
 
     spinMotor(motor, pid_rotary_inc.control(goal_height, robot_height));
 
-
     switch (load_mode) {
     case -1:
-      laundry_speed = -MAX_LAUNDRY_SPEED;
+      laundry_speed = -LAUNDRY_SPEED;
       if (limit_back.read() == 1) {
         laundry_speed = 0;
       }
@@ -130,26 +131,39 @@ int main() {
       break;
 
     case 1:
-      laundry_speed = MAX_LAUNDRY_SPEED;
+      laundry_speed = LAUNDRY_SPEED;
       if (limit_front.read() == 1) {
         laundry_speed = 0;
       }
       break;
 
     case 2:
-      if (limit_stand.read() == 1) {
-        laundry_speed = -MAX_LAUNDRY_SPEED;
+      prev_stand = current_stand;
+      current_stand = limit_stand.read();
+      if (current_stand != prev_stand) {
+        laundry_timer.reset();
+      }
+      if (current_stand == 1) {
+        if (laundry_timer.read() > LAUNDRY_WAIT_DETECTION) {
+          laundry_speed = -LAUNDRY_SPEED;
+        } else {
+          laundry_speed = -LAUNDRY_DETECTION_SPEED;
+        }
         if (limit_back.read() == 1) {
           laundry_speed = 0;
         }
       } else {
-        laundry_speed = MAX_LAUNDRY_SPEED;
+        if (laundry_timer.read() > LAUNDRY_WAIT_DETECTION) {
+          laundry_speed = LAUNDRY_SPEED;
+        } else {
+          laundry_speed = LAUNDRY_DETECTION_SPEED;
+        }
         if (limit_front.read() == 1) {
           laundry_speed = 0;
         }
       }
       break;
     }
-    spinMotor(2, laundry_speed);
+    spinMotor(LAUNDRY_MOTOR_ID, laundry_speed);
   }
 }
