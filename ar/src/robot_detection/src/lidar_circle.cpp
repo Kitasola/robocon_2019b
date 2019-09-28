@@ -18,6 +18,7 @@ struct Point {
   int y; // mm
 };
 
+bool can_detection = false;
 std::vector<Point> scan_data; // 相対位置
 void getLidarScan(const sensor_msgs::LaserScan msgs) {
   int scan_start_id =
@@ -36,6 +37,7 @@ void getLidarScan(const sensor_msgs::LaserScan msgs) {
       scan_data.push_back(dummy_point);
     }
   }
+  can_detection = true;
 }
 
 struct ModelParam { // Circle
@@ -102,10 +104,13 @@ int main(int argc, char **argv) {
   while (ros::ok()) {
     ros::spinOnce();
 
-    ModelParam robot_model = checkModel();
-    robot_pose.x = LIDAR_POSITION.x - robot_model.y;
-    robot_pose.y = LIDAR_POSITION.y + robot_model.x;
-    robot_pose_pub.publish(robot_pose);
+    if (can_detection) {
+      ModelParam robot_model = checkModel();
+      robot_pose.x = LIDAR_POSITION.x - robot_model.y;
+      robot_pose.y = LIDAR_POSITION.y + robot_model.x;
+      robot_pose_pub.publish(robot_pose);
+      can_detection = false;
+    }
 
     loop_rate.sleep();
   }
