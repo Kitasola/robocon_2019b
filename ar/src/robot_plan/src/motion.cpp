@@ -114,6 +114,20 @@ private:
 
 using namespace ros;
 using Pi = Pigpiod;
+// スイッチ基板のピンアサイン
+enum Switch {
+  START = 18,
+  RESET = 1,
+  CALIBRATION = 3,
+  SHEET = 12,
+  TOWEL_0 = 13,
+  TOWEL_1 = 14,
+  TOWEL_2 = 15,
+  LRF = 16,
+  ODOM = 17
+};
+Switch ALL_SWITCH[] = {START,   RESET,   CALIBRATION, SHEET, TOWEL_0,
+                       TOWEL_1, TOWEL_2, LRF,         ODOM};
 
 ros::ServiceClient motor_speed;
 int send(int id, int cmd, int data) {
@@ -134,6 +148,7 @@ int main(int argc, char **argv) {
   std_msgs::String global_message;
   motor_speed = n.serviceClient<motor_serial::motor_serial>("motor_speed");
 
+  // コート情報の取得
   std::string coat_color;
   n.getParam("/coat", coat_color);
   int coat;
@@ -146,26 +161,37 @@ int main(int argc, char **argv) {
     ROS_WARN_STREAM("coat???");
   }
 
+  // スタート位置の取得
   int start_x, start_y;
   n.getParam("/ar/start_x", start_x);
   n.getParam("/ar/start_y", start_y);
-  constexpr int NUM_MAP = 3;
-  GoalManager goal_map[NUM_MAP] = {goal_map(coat), goal_map(coat),
-                                   goal_map(coat)};
+
   // パラメータ
   // 2段目昇降機構
-  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 74, TWO_STAGE_TOWEL = 100,
-                TWO_STAGE_READY = 0, TWO_STAGE_ERROR_MAX = 10; // cm
+  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 74, TWO_STAGE_SHEET = 74,
+                TWO_STAGE_READY = 0, TWO_STAGE_ERROR_MAX = 1; // cm
   constexpr double TWO_STAGE_TIME = 0.06;
   // ハンガー
   constexpr int HUNGER_ID = 1, HUNGER_SPEED = 200;
-  constexpr double HUNGER_WAIT_TIME = 1.0;
+  constexpr double HUNGER_WAIT_TIME = HUNGER_SPEED * 0.01;
+  // 3段目昇降機構
+  constexpr int THREE_STAGE_ID = 1, THREE_STAGE_SHEET = 74;
+  constexpr double THREE_STAGE_TIME = 0.06;
+  // シーツ
+  constexpr int SHEET_ID = 3, SHEET_STAGE = 74;
+  constexpr double SHEET_STAGE_TIME = 0.06;
 
   // 座標追加
   // add(int x, int y, int yaw, int action_type = 0, int action_value = 0,
   // int velocity_x = 0, int velocity_y = 0)
-  // 0: 通過, 1: 2段目昇降, 2: ハンガー, 3: バスタオル, 4: 3段目昇降, 5: シーツ,
-  // 10: 一定時間待機, 11: スタートスイッチの入力待ち
+  // action_type
+  // 0: 通過, 1: 2段目昇降, 2: ハンガー, 3: バスタオル, 4: 3段目昇降, 5:
+  // シーツ, 10: 一定時間待機, 11: スタートスイッチ
+  constexpr int NUM_MAP = 2;
+  // map_type
+  // 0: ハンガー, 1: シーツ
+  int map_type = 0;
+  GoalManager goal_map[NUM_MAP] = {GoalManager(coat), GoalManager(coat)};
   goal_map[0].add(start_x, start_y, 0,
                   11); // Move: スタートゾーン -> Wait: スタートスイッチ
   goal_map[0].add(5400, 5500, 0, 1,
@@ -185,26 +211,45 @@ int main(int argc, char **argv) {
   goal_map[0].add(2050, 5500, 0, 1,
                   TWO_STAGE_READY); // Move: ハンガー前 -> Start: 昇降
   goal_map[0].add(5400, 5500, 0);   // Move: 小ポール横
-  goal_map[0].add(5400, 5500, 0);   // Move: スタートゾーン
+  goal_map[0].add(start_x, start_y, 0,
+                  11); // Move: スタートゾーン -> Wait: スタートスイッチ
+
+  goal_map[1].add(start_x, start_y, 0,
+                  11); // Move: スタートゾーン -> Wait: スタートスイッチ
+  goal_map[1].add(5400, 9250, 0); // Move: 大ポール横
+  goal_map[1].add(5400, 9000, 0); // Move: 大ポール中央手前
+  goal_map[1].add(5400, 9250, 0); // Move: 大ポール横
+  goal_map[1].add(start_x, start_y, 0,
+                  11); // Move: 大ポール横 -> Wait: スタートスイッチ
 
   bool changed_phase = true;
   double start;
 
-  // RasPi
-  constexpr int START_PIN = 18, RESET_PIN = 1;
-  Pi::gpio().set(START_PIN, IN, PULL_DOWN);
-  Pi::gpio().set(RESET_PIN, IN, PULL_DOWN);
+  // スイッチ基板
+  for (Switch pin : ALL_SWITCH) {
+    Pi::gpio().set(pin, IN, PULL_DOWN);
+  }
 
   global_message.data = "Game Start";
   global_message_pub.publish(global_message);
 
-  constexpr double FREQ = 10;
+  constexpr double FREQ = 50;
   ros::Rate loop_rate(FREQ);
 
   while (ros::ok()) {
     ros::spinOnce();
-    if (Pi::gpio().read(RESET_PIN)) {
-      global_message.data = "Robo_Pose Reset";
+    if (Pi::gpio().read(RESET)) {
+      global_message.data = "Robo_Pose Reset Both";
+      global_message_pub.publish(global_message);
+    }
+    if (Pi::gpio().read(ODOM)) {
+      global_message.data = "Robo_Pose ON Odom";
+      global_message_pub.publish(global_message);
+    } else if (Pi::gpio().read(ODOM)) {
+      global_message.data = "Robo_Pose ON LRF";
+      global_message_pub.publish(global_message);
+    } else {
+      global_message.data = "Robo_Pose ON Double";
       global_message_pub.publish(global_message);
     }
 
@@ -212,7 +257,7 @@ int main(int argc, char **argv) {
 
     bool can_send_next_goal = false;
     if (planner.is_reach_goal) {
-      switch (goal_map.now.action_type) {
+      switch (goal_map[map_type].now.action_type) {
       case 0: {
         can_send_next_goal = true;
         changed_phase = true;
@@ -221,7 +266,7 @@ int main(int argc, char **argv) {
       case 1: {
         start = now;
         // 伸縮
-        send(TWO_STAGE_ID, 30, goal_map.now.action_value);
+        send(TWO_STAGE_ID, 30, goal_map[map_type].now.action_value);
         can_send_next_goal = true;
         changed_phase = true;
         break;
@@ -234,12 +279,12 @@ int main(int argc, char **argv) {
           changed_phase = false;
         }
         // 取り付くまでタイマー待機
-        if (now - start > goal_map.now.action_value &&
-            now - start <= goal_map.now.action_value * 2) {
+        if (now - start > goal_map[map_type].now.action_value &&
+            now - start <= goal_map[map_type].now.action_value * 2) {
           // 縮める
           send(HUNGER_ID, 20, -HUNGER_SPEED);
           // 縮むまでタイマー待機
-        } else if (now - start > goal_map.now.action_value * 2) {
+        } else if (now - start > goal_map[map_type].now.action_value * 2) {
           can_send_next_goal = true;
           changed_phase = true;
         }
@@ -251,15 +296,20 @@ int main(int argc, char **argv) {
         break;
       }
       case 10: {
-        if (now - start > goal_map.now.action_value) {
+        if (now - start > goal_map[map_type].now.action_value) {
           can_send_next_goal = true;
           changed_phase = true;
           break;
         }
       }
       case 11: {
-        if (Pi::gpio().read(START_PIN)) {
-          planner.sendNextGoal(goal_map.getPtp());
+        if (Pi::gpio().read(START)) {
+          if (Pi::gpio().read(SHEET)) {
+            map_type = 1;
+          } else {
+            map_type = 0;
+          }
+          goal_map[map_type].restart();
           can_send_next_goal = true;
           changed_phase = true;
         }
@@ -269,12 +319,13 @@ int main(int argc, char **argv) {
 
       if (can_send_next_goal) {
         // ログ取り用
-        global_message.data = "Log, Done, %d, %d, %d, %d", goal_map.now.x,
-        goal_map.now.y, goal_map.now.action_type, goal_map.now.action_value;
+        global_message.data = "Log, Done, %d, %d, %d, %d",
+        goal_map[map_type].now.x, goal_map[map_type].now.y,
+        goal_map[map_type].now.action_type, goal_map[map_type].now.action_value;
         global_message_pub.publish(global_message);
 
-        goal_map.next();
-        planner.sendNextGoal(goal_map.getPtp());
+        goal_map[map_type].next();
+        planner.sendNextGoal(goal_map[map_type].getPtp());
       }
 
       loop_rate.sleep();
