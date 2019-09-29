@@ -134,10 +134,24 @@ int main(int argc, char **argv) {
   std_msgs::String global_message;
   motor_speed = n.serviceClient<motor_serial::motor_serial>("motor_speed");
 
-  constexpr double FREQ = 1, SWITCH_FREQ = 100;
-  ros::Rate loop_rate(FREQ);
-  ros::Rate switch_rate(SWITCH_FREQ);
+  std::string coat_color;
+  n.getParam("/coat", coat_color);
+  int coat;
+  if (coat_color == "blue") {
+    coat = 1;
+  } else if (coat_color == "red") {
+    coat = -1;
+  } else {
+    coat = 1;
+    ROS_WARN_STREAM("coat???");
+  }
 
+  int start_x, start_y;
+  n.getParam("/ar/start_x", start_x);
+  n.getParam("/ar/start_y", start_y);
+  constexpr int NUM_MAP = 3;
+  GoalManager goal_map[NUM_MAP] = {goal_map(coat), goal_map(coat),
+                                   goal_map(coat)};
   // パラメータ
   // 2段目昇降機構
   constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 74, TWO_STAGE_TOWEL = 100,
@@ -151,62 +165,49 @@ int main(int argc, char **argv) {
   // add(int x, int y, int yaw, int action_type = 0, int action_value = 0,
   // int velocity_x = 0, int velocity_y = 0)
   // 0: 通過, 1: 2段目昇降, 2: ハンガー, 3: バスタオル, 4: 3段目昇降, 5: シーツ,
-  // 10: 一定時間待機
-  std::string coat_color;
-  n.getParam("/coat", coat_color);
-  int coat;
-  if (coat_color == "blue") {
-    coat = 1;
-  } else if (coat_color == "red") {
-    coat = -1;
-  } else {
-    coat = 1;
-    ROS_WARN_STREAM("coat???");
-  }
-
-  GoalManager goal_map(coat);
-  int start_x, start_y;
-  n.getParam("/ar/start_x", start_x);
-  n.getParam("/ar/start_y", start_y);
-  goal_map.add(start_x, start_y, 0); // Move: スタートゾーン
-  goal_map.add(5400, 5500, 0, 1,
-               TWO_STAGE_HUNGER); // Move: 小ポール横 -> Start: 昇降
-  goal_map.add(
+  // 10: 一定時間待機, 11: スタートスイッチの入力待ち
+  goal_map[0].add(start_x, start_y, 0,
+                  11); // Move: スタートゾーン -> Wait: スタートスイッチ
+  goal_map[0].add(5400, 5500, 0, 1,
+                  TWO_STAGE_HUNGER); // Move: 小ポール横 -> Start: 昇降
+  goal_map[0].add(
       3650, 5500, 0, 10,
       TWO_STAGE_HUNGER *
           TWO_STAGE_TIME); // Move: 小ポール横 -> Wait: 昇降完了タイマー
-  /* goal_map.add(-3650, 5500, 0); // Move: ハンガー前 */
-  goal_map.add(
+  /* goal_map[0].add(3650, 5500, 0); // Move: ハンガー前 */
+  goal_map[0].add(
       3650, 5000, 0, 2,
       HUNGER_WAIT_TIME); // Move: ハンガー手前 -> Wait:ハンガー完了タイマー
-  goal_map.add(2850, 5000, 0, 2,
-               HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
-  goal_map.add(2050, 5000, 0, 2,
-               HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
-  goal_map.add(2050, 5500, 0, 1,
-               TWO_STAGE_READY); // Move: ハンガー前 -> Start: 昇降
-  goal_map.add(5400, 5500, 0);   // Move: 小ポール横
-  goal_map.add(5400, 5500, 0);   // Move: スタートゾーン
+  goal_map[0].add(2850, 5000, 0, 2,
+                  HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
+  goal_map[0].add(2050, 5000, 0, 2,
+                  HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
+  goal_map[0].add(2050, 5500, 0, 1,
+                  TWO_STAGE_READY); // Move: ハンガー前 -> Start: 昇降
+  goal_map[0].add(5400, 5500, 0);   // Move: 小ポール横
+  goal_map[0].add(5400, 5500, 0);   // Move: スタートゾーン
 
   bool changed_phase = true;
   double start;
 
   // RasPi
-  constexpr int START_PIN = 18;
-  Pi::gpio().set(18, IN, PULL_DOWN);
+  constexpr int START_PIN = 18, RESET_PIN = 1;
+  Pi::gpio().set(START_PIN, IN, PULL_DOWN);
+  Pi::gpio().set(RESET_PIN, IN, PULL_DOWN);
 
-  while (ros::ok()) {
-    if (Pi::gpio().read(START_PIN)) {
-      planner.sendNextGoal(goal_map.getPtp());
-      break;
-    }
-    switch_rate.sleep();
-  }
   global_message.data = "Game Start";
   global_message_pub.publish(global_message);
 
+  constexpr double FREQ = 10;
+  ros::Rate loop_rate(FREQ);
+
   while (ros::ok()) {
     ros::spinOnce();
+    if (Pi::gpio().read(RESET_PIN)) {
+      global_message.data = "Robo_Pose Reset";
+      global_message_pub.publish(global_message);
+    }
+
     double now = ros::Time::now().toSec();
 
     bool can_send_next_goal = false;
@@ -255,6 +256,14 @@ int main(int argc, char **argv) {
           changed_phase = true;
           break;
         }
+      }
+      case 11: {
+        if (Pi::gpio().read(START_PIN)) {
+          planner.sendNextGoal(goal_map.getPtp());
+          can_send_next_goal = true;
+          changed_phase = true;
+        }
+        break;
       }
       }
 
