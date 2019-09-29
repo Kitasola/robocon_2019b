@@ -26,7 +26,9 @@ void getLidarScan(const sensor_msgs::LaserScan msgs) {
   int scan_finish_id =
       (SCAN_FINISH_ANGLE - msgs.angle_min) / msgs.angle_increment;
   scan_data.resize(0);
+  ROS_INFO_STREAM("OK0");
   for (int i = scan_start_id; i < scan_finish_id + 1; ++i) {
+    ROS_INFO_STREAM("OK1:" << i);
     if (msgs.ranges[i] >= MIN_SCAN_LENGTH &&
         msgs.ranges[i] <= MAX_SCAN_LENGTH) {
       Point dummy_point;
@@ -58,6 +60,7 @@ ModelParam makeModel() {
   for (int i = 0; i < 3; ++i) {
     sample[i] = scan_data.at(point_id(mt));
   }
+  ROS_INFO_STREAM("OK2");
 
   LineParam bisector[2];
   for (int i = 0; i < 2; ++i) {
@@ -66,6 +69,7 @@ ModelParam makeModel() {
     bisector[i].b = (double)(sample[i + 1].y + sample[i].y) / 2 -
                     bisector[i].a * (double)(sample[i + 1].x + sample[i].x) / 2;
   }
+  ROS_INFO_STREAM("OK3");
 
   ModelParam result;
   result.x = (bisector[1].b - bisector[0].b) / (bisector[0].a - bisector[1].a);
