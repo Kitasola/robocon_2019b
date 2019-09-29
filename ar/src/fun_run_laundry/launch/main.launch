@@ -12,6 +12,7 @@
     <param name="baud" value="115200"/> 
   </node>
 
+  <param name="/coat" value="blue"/>
   <param name="/ar/start_x" value="-5600"/>
   <param name="/ar/start_y" value="1950"/>
   <node machine="ar" name="motor_serial" pkg="motor_serial" type="motor_serial"/>
