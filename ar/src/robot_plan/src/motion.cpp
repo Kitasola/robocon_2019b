@@ -54,18 +54,21 @@ struct GoalInfo {
 
 class GoalManager {
 public:
-  GoalManager() {
-    add(5400, 1800, 0);
-
+  GoalManager(int coat) {
+    coat_reverse_ = coat;
     restart();
   }
-  void add(GoalInfo goal) { map_.push_back(goal); }
+  void add(GoalInfo goal) {
+    goal.x = coat_reverse_ * goal.x;
+    goal.yaw = coat_reverse_ * goal.yaw;
+    map_.push_back(goal);
+  }
   void add(int x, int y, int yaw, int action_type = 0, int action_value = 0,
            int velocity_x = 0, int velocity_y = 0) {
     GoalInfo dummy_goal;
-    dummy_goal.x = x;
+    dummy_goal.x = coat_reverse_ * x;
     dummy_goal.y = y;
-    dummy_goal.yaw = yaw;
+    dummy_goal.yaw = coat_reverse_ * yaw;
     dummy_goal.action_type = action_type;
     dummy_goal.action_value = action_value;
     dummy_goal.velocity_x = velocity_x;
@@ -106,6 +109,7 @@ public:
 private:
   std::vector<GoalInfo> map_;
   int map_id_ = 0;
+  int coat_reverse_;
 };
 
 using namespace ros;
@@ -148,29 +152,41 @@ int main(int argc, char **argv) {
   // int velocity_x = 0, int velocity_y = 0)
   // 0: 通過, 1: 2段目昇降, 2: ハンガー, 3: バスタオル, 4: 3段目昇降, 5: シーツ,
   // 10: 一定時間待機
-  GoalManager goal_map;
+  std::string coat_color;
+  n.getParam("/coat", coat_color);
+  int coat;
+  if (coat_color == "blue") {
+    coat = 1;
+  } else if (coat_color == "red") {
+    coat = -1;
+  } else {
+    coat = 1;
+    ROS_WARN_STREAM("coat???");
+  }
+
+  GoalManager goal_map(coat);
   int start_x, start_y;
   n.getParam("/ar/start_x", start_x);
   n.getParam("/ar/start_y", start_y);
   goal_map.add(start_x, start_y, 0); // Move: スタートゾーン
-  goal_map.add(-5400, 5500, 0, 1,
+  goal_map.add(5400, 5500, 0, 1,
                TWO_STAGE_HUNGER); // Move: 小ポール横 -> Start: 昇降
   goal_map.add(
-      -3650, 5500, 0, 10,
+      3650, 5500, 0, 10,
       TWO_STAGE_HUNGER *
           TWO_STAGE_TIME); // Move: 小ポール横 -> Wait: 昇降完了タイマー
   /* goal_map.add(-3650, 5500, 0); // Move: ハンガー前 */
   goal_map.add(
-      -3650, 5000, 0, 2,
+      3650, 5000, 0, 2,
       HUNGER_WAIT_TIME); // Move: ハンガー手前 -> Wait:ハンガー完了タイマー
-  goal_map.add(-2850, 5000, 0, 2,
+  goal_map.add(2850, 5000, 0, 2,
                HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
-  goal_map.add(-2050, 5000, 0, 2,
+  goal_map.add(2050, 5000, 0, 2,
                HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
-  goal_map.add(-2050, 5500, 0, 1,
+  goal_map.add(2050, 5500, 0, 1,
                TWO_STAGE_READY); // Move: ハンガー前 -> Start: 昇降
-  goal_map.add(-5400, 5500, 0);  // Move: 小ポール横
-  goal_map.add(-5400, 5500, 0);  // Move: スタートゾーン
+  goal_map.add(5400, 5500, 0);   // Move: 小ポール横
+  goal_map.add(5400, 5500, 0);   // Move: スタートゾーン
 
   bool changed_phase = true;
   double start;
@@ -181,7 +197,6 @@ int main(int argc, char **argv) {
 
   while (ros::ok()) {
     if (Pi::gpio().read(START_PIN)) {
-      goal_map.next();
       planner.sendNextGoal(goal_map.getPtp());
       break;
     }
