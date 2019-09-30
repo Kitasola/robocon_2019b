@@ -26,9 +26,7 @@ void getLidarScan(const sensor_msgs::LaserScan msgs) {
   int scan_finish_id =
       (SCAN_FINISH_ANGLE - msgs.angle_min) / msgs.angle_increment;
   scan_data.resize(0);
-  ROS_INFO_STREAM("OK0");
   for (int i = scan_start_id; i < scan_finish_id + 1; ++i) {
-    ROS_INFO_STREAM("OK1:" << i);
     if (msgs.ranges[i] >= MIN_SCAN_LENGTH &&
         msgs.ranges[i] <= MAX_SCAN_LENGTH) {
       Point dummy_point;
@@ -59,8 +57,8 @@ ModelParam makeModel() {
   Point sample[3];
   for (int i = 0; i < 3; ++i) {
     sample[i] = scan_data.at(point_id(mt));
+    ROS_INFO_STREAM(sample[i].x << ", " << sample[i].y);
   }
-  ROS_INFO_STREAM("OK2");
 
   LineParam bisector[2];
   for (int i = 0; i < 2; ++i) {
@@ -69,20 +67,19 @@ ModelParam makeModel() {
     bisector[i].b = (double)(sample[i + 1].y + sample[i].y) / 2 -
                     bisector[i].a * (double)(sample[i + 1].x + sample[i].x) / 2;
   }
-  ROS_INFO_STREAM("OK3");
 
   ModelParam result;
   result.x = (bisector[1].b - bisector[0].b) / (bisector[0].a - bisector[1].a);
   result.y = bisector[0].a * result.x + bisector[0].b;
+  ROS_INFO_STREAM(result.x << ", " << result.y);
   return result;
 }
 
-constexpr int MODEL_RADIUS = 720, MAX_ERROR_MODEL = 5, MIN_FIT_POINT = 100,
-              MAX_LOOP_COUNT = 10;
+constexpr int MODEL_RADIUS = 720, MAX_ERROR_MODEL = 10, MIN_FIT_POINT = 100,
+              MAX_LOOP_COUNT = 200;
 ModelParam checkModel() {
   int fit_point_count = 0;
-  int loop_count = 0;
-  while (fit_point_count < MIN_FIT_POINT || loop_count < MAX_LOOP_COUNT) {
+  for (int i = 0; i < MAX_LOOP_COUNT; ++i) {
     fit_point_count = 0;
     ModelParam model = makeModel();
     for (point : scan_data) {
@@ -90,6 +87,10 @@ ModelParam checkModel() {
               MODEL_RADIUS) < MAX_ERROR_MODEL) {
         ++fit_point_count;
       }
+    }
+    if (fit_point_count > MIN_FIT_POINT) {
+      ROS_INFO_STREAM(fit_point_count);
+      return model;
     }
   }
 }
@@ -110,8 +111,11 @@ int main(int argc, char **argv) {
 
     if (can_detection) {
       ModelParam robot_model = checkModel();
-      robot_pose.x = LIDAR_POSITION.x - robot_model.y;
-      robot_pose.y = LIDAR_POSITION.y + robot_model.x;
+      /* robot_pose.x = LIDAR_POSITION.x - robot_model.y; */
+      /* robot_pose.y = LIDAR_POSITION.y + robot_model.x; */
+      robot_pose.x = robot_model.x;
+      robot_pose.y = robot_model.y;
+      ROS_INFO_STREAM(robot_pose.x << ", " << robot_pose.y);
       robot_pose_pub.publish(robot_pose);
       can_detection = false;
     }
