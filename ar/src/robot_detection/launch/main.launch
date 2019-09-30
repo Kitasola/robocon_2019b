@@ -9,4 +9,8 @@
   </node>
   <node name="lidar_detection_robot" pkg="robot_detection" type="lidar_detection_circle"/>
 
+  <!-- rviz -->
+  <arg name="rvizconfig" default="$(find robot_detection)/config/default.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true"/>
+
 </launch>

@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
   n.getParam("/lidar/y", LIDAR_POSITION.y);
   LIDAR_POSITION.z = 0;
 
-  constexpr int FREQ = 10;
+  constexpr int FREQ = 20;
   ros::Rate loop_rate(FREQ);
   while (ros::ok()) {
     ros::spinOnce();
