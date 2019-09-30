@@ -2,6 +2,8 @@ float64 move_angle
 float64 move_speed
 float64 move_turn_right
 float64 move_turn_left
+float64 move_arm_x
+float64 move_arm_y
 bool turn_right
 bool turn_left
 bool arm_data_1
