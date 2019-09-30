@@ -59,11 +59,21 @@ ModelParam makeModel() {
   }
 
   LineParam bisector[2];
-  for (int i = 0; i < 2; ++i) {
-    bisector[i].a =
-        (sample[i + 1].x - sample[i].x) / (sample[i + 1].y - sample[i].y);
-    bisector[i].b = (sample[i + 1].y + sample[i].y) / 2 -
-                    bisector[i].a * (sample[i + 1].x + sample[i].x) / 2;
+  int param_id = 0;
+  for (int i = 0; i < 3 && param_id < 2; ++i) {
+    bisector[param_id].a = -(sample[(i + 1) % 3].x - sample[i].x) /
+                           (sample[(i + 1) % 3].y - sample[i].y);
+    if (!std::isinf(bisector[param_id].a)) {
+      bisector[param_id].b =
+          (sample[(i + 1) % 3].y + sample[i].y) / 2 -
+          bisector[param_id].a * (sample[(i + 1) % 3].x + sample[i].x) / 2;
+    } else {
+      continue;
+    }
+    ROS_INFO_STREAM("bisector: " << param_id << ", " << i << ", "
+                                 << bisector[param_id].a << ", "
+                                 << bisector[param_id].b);
+    ++param_id;
   }
 
   ModelParam result;
@@ -129,6 +139,7 @@ int main(int argc, char **argv) {
       match_scan_pub.publish(match_scan);
       can_detection = false;
     }
+    makeModel();
 
     loop_rate.sleep();
   }
