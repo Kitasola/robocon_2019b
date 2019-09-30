@@ -84,7 +84,7 @@ void controllerButton(const three_omuni::button &button){
 }
 void controllerJoy(const three_omuni::button &button){
     if(button.arm_data_1 == 0 && button.arm_data_2 == 0){
-        angle_data.data[0] -= button.move_arm_x;
+        angle_data.data[0] += button.move_arm_x;
         angle_data.data[1] += button.move_arm_y;
     }
 }
