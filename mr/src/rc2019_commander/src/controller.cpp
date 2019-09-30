@@ -25,7 +25,7 @@ void joy_callback(const sensor_msgs::Joy &joy_msg){
     data.move_speed = speed;
     data.move_turn_right = akashi::map(joy_msg.axes[13], 1, -1, 0, 255);
     data.move_turn_left = akashi::map(joy_msg.axes[12], 1, -1, 0, 255);
-    data.move_arm_x = -joy_msg.axes[1];
+    data.move_arm_x = -joy_msg.axes[0];
     data.move_arm_y = joy_msg.axes[1];
     //I have not put the rotation component yet
     data.calibration = joy_msg.buttons[16];
