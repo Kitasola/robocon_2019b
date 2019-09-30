@@ -2,8 +2,10 @@
 <launch>
   <param name="/ar/start_x" value="-5600"/>
   <param name="/ar/start_y" value="1950"/>
+  <param name="/lidar/x" value="6250"/>
+  <param name="/lidar/y" value="5000"/>
   <node name="urg_node" pkg="urg_node" type="urg_node">
-    <param name="_ip_address" value="192.168.0.10" />
+    <param name="ip_address" value="192.168.0.10" />
   </node>
   <node name="lidar_detection_robot" pkg="robot_detection" type="lidar_detection_circle"/>
 

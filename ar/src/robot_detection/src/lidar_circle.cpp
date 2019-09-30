@@ -70,16 +70,15 @@ ModelParam makeModel() {
     } else {
       continue;
     }
-    ROS_INFO_STREAM("bisector: " << param_id << ", " << i << ", "
-                                 << bisector[param_id].a << ", "
-                                 << bisector[param_id].b);
+    ROS_INFO_STREAM("bisector[" << param_id << "]:" << bisector[param_id].a
+                                << ", " << bisector[param_id].b);
     ++param_id;
   }
 
   ModelParam result;
   result.x = (bisector[1].b - bisector[0].b) / (bisector[0].a - bisector[1].a);
   result.y = bisector[0].a * result.x + bisector[0].b;
-  ROS_INFO_STREAM(result.x << ", " << result.y);
+  ROS_INFO_STREAM("Model: " << result.x << ", " << result.y);
   return result;
 }
 
@@ -117,8 +116,8 @@ int main(int argc, char **argv) {
       n.advertise<geometry_msgs::Pose2D>("lidar/robot_pose", 1);
   geometry_msgs::Pose2D robot_pose;
   geometry_msgs::Point32 LIDAR_POSITION; // mm
-  LIDAR_POSITION.x = 6250;
-  LIDAR_POSITION.y = 5000;
+  n.getParam("/lidar/x", LIDAR_POSITION.x);
+  n.getParam("/lidar/y", LIDAR_POSITION.y);
   LIDAR_POSITION.z = 0;
 
   constexpr int FREQ = 20;
@@ -128,18 +127,15 @@ int main(int argc, char **argv) {
 
     if (can_detection) {
       ModelParam robot_model = checkModel();
-      /* robot_pose.x = LIDAR_POSITION.x - robot_model.y; */
-      /* robot_pose.y = LIDAR_POSITION.y + robot_model.x; */
-      robot_pose.x = robot_model.x;
-      robot_pose.y = robot_model.y;
-      ROS_INFO_STREAM(robot_pose.x << ", " << robot_pose.y);
+      robot_pose.x = LIDAR_POSITION.x - robot_model.y;
+      robot_pose.y = LIDAR_POSITION.y + robot_model.x;
+      ROS_INFO_STREAM("Robot: " << robot_pose.x << ", " << robot_pose.y);
       robot_pose_pub.publish(robot_pose);
 
       raw_scan_pub.publish(scan_data);
       match_scan_pub.publish(match_scan);
       can_detection = false;
     }
-    makeModel();
 
     loop_rate.sleep();
   }
