@@ -91,7 +91,9 @@ public:
 
   void restart() {
     map_id_ = 0;
-    now = map_.at(map_id_);
+    if (map_.size() > 0) {
+      now = map_.at(map_id_);
+    }
   };
 
   void reset() { map_.resize(0); }
@@ -139,10 +141,15 @@ int send(int id, int cmd, int data) {
   return srv.response.data;
 }
 
+bool can_starts_game = false;
+void checkGlobalMessage(const std_msgs::String msg) { can_starts_game = true; }
+
 int main(int argc, char **argv) {
   ros::init(argc, argv, "motion_planner");
   ros::NodeHandle n;
   Ptp planner(&n, "wheel");
+  ros::Subscriber global_message_sub =
+      n.subscribe("global_message", 1, checkGlobalMessage);
   ros::Publisher global_message_pub =
       n.advertise<std_msgs::String>("global_message", 1);
   std_msgs::String global_message;
@@ -192,8 +199,7 @@ int main(int argc, char **argv) {
   // 0: ハンガー, 1: シーツ
   int map_type = 0;
   GoalManager goal_map[NUM_MAP] = {GoalManager(coat), GoalManager(coat)};
-  goal_map[0].add(start_x, start_y, 0,
-                  11); // Move: スタートゾーン -> Wait: スタートスイッチ
+  goal_map[0].add(start_x, start_y, 0, 11); // Move: スタートゾーン
   goal_map[0].add(5400, 5500, 0, 1,
                   TWO_STAGE_HUNGER); // Move: 小ポール横 -> Start: 昇降
   goal_map[0].add(
@@ -230,6 +236,13 @@ int main(int argc, char **argv) {
     Pi::gpio().set(pin, IN, PULL_DOWN);
   }
 
+  while (ros::ok()) {
+    if (Pi::gpio().read(START)) {
+      goal_map[map_type].restart();
+      break;
+    }
+  }
+  ROS_INFO_STREAM("Game Start");
   global_message.data = "Game Start";
   global_message_pub.publish(global_message);
 
@@ -309,6 +322,7 @@ int main(int argc, char **argv) {
           } else {
             map_type = 0;
           }
+          map_type = 0;
           goal_map[map_type].restart();
           can_send_next_goal = true;
           changed_phase = true;
