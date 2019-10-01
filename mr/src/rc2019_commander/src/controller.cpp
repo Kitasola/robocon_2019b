@@ -25,8 +25,8 @@ void joy_callback(const sensor_msgs::Joy &joy_msg){
     data.move_speed = speed;
     data.move_turn_right = akashi::map(joy_msg.axes[13], 1, -1, 0, 255);
     data.move_turn_left = akashi::map(joy_msg.axes[12], 1, -1, 0, 255);
-    data.move_arm_x = -joy_msg.axes[0];
-    data.move_arm_y = joy_msg.axes[1];
+    data.move_arm_x = akashi::map(joy_msg.axes[0], 1, -1, 0, 100);
+    data.move_arm_y = akashi::map(joy_msg.axes[1], 1, -1, 0, 100);
     //I have not put the rotation component yet
     data.calibration = joy_msg.buttons[16];
     data.arm_data_1 = joy_msg.buttons[5];
@@ -69,7 +69,7 @@ int main(int argc, char **argv){
     ros::Publisher controller_pub = n.advertise<rc2019_commander::button>("controller_info", 50);
     ros::Subscriber check_sub = n.subscribe("controller_check", 10, check_callback);
     ros::Subscriber joy_sub = n.subscribe("joy", 10, joy_callback);
-    ros::Rate loop_rate(100);
+    ros::Rate loop_rate(1000);
     while(ros::ok()){
         controller_pub.publish(data);
         ros::spinOnce();
