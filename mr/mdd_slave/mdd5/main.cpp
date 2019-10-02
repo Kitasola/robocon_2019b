@@ -21,7 +21,7 @@ constexpr PinName MOTOR_PIN[NUM_MOTOR_PORT][3] = {{PB_0, PB_1, PB_3},
                                                   {PB_6, PA_11, PB_7}};
 
 constexpr int NUM_ENCODER_PORT = 4;
-constexpr int RANGE = 512;
+constexpr int RANGE = 256;
 constexpr PinName ENCODER_PIN[NUM_ENCODER_PORT][2] = {
     {PA_0, PA_4}, {PA_1, PA_3}, {PA_8, PA_7}, {PB_6, PA_11}};
 RotaryInc *rotary[NUM_ENCODER_PORT];
@@ -35,8 +35,8 @@ InterruptIn shoulder(PB_6, PullUp);
 InterruptIn elbow(PA_11, PullUp);
 */
 
-RotaryInc raw_shoulder(PA_0, PA_4, 512, 1);
-RotaryInc raw_elbow(PA_1, PA_3, 512, 1);
+RotaryInc raw_shoulder(PA_0, PA_4, 256, 1);
+RotaryInc raw_elbow(PA_1, PA_3, 256, 1);
 
 /*
 bool flag_z_shoulder = false;
@@ -189,8 +189,8 @@ int main() {
 //RotaryInc raw_shoulder(PA_0, PA_4, 512, 1);
 //RotaryInc raw_elbow(PA_1, PA_3, 512, 1);
   while (true) {
-    arm_angle[0] = (360) * (-1) * raw_shoulder.get() / 512;
-    arm_angle[1] = (360) * (-1) * raw_elbow.get() / 512;
+    arm_angle[0] = (360) * (-1) * raw_shoulder.get() / RANGE;
+    arm_angle[1] = (360) * (-1) * raw_elbow.get() / RANGE;
     //PidPosition se_motor[2] = {PidPosition(0.5, 0, 0.4, 0),
     //                           PidPosition(0.5, 0, 0.4, 0)};
     for(int i = 0; i < 2; ++i){
