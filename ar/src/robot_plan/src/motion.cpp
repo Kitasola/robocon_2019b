@@ -119,8 +119,8 @@ using Pi = Pigpiod;
 // スイッチ基板のピンアサイン
 enum Switch {
   START = 18,
-  RESET = 1,
-  CALIBRATION = 3,
+  RESET = 10,
+  CALIBRATION = 11,
   SHEET = 12,
   TOWEL_0 = 13,
   TOWEL_1 = 14,
@@ -236,13 +236,7 @@ int main(int argc, char **argv) {
     Pi::gpio().set(pin, IN, PULL_DOWN);
   }
 
-  while (ros::ok()) {
-    if (Pi::gpio().read(START)) {
-      goal_map[map_type].restart();
-      break;
-    }
-  }
-  ROS_INFO_STREAM("Game Start");
+  goal_map[map_type].restart();
   global_message.data = "Game Start";
   global_message_pub.publish(global_message);
 
@@ -251,20 +245,20 @@ int main(int argc, char **argv) {
 
   while (ros::ok()) {
     ros::spinOnce();
-    if (Pi::gpio().read(RESET)) {
-      global_message.data = "Robo_Pose Reset Both";
-      global_message_pub.publish(global_message);
-    }
-    if (Pi::gpio().read(ODOM)) {
-      global_message.data = "Robo_Pose ON Odom";
-      global_message_pub.publish(global_message);
-    } else if (Pi::gpio().read(ODOM)) {
-      global_message.data = "Robo_Pose ON LRF";
-      global_message_pub.publish(global_message);
-    } else {
-      global_message.data = "Robo_Pose ON Double";
-      global_message_pub.publish(global_message);
-    }
+    /* if (Pi::gpio().read(RESET)) { */
+    /*   global_message.data = "Robo_Pose Reset Both"; */
+    /*   global_message_pub.publish(global_message); */
+    /* } */
+    /* if (Pi::gpio().read(ODOM)) { */
+    /*   global_message.data = "Robo_Pose ON Odom"; */
+    /*   global_message_pub.publish(global_message); */
+    /* } else if (Pi::gpio().read(ODOM)) { */
+    /*   global_message.data = "Robo_Pose ON LRF"; */
+    /*   global_message_pub.publish(global_message); */
+    /* } else { */
+    /*   global_message.data = "Robo_Pose ON Double"; */
+    /*   global_message_pub.publish(global_message); */
+    /* } */
 
     double now = ros::Time::now().toSec();
 
@@ -317,11 +311,11 @@ int main(int argc, char **argv) {
       }
       case 11: {
         if (Pi::gpio().read(START)) {
-          if (Pi::gpio().read(SHEET)) {
-            map_type = 1;
-          } else {
-            map_type = 0;
-          }
+          /* if (Pi::gpio().read(SHEET)) { */
+          /*   map_type = 1; */
+          /* } else { */
+          /*   map_type = 0; */
+          /* } */
           map_type = 0;
           goal_map[map_type].restart();
           can_send_next_goal = true;
