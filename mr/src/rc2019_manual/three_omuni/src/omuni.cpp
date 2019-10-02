@@ -104,14 +104,20 @@ int main(int argc, char **argv){
 		std_msgs::Int16 msg;
 		change_speed(robot_speed, robot_angle, wheel_control, resolutional);
 		for(int i = 0; i < 3; ++i){
-			if(speed_half)wheel_control[i] / 2;
+			if(speed_half == true){
+				wheel_control[i] * (1 / 2);
+			}
 			srv.request.id = (unsigned int)WHEEL_ID[i];
 			srv.request.cmd = (unsigned int)WHEEL_CMD[i];
 			srv.request.data = (int)wheel_control[i];
 			motor_speed.call(srv);
 		}
 		//msg.data = (int)srv.request.data;
-		msg.data = (int)resolutional;
+		if(speed_half == true){
+			msg.data = 100;
+		}else{
+			msg.data = 0;
+		}
 		check_pub.publish(msg);
 		ros::spinOnce();
 		loop_rate.sleep();
