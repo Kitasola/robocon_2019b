@@ -19,3 +19,4 @@ bool shooting
 bool laundry_case_open
 bool laundry_case_close
 bool hand
+bool obon

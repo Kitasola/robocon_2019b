@@ -41,6 +41,7 @@ void joy_callback(const sensor_msgs::Joy &joy_msg){
     data.hand = joy_msg.buttons[10];
     data.laundry_case_open = joy_msg.buttons[12];
     data.laundry_case_close = joy_msg.buttons[13];
+    data.obon = joy_msg.buttons[3];
     //robot_arm position key(right key)
     if(joy_msg.buttons[4] && joy_msg.buttons[10]){
         data.expansion_up_key = true;
