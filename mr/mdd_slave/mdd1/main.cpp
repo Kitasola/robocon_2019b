@@ -11,11 +11,6 @@ constexpr int NUM_PORT = 5;
 // 0: Motor, 1: Encoder, 2: Other
 constexpr int PORT_FUNCTION[NUM_PORT] = {0, 2, 2, 2, 0};
 
-<<<<<<< HEAD
-double current_speed_1, current_speed_2;
-
-=======
->>>>>>> 3921e472be6bcb2d9ee0f0206c60195e63c59c02
 constexpr int NUM_MOTOR_PORT = 4;
 constexpr int MAX_PWM = 1000;
 constexpr double MAX_PWM_MBED = 0.95;
@@ -34,13 +29,9 @@ RotaryInc rotary_inc_1(PA_0, PA_4, 512, 1);
 RotaryInc rotary_inc_2(PA_8, PA_7, 512, 1);
 constexpr double diameter = 101.6;
 
-<<<<<<< HEAD
 int goal_speed_1, goal_speed_2;
-double data_1, data_2;
-=======
-double goal_speed_1, goal_speed_2;
-double data_1, data_2;
->>>>>>> 3921e472be6bcb2d9ee0f0206c60195e63c59c02
+//double data_1, data_2;
+
 float map(float value, float from_low, float from_high, float to_low,
           float to_high) {
   if (value > from_high) {
@@ -90,30 +81,33 @@ bool safe(int cmd, int rx_data, int &tx_data) {
   }
   return true;
 }
+
 double current_speed_1, current_speed_2;
 double get_speed_1, get_speed_2;
 
 bool d1_speed(int cmd, int rx_data, int &tx_data) {
-  goal_speed_1 = (double)(rx_data) / 100.0;
+  goal_speed_1 = rx_data;
   // tx_data = get_speed_1;
   return true;
 }
 
 bool d2_speed(int cmd, int rx_data, int &tx_data) {
-  goal_speed_2 = (double)(rx_data) / 100.0;
+  goal_speed_2 = rx_data;
   // tx_data = get_speed_2;
   return true;
-
-  bool check(int cmd, int rx_data, int &tx_data) { return true; }
+}
+  bool check(int cmd, int rx_data, int &tx_data) {
+  return true;
+  }
 
   int main() {
     slave.addCMD(255, safe);
     slave.addCMD(2, spinMotor);
     slave.addCMD(5, spinMotor);
-    /* slave.addCMD(70, d1_speed); */
-    /* slave.addCMD(71, d2_speed); */
-    /* constexpr int motor_1 = 0; */
-    /* constexpr int motor_2 = 3; */
+    slave.addCMD(70, d1_speed);
+    slave.addCMD(71, d2_speed);
+    constexpr int motor_1 = 0;
+    constexpr int motor_2 = 3;
 
     /* double current_speed_1, current_speed_2; */
     /* double get_speed_1,get_speed_2; */
@@ -138,7 +132,7 @@ bool d2_speed(int cmd, int rx_data, int &tx_data) {
       /*         data_2 = pid_2.control((double)goal_speed_2, current_speed_2);
        */
 
-      /*         spinMotor(motor_1,data_1); */
-      /*         spinMotor(motor_2,data_2); */
+               spinMotor(motor_1,goal_speed_1);
+               spinMotor(motor_2,goal_speed_2);
     }
   }
