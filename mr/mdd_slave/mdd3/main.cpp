@@ -73,7 +73,7 @@ bool safe(int cmd, int rx_data, int &tx_data) {
 }
 
 PwmOut rock_tray_servo(PA_1);
-constexpr int TARY_ROCK_ANGLE = 40, TARY_FREE_ANGLE = 5;
+constexpr int TARY_ROCK_ANGLE = 40, TARY_FREE_ANGLE = 0;
 constexpr double WAIT_TRAY_SERVO = 1.5;
 void rockTray(int degree) {
   rock_tray_servo.pulsewidth(map(degree, 0, 180, 0.9e-3, 2.1e-3));
@@ -86,7 +86,7 @@ bool rockTray(int cmd, int rx_data, int &tx_data) {
 }
 
 PwmOut hand_servo(PA_3);
-constexpr int HAND_CATCH_ANGLE = 170, HAND_RELEASE_ANGLE = 70;
+constexpr int HAND_CATCH_ANGLE = 130, HAND_RELEASE_ANGLE = 0;
 constexpr double WAIT_HAND_SERVO = 1;
 void actHand(int degree) {
   hand_servo.pulsewidth(map(degree, 0, 180, 0.9e-3, 2.25e-3));
@@ -96,10 +96,13 @@ bool actHand(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-int phase = 0;
+Timer time;
+int phase = 7;
 int goal_stroke = 0;
+int goal_shoot_stroke = 0;
 bool startShoot(int cmd, int rx_data, int &tx_data) {
-  goal_stroke = rx_data;
+  goal_shoot_stroke = rx_data;
+  time.reset();
   phase = 3;
   return true;
 }
@@ -131,7 +134,6 @@ bool loadTray(int cmd, int rx_data, int &tx_data) {
 }
 
 int main() {
-  Timer time;
   time.start();
   slave.addCMD(30, startShoot);
   slave.addCMD(31, setTraySpeed);
@@ -152,16 +154,19 @@ int main() {
   RotaryInc stroke_rotary(ENCODER_PIN[STROKE_ENCODER_ID][0],
                           ENCODER_PIN[STROKE_ENCODER_ID][1], 256, 1);
   constexpr int MAX_STROKE_LENGTH = 370, MAX_STROKE_ERROR = 1;
-  constexpr int STROKE_LOAD_LENGTH = 360;
+  constexpr int STROKE_LOAD_LENGTH = 350;
   int current_stroke = 0, stroke_offset = -MAX_STROKE_LENGTH;
   constexpr double STROKE_DIAMETER = -42;
   PidPosition stroke(3.0, 0, 0, 0);
   AnalogIn stroke_reset(PA_5);
-  constexpr double WAIT_RELOAD_ROCK = 1, WAIT_RELOAD_CHARGE = 0.2;
+  constexpr double WAIT_RELOAD_ROCK = 2, WAIT_RELOAD_CHARGE = 0.2,
+                   WAIT_ROLL_TRAY = 2;
   constexpr int RELOAD_ROCK_SPEED = 10, RELOAD_CHARGE_SPEED = 10;
   int reload_speed = 0;
   bool reload_mode = false;
   DigitalOut shoot_rock(PA_6);
+  goal_stroke = MAX_STROKE_LENGTH;
+  phase = 7;
 
   while (true) {
     spinMotor(TRAY_MOTOR_ID, goal_tray_speed);
@@ -183,32 +188,36 @@ int main() {
     case 0: {
       goal_stroke = STROKE_LOAD_LENGTH;
       if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) {
-        rockTray(TARY_ROCK_ANGLE);
+        actHand(HAND_RELEASE_ANGLE);
         time.reset();
         phase = 1;
       }
       break;
     }
     case 1: {
-      if (time.read() > WAIT_TRAY_SERVO) {
-        actHand(HAND_RELEASE_ANGLE);
+      if (time.read() > WAIT_HAND_SERVO) {
+        rockTray(TARY_ROCK_ANGLE);
         time.reset();
         phase = 2;
       }
       break;
     }
     case 2: {
-      if (time.read() > WAIT_HAND_SERVO) {
+      if (time.read() > WAIT_TRAY_SERVO) {
+        time.reset();
         goal_stroke = MAX_STROKE_LENGTH;
       }
       break;
     }
     case 3: {
       goal_tray_speed = goal_shoot_tray_speed;
-      if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) {
-        shoot_rock.write(1);
-        time.reset();
-        phase = 4;
+      if (time.read() > WAIT_ROLL_TRAY) {
+        goal_stroke = goal_shoot_stroke;
+        if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) {
+          shoot_rock.write(1);
+          time.reset();
+          phase = 4;
+        }
       }
       break;
     }
@@ -256,6 +265,7 @@ int main() {
     case 9: {
       if (time.read() > WAIT_HAND_SERVO) {
         goal_stroke = MAX_STROKE_LENGTH;
+        time.reset();
       }
       break;
     }

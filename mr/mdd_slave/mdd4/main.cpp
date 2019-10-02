@@ -95,7 +95,6 @@ int main() {
   slave.addCMD(255, safe);
   slave.addCMD(3, spinMotor);
   slave.addCMD(20, loadTray);
-  slave.addCMD(72, d3_speed);
   constexpr int TARY_MOTOR_ID = 0, MAX_TARY_MOTOR_SPEED = -100; // 下向き
   DigitalIn slit(PA_0);
   slit.mode(PullUp);
