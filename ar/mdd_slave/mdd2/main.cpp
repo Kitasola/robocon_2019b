@@ -115,7 +115,7 @@ bool checkTwoRegister(int cmd, int rx_data, int &tx_data) {
 
 int two_stage_speed[2] = {};
 bool checkTwoVelocity(int cmd, int rx_data, int &tx_data) {
-  tx_data = now[rx_data];
+  tx_data = two_stage_speed[rx_data];
   return true;
 }
 
@@ -159,7 +159,6 @@ int main() {
   constexpr double TWO_STAGE_DOWN = 0.8;
   PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(0.5, 0, 0, 0),
                                              PidPosition(0.5, 0, 0, 0)};
-  DigitalOut LED[2] = {DigitalOut(PB_3), DigitalOut(PB_4)};
   while (true) {
     for (int i = 0; i < NUM_TWO_REGISTER; ++i) {
       two_hight_current[i] =
