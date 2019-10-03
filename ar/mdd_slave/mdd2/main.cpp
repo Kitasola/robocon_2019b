@@ -66,13 +66,6 @@ bool spinMotor(int cmd, int rx_data, int &tx_data) {
   return spinMotor(cmd - 2, rx_data);
 }
 
-bool safe(int cmd, int rx_data, int &tx_data) {
-  for (int i = 0; i < 4; ++i) {
-    spinMotor(i, 0);
-  }
-  return true;
-}
-
 PwmOut towel[2] = {PwmOut(PA_3), PwmOut(PA_1)};
 constexpr float MIN_SERVO_PULSE = 0.5e-3;
 constexpr float MAX_SERVO_PULSE = 2.4e-3;
@@ -96,19 +89,19 @@ bool setTwoHigh(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-int two_max_velocity = 0; // mm/s
-bool setTwoVelocity(int cmd, int rx_data, int &tx_data) {
-  // rx_data, tx_data [cm]
-  two_max_velocity = rx_data * 10;
-  return true;
-}
+/* int two_max_velocity = 0; // mm/s */
+/* bool setTwoVelocity(int cmd, int rx_data, int &tx_data) { */
+/*   // rx_data, tx_data [cm] */
+/*   two_max_velocity = rx_data * 10; */
+/*   return true; */
+/* } */
 
-int two_max_accel = 0; // mm/s^2
-bool setTwoAccel(int cmd, int rx_data, int &tx_data) {
-  // rx_data, tx_data [cm]
-  two_max_accel = rx_data * 10;
-  return true;
-}
+/* int two_max_accel = 0; // mm/s^2 */
+/* bool setTwoAccel(int cmd, int rx_data, int &tx_data) { */
+/*   // rx_data, tx_data [cm] */
+/*   two_max_accel = rx_data * 10; */
+/*   return true; */
+/* } */
 
 int two_hight_current[2] = {};
 bool checkTwoRegister(int cmd, int rx_data, int &tx_data) {
@@ -120,13 +113,8 @@ bool checkTwoRegister(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-int now[2] = {};
+int two_stage_speed[2] = {};
 bool checkTwoVelocity(int cmd, int rx_data, int &tx_data) {
-  /* if (rx_data >= 10) { */
-  /*   tx_data = now[rx_data - 10] / 10; */
-  /* } else { */
-  /*   tx_data = now[rx_data] % 10; */
-  /* } */
   tx_data = now[rx_data];
   return true;
 }
@@ -141,6 +129,13 @@ bool checkTwoVelocity(int cmd, int rx_data, int &tx_data) {
 /*   return true; */
 /* } */
 
+bool safe(int cmd, int rx_data, int &tx_data) {
+  for (int i = 0; i < 2; ++i) {
+    two_stage_speed[i] = 0;
+  }
+  return true;
+}
+
 int main() {
   slave.addCMD(255, safe);
   slave.addCMD(4, spinMotor);
@@ -148,10 +143,11 @@ int main() {
 
   slave.addCMD(10, dryTowel);
   slave.addCMD(30, setTwoHigh);
-  slave.addCMD(31, setTwoVelocity);
-  slave.addCMD(32, setTwoAccel);
+  /* slave.addCMD(31, setTwoVelocity); */
+  /* slave.addCMD(32, setTwoAccel); */
   slave.addCMD(33, checkTwoRegister);
   slave.addCMD(34, checkTwoVelocity);
+
   constexpr int NUM_TWO_REGISTER = 2;
   AnalogIn two_register[NUM_TWO_REGISTER] = {AnalogIn(PB_0),
                                              AnalogIn(PA_0)}; // right, left
@@ -168,11 +164,12 @@ int main() {
     for (int i = 0; i < NUM_TWO_REGISTER; ++i) {
       two_hight_current[i] =
           two_register[i].read() * TWO_REGISTER_MULTI[i] - TOW_STAGE_OFFSET[i];
-      now[i] = two_motor[i].control(goal_two_hight, two_hight_current[i]);
+      two_stage_speed[i] =
+          two_motor[i].control(goal_two_hight, two_hight_current[i]);
       if (goal_two_hight < two_hight_current[i]) {
-        now[i] *= TWO_STAGE_DOWN;
+        two_stage_speed[i] *= TWO_STAGE_DOWN;
       }
-      spinMotor(TWO_STAGE_ID[i], now[i]);
+      spinMotor(TWO_STAGE_ID[i], two_stage_speed[i]);
     }
     dummy_current_two_hight = (two_hight_current[0] + two_hight_current[1]) / 2;
     wait(0.01);
