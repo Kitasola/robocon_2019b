@@ -8,15 +8,9 @@ using namespace arrc;
 ScrpSlave slave(PA_9, PA_10, PA_12, SERIAL_TX, SERIAL_RX, 0x0803e000);
 
 constexpr int NUM_PORT = 5;
-// 0: Motor, 1: Encoder, 2: Other
-constexpr int PORT_FUNCTION[NUM_PORT] = {2, 2, 2, 0, 0};
 
 constexpr int NUM_MOTOR_PORT = 4;
-<<<<<<< HEAD
-constexpr int MAX_PWM = 255;
-=======
 constexpr int MAX_PWM = 250;
->>>>>>> develop/ar
 constexpr double MAX_PWM_MBED = 0.95;
 constexpr float PERIOD = 1 / 1000.0;
 constexpr PinName MOTOR_PIN[NUM_MOTOR_PORT][3] = {{PB_0, PB_1, PB_3},
@@ -28,7 +22,6 @@ constexpr int NUM_ENCODER_PORT = 4;
 constexpr int RANGE = 200;
 constexpr PinName ENCODER_PIN[NUM_ENCODER_PORT][2] = {
     {PA_0, PA_4}, {PA_1, PA_3}, {PA_8, PA_7}, {PB_6, PA_11}};
-RotaryInc *rotary[NUM_ENCODER_PORT];
 
 float map(float value, float from_low, float from_high, float to_low,
           float to_high) {
@@ -127,17 +120,6 @@ bool checkTwoRegister(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-<<<<<<< HEAD
-/* DigitalOut arm_solenoid[2] = {DigitalOut(PB_6), DigitalOut(PA_11)}; */
-/* DigitalOut arm_led[2] = {DigitalOut(PB_3), DigitalOut(PB_4)}; */
-/* bool solenoid(int cmd, int rx_data, int &tx_data) { */
-/*   arm_solenoid[0].write(rx_data % 10); */
-/*   arm_led[0].write(rx_data % 10); */
-/*   arm_solenoid[1].write((rx_data / 10) % 10); */
-/*   arm_led[1].write((rx_data / 10) % 10); */
-/*   return true; */
-/* } */
-=======
 int now[2] = {};
 bool checkTwoVelocity(int cmd, int rx_data, int &tx_data) {
   if (rx_data >= 10) {
@@ -147,7 +129,6 @@ bool checkTwoVelocity(int cmd, int rx_data, int &tx_data) {
   }
   return true;
 }
->>>>>>> develop/ar
 
 /* DigitalOut arm_solenoid[2] = {DigitalOut(PB_6), DigitalOut(PA_11)}; */
 /* DigitalOut arm_led[2] = {DigitalOut(PB_3), DigitalOut(PB_4)}; */
@@ -160,24 +141,9 @@ bool checkTwoVelocity(int cmd, int rx_data, int &tx_data) {
 /* } */
 
 int main() {
-  if (PORT_FUNCTION[0] == 0) {
-    slave.addCMD(2, spinMotor);
-  }
-  if (PORT_FUNCTION[1] == 0) {
-    rotary[0] = new RotaryInc(ENCODER_PIN[0][0], ENCODER_PIN[0][1], RANGE, 1);
-  }
-  for (int i = 2; i < NUM_PORT; ++i) {
-    switch (PORT_FUNCTION[i]) {
-    case 0:
-      slave.addCMD(i + 1, spinMotor);
-      break;
-    case 1:
-      rotary[i - 1] =
-          new RotaryInc(ENCODER_PIN[i - 1][0], ENCODER_PIN[i - 1][1], RANGE, 1);
-      break;
-    }
-  }
   slave.addCMD(255, safe);
+  slave.addCMD(4, spinMotor);
+  slave.addCMD(5, spinMotor);
 
   slave.addCMD(10, dryTowel);
   slave.addCMD(30, setTwoHigh);
@@ -191,8 +157,8 @@ int main() {
   constexpr int TWO_STAGE_ID[NUM_TWO_REGISTER] = {2, 3};
   constexpr float TWO_REGISTER_MULTI[NUM_TWO_REGISTER] = {
       720 / (210.0 / 255) * 5 / 3.3,
-      720 / (210.0 / 255) * 5 / 3.3}; // mmへの変換倍率
-  constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {130, 131};
+      -720 / (210.0 / 255) * 5 / 3.3}; // mmへの変換倍率
+  constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {130, -1190};
   PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(1.0, 0, 0, 0),
                                              PidPosition(1.0, 0, 0, 0)};
   DigitalOut LED[2] = {DigitalOut(PB_3), DigitalOut(PB_4)};
@@ -201,7 +167,7 @@ int main() {
       two_hight_current[i] =
           two_register[i].read() * TWO_REGISTER_MULTI[i] - TOW_STAGE_OFFSET[i];
       now[i] = two_motor[i].control(goal_two_hight, two_hight_current[i]);
-      spinMotor(TWO_STAGE_ID[i], -now[i]);
+      spinMotor(TWO_STAGE_ID[i], now[i]);
     }
     dummy_current_two_hight = (two_hight_current[0] + two_hight_current[1]) / 2;
   }
