@@ -122,11 +122,12 @@ bool checkTwoRegister(int cmd, int rx_data, int &tx_data) {
 
 int now[2] = {};
 bool checkTwoVelocity(int cmd, int rx_data, int &tx_data) {
-  if (rx_data >= 10) {
-    tx_data = now[rx_data - 10] / 10;
-  } else {
-    tx_data = now[rx_data] % 10;
-  }
+  /* if (rx_data >= 10) { */
+  /*   tx_data = now[rx_data - 10] / 10; */
+  /* } else { */
+  /*   tx_data = now[rx_data] % 10; */
+  /* } */
+  tx_data = now[rx_data];
   return true;
 }
 
@@ -159,8 +160,8 @@ int main() {
       720 / (210.0 / 255) * 5 / 3.3,
       -720 / (210.0 / 255) * 5 / 3.3}; // mmへの変換倍率
   constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {130, -1190};
-  PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(1.0, 0, 0, 0),
-                                             PidPosition(1.0, 0, 0, 0)};
+  PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(0.5, 0, 0, 0),
+                                             PidPosition(0.5, 0, 0, 0)};
   DigitalOut LED[2] = {DigitalOut(PB_3), DigitalOut(PB_4)};
   while (true) {
     for (int i = 0; i < NUM_TWO_REGISTER; ++i) {
@@ -170,5 +171,6 @@ int main() {
       spinMotor(TWO_STAGE_ID[i], now[i]);
     }
     dummy_current_two_hight = (two_hight_current[0] + two_hight_current[1]) / 2;
+    wait(0.01);
   }
 }
