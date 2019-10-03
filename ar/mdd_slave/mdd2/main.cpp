@@ -160,6 +160,7 @@ int main() {
       720 / (210.0 / 255) * 5 / 3.3,
       -720 / (210.0 / 255) * 5 / 3.3}; // mmへの変換倍率
   constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {130, -1190};
+  constexpr double TWO_STAGE_DOWN = 0.8;
   PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(0.5, 0, 0, 0),
                                              PidPosition(0.5, 0, 0, 0)};
   DigitalOut LED[2] = {DigitalOut(PB_3), DigitalOut(PB_4)};
@@ -168,6 +169,9 @@ int main() {
       two_hight_current[i] =
           two_register[i].read() * TWO_REGISTER_MULTI[i] - TOW_STAGE_OFFSET[i];
       now[i] = two_motor[i].control(goal_two_hight, two_hight_current[i]);
+      if (goal_two_hight < two_hight_current[i]) {
+        now[i] *= TWO_STAGE_DOWN;
+      }
       spinMotor(TWO_STAGE_ID[i], now[i]);
     }
     dummy_current_two_hight = (two_hight_current[0] + two_hight_current[1]) / 2;
