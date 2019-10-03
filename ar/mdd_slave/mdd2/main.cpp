@@ -157,9 +157,9 @@ int main() {
                                              AnalogIn(PA_0)}; // right, left
   constexpr int TWO_STAGE_ID[NUM_TWO_REGISTER] = {2, 3};
   constexpr float TWO_REGISTER_MULTI[NUM_TWO_REGISTER] = {
-      720 / (210.0 / 255) * 5 / 3.3,
-      -720 / (210.0 / 255) * 5 / 3.3}; // mmへの変換倍率
-  constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {130, -1190};
+      -720 / (210.0 / 255) * 5 / 3.3,
+      720 / (210.0 / 255) * 5 / 3.3}; // mmへの変換倍率
+  constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {-1196, 127};
   constexpr double TWO_STAGE_DOWN = 0.8;
   PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(0.5, 0, 0, 0),
                                              PidPosition(0.5, 0, 0, 0)};
