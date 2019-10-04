@@ -22,8 +22,8 @@ int main(int argc, char **argv) {
   gyro.start();
   ROS_INFO_STREAM("Calibration Finish");
 
-  constexpr int MAIN_FREQ = 500;
-  constexpr int TOPIC_FREQ = 10;
+  constexpr int MAIN_FREQ = 1000;
+  constexpr int TOPIC_FREQ = 30;
   ros::Rate loop_rate(MAIN_FREQ);
   ros::Time start = ros::Time::now();
 
