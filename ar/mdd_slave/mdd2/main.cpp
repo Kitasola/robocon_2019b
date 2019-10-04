@@ -119,16 +119,6 @@ bool checkTwoVelocity(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-/* DigitalOut arm_solenoid[2] = {DigitalOut(PB_6), DigitalOut(PA_11)}; */
-/* DigitalOut arm_led[2] = {DigitalOut(PB_3), DigitalOut(PB_4)}; */
-/* bool solenoid(int cmd, int rx_data, int &tx_data) { */
-/*   arm_solenoid[0].write(rx_data % 10); */
-/*   arm_led[0].write(rx_data % 10); */
-/*   arm_solenoid[1].write((rx_data / 10) % 10); */
-/*   arm_led[1].write((rx_data / 10) % 10); */
-/*   return true; */
-/* } */
-
 bool safe(int cmd, int rx_data, int &tx_data) {
   for (int i = 0; i < 2; ++i) {
     two_stage_speed[i] = 0;
