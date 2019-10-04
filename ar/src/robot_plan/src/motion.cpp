@@ -237,10 +237,8 @@ int main(int argc, char **argv) {
   }
 
   goal_map[map_type].restart();
-  global_message.data = "Game Start";
-  global_message_pub.publish(global_message);
 
-  constexpr double FREQ = 50;
+  constexpr double FREQ = 10;
   ros::Rate loop_rate(FREQ);
 
   while (ros::ok()) {
@@ -311,6 +309,8 @@ int main(int argc, char **argv) {
       }
       case 11: {
         if (Pi::gpio().read(START)) {
+          global_message.data = "Game Start";
+          global_message_pub.publish(global_message);
           /* if (Pi::gpio().read(SHEET)) { */
           /*   map_type = 1; */
           /* } else { */
@@ -327,10 +327,11 @@ int main(int argc, char **argv) {
 
       if (can_send_next_goal) {
         // ログ取り用
-        global_message.data = "Log, Done, %d, %d, %d, %d",
-        goal_map[map_type].now.x, goal_map[map_type].now.y,
-        goal_map[map_type].now.action_type, goal_map[map_type].now.action_value;
-        global_message_pub.publish(global_message);
+        /* global_message.data = "Log, Done, %d, %d, %d, %d", */
+        /* goal_map[map_type].now.x, goal_map[map_type].now.y, */
+        /* goal_map[map_type].now.action_type,
+         * goal_map[map_type].now.action_value; */
+        /* global_message_pub.publish(global_message); */
 
         goal_map[map_type].next();
         planner.sendNextGoal(goal_map[map_type].getPtp());

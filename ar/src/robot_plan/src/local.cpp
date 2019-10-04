@@ -257,13 +257,13 @@ private:
   constexpr static double VELOCITY_MIN = 300, VELOCITY_MAX = 3000,
                           ACCEL_MAX = 1500;
   constexpr static double ERROR_DISTANCE_MAX = 40;
-  constexpr static double ROOT_FOLLOW = 2.0;
+  constexpr static double ROOT_FOLLOW = 1.7;
   std::vector<AccelMap> velocity_map[2];
   constexpr static int MAP_SCOPE = 1, MAP_SEARCH_RANGE = 5 * MAP_SCOPE;
   int map_id[2] = {};
   int map_id_max[2] = {};
 
-  arrc::PidVelocity moment{7, 0, 0};
+  arrc::PidVelocity moment{10, 0, 0};
 };
 
 int main(int argc, char **argv) {
