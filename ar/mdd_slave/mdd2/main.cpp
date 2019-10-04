@@ -146,9 +146,9 @@ int main() {
       -720 / (210.0 / 255) * 5 / 3.3,
       720 / (210.0 / 255) * 5 / 3.3}; // mmへの変換倍率
   constexpr int TOW_STAGE_OFFSET[NUM_TWO_REGISTER] = {-1196, 127};
-  constexpr double TWO_STAGE_DOWN = 0.8;
-  PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(0.5, 0, 0, 0),
-                                             PidPosition(0.5, 0, 0, 0)};
+  constexpr double TWO_STAGE_DOWN = 0.5;
+  PidPosition two_motor[NUM_TWO_REGISTER] = {PidPosition(5.0, 0, 0, 0),
+                                             PidPosition(5.0, 0, 0, 0)};
   while (true) {
     for (int i = 0; i < NUM_TWO_REGISTER; ++i) {
       two_hight_current[i] =
