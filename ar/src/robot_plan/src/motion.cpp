@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
 
   // パラメータ
   // 2段目昇降機構
-  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 74, TWO_STAGE_SHEET = 74,
+  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 75, TWO_STAGE_SHEET = 74,
                 TWO_STAGE_READY = 0, TWO_STAGE_ERROR_MAX = 1; // cm
   constexpr double TWO_STAGE_TIME = 0.06;
   // ハンガー
@@ -327,11 +327,12 @@ int main(int argc, char **argv) {
 
       if (can_send_next_goal) {
         // ログ取り用
-        /* global_message.data = "Log, Done, %d, %d, %d, %d", */
-        /* goal_map[map_type].now.x, goal_map[map_type].now.y, */
-        /* goal_map[map_type].now.action_type,
-         * goal_map[map_type].now.action_value; */
-        /* global_message_pub.publish(global_message); */
+        global_message.data = "Log, Done, "
+                              << goal_map[map_type].now.x << ", "
+                              << goal_map[map_type].now.y << ", "
+                              << goal_map[map_type].now.action_type << ", "
+                              << goal_map[map_type].now.action_value;
+        global_message_pub.publish(global_message);
 
         goal_map[map_type].next();
         planner.sendNextGoal(goal_map[map_type].getPtp());
