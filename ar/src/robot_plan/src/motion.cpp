@@ -5,6 +5,7 @@
 #include <motor_serial/motor_serial.h>
 #include <pigpiod.hpp>
 #include <ros/ros.h>
+#include <sstream>
 #include <std_msgs/Bool.h>
 #include <std_msgs/String.h>
 #include <vector>
@@ -161,11 +162,13 @@ int main(int argc, char **argv) {
   int coat;
   if (coat_color == "blue") {
     coat = 1;
+    ROS_WARN_STREAM("Coat is Blue");
   } else if (coat_color == "red") {
     coat = -1;
+    ROS_WARN_STREAM("Coat is Red");
   } else {
     coat = 1;
-    ROS_WARN_STREAM("coat???");
+    ROS_WARN_STREAM("Coat is ???");
   }
 
   // スタート位置の取得
@@ -199,7 +202,7 @@ int main(int argc, char **argv) {
   // 0: ハンガー, 1: シーツ
   int map_type = 0;
   GoalManager goal_map[NUM_MAP] = {GoalManager(coat), GoalManager(coat)};
-  goal_map[0].add(start_x, start_y, 0, 11); // Move: スタートゾーン
+  goal_map[0].add(start_x, start_y, 0); // Move: スタートゾーン
   goal_map[0].add(5400, 5500, 0, 1,
                   TWO_STAGE_HUNGER); // Move: 小ポール横 -> Start: 昇降
   goal_map[0].add(
@@ -236,6 +239,13 @@ int main(int argc, char **argv) {
     Pi::gpio().set(pin, IN, PULL_DOWN);
   }
 
+  while (ros::ok()) {
+    if (Pi::gpio().read(START)) {
+      global_message.data = "Game Start";
+      global_message_pub.publish(global_message);
+      break;
+    }
+  }
   goal_map[map_type].restart();
 
   constexpr double FREQ = 10;
@@ -309,8 +319,6 @@ int main(int argc, char **argv) {
       }
       case 11: {
         if (Pi::gpio().read(START)) {
-          global_message.data = "Game Start";
-          global_message_pub.publish(global_message);
           /* if (Pi::gpio().read(SHEET)) { */
           /*   map_type = 1; */
           /* } else { */
@@ -327,11 +335,12 @@ int main(int argc, char **argv) {
 
       if (can_send_next_goal) {
         // ログ取り用
-        global_message.data = "Log, Done, "
-                              << goal_map[map_type].now.x << ", "
-                              << goal_map[map_type].now.y << ", "
-                              << goal_map[map_type].now.action_type << ", "
-                              << goal_map[map_type].now.action_value;
+        std::stringstream ss;
+        ss << "Log, Done, " << goal_map[map_type].now.x << ", "
+           << goal_map[map_type].now.y << ", "
+           << goal_map[map_type].now.action_type << ", "
+           << goal_map[map_type].now.action_value;
+        global_message.data = ss.str();
         global_message_pub.publish(global_message);
 
         goal_map[map_type].next();
