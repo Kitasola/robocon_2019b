@@ -86,7 +86,7 @@ bool rockTray(int cmd, int rx_data, int &tx_data) {
 }
 
 PwmOut hand_servo(PA_3);
-constexpr int HAND_CATCH_ANGLE = 130, HAND_RELEASE_ANGLE = 0;
+constexpr int HAND_CATCH_ANGLE = 170, HAND_RELEASE_ANGLE = 0;
 constexpr double WAIT_HAND_SERVO = 1;
 void actHand(int degree) {
   hand_servo.pulsewidth(map(degree, 0, 180, 0.9e-3, 2.25e-3));

@@ -98,10 +98,11 @@ int main() {
   constexpr int TARY_MOTOR_ID = 0, MAX_TARY_MOTOR_SPEED = -100; // 下向き
   DigitalIn slit(PA_0);
   slit.mode(PullUp);
-  int current_slit = 0, prev_slit = 0;
   constexpr int LIGHT = 1, DARK = 0;
+  int current_slit = LIGHT, prev_slit = LIGHT;
   DigitalIn limit_lower(PA_11);
   limit_lower.mode(PullUp);
+  DigitalOut limit_led(PB_7);
   int phase = 0, current_tray_point = 0;
 
   /* constexpr int motor_3 = 1; */
@@ -115,8 +116,9 @@ int main() {
     /*     spinMotor(motor_3, pid_3.control((double)goal_speed_3,
      * current_speed_3)); */
 
-    /*     prev_slit = current_slit; */
-    /*     current_slit = slit.read(); */
+    prev_slit = current_slit;
+    current_slit = slit.read();
+    limit_led = limit_lower.read();
 
     switch (phase) {
     case 0:
