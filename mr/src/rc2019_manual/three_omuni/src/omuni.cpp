@@ -46,13 +46,13 @@ void gyro_callback(const std_msgs::Float64 &gyro_info) {
 void change_speed(double speed, double angle, double *wheel_control,
                   double turn_right, double turn_left) {
   // resolutional_speed�~A��~[~^転�~H~P�~H~F
-  double true_angle = angle - gyro_angle;
+  double true_angle = angle + gyro_angle;
   double speed_x, speed_y;
   // if(true_angle >= (M_PI / 2) && true_angle <= ((2 *M_PI) / 3)){
-  // if(cos(gyro_angle) >= 0){
-  speed_x = -1 * speed * cos(true_angle);
+  //if(cos(gyro_angle) >= 0){
+  	speed_x = -1 * speed * cos(true_angle);
   //}else{
-  // speed_x = speed * cos(true_angle);
+  //      speed_x = speed * cos(true_angle);
   //}
   // double speed_x = -1 * speed * cos(angle);
   // if(true_angle > ((2 * M_PI) / 3) && true_angle < (M_PI / 2)){
