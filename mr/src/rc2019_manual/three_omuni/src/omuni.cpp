@@ -40,30 +40,44 @@ void joy_callback(const three_omuni::button &move_info) {
 }
 
 void gyro_callback(const std_msgs::Float64 &gyro_info) {
-  gyro_angle = gyro_info.data;
+  gyro_angle = gyro_info.data * (M_PI / 180);
 }
 
 void change_speed(double speed, double angle, double *wheel_control,
                   double turn_right, double turn_left) {
   // resolutional_speed�~A��~[~^転�~H~P�~H~F
-  double speed_x = -1 * speed * cos(angle - gyro_angle);
-  double speed_y = speed * sin(angle - gyro_angle);
-  double resolutional_speed = (robot_right + robot_left - gyro_angle);
+  double true_angle = angle - gyro_angle;
+  double speed_x, speed_y;
+  // if(true_angle >= (M_PI / 2) && true_angle <= ((2 *M_PI) / 3)){
+  // if(cos(gyro_angle) >= 0){
+  speed_x = -1 * speed * cos(true_angle);
+  //}else{
+  // speed_x = speed * cos(true_angle);
+  //}
+  // double speed_x = -1 * speed * cos(angle);
+  // if(true_angle > ((2 * M_PI) / 3) && true_angle < (M_PI / 2)){
+  // if(sin(gyro_angle) >= 0){
+  speed_y = speed * sin(true_angle);
+  //}else{
+  // speed_y = -1 * speed * sin(true_angle);
+  //}
+  // double speed_y = speed * sin(angle);
+  double resolutional_speed = robot_right + robot_left;
   // cout << speed_x << ", " << speed_y << endl;
   wheel_control[0] =
-      (((-1 * speed_x * cos(M_PI / 3)) + (speed_y * sin(M_PI / 3))) +
-       resolutional_speed) /
+      1.2 * (((-1 * speed_x * cos(M_PI / 3)) + (speed_y * sin(M_PI / 3))) +
+             resolutional_speed) /
       3;
-  // wheel_control[0] =((-1 * speed_x * cos(M_PI / 3)) + (speed_y * sin(M_PI /
-  // 3)));
+  // wheel_control[0] = 1.2 * (((-1 * speed_x * cos(M_PI / 3)) + (speed_y *
+  // sin(M_PI / 3))) + resolutional_speed) / 3;
   wheel_control[1] =
-      (2 * ((-1 * speed_x * cos(M_PI / 3)) - (speed_y * sin(M_PI / 3))) +
-       resolutional_speed) /
+      1.4 * (((-1 * speed_x * cos(M_PI / 3)) - (speed_y * sin(M_PI / 3))) +
+             resolutional_speed) /
       3;
-  // wheel_control[1] = 1.5 * ((-1 * speed_x * cos(M_PI / 3)) - (speed_y *
-  // sin(M_PI / 3)));
-  wheel_control[2] = (speed_x + resolutional_speed) / 3;
-  // wheel_control[2] = speed_x;
+  // wheel_control[1] = 1.4 * (((-1 * speed_x * cos(M_PI / 3)) - (speed_y *
+  // sin(M_PI / 3))) + resolutional_speed) / 3;
+  wheel_control[2] = 1.1 * (speed_x + resolutional_speed) / 3;
+  // wheel_control[2] = 1.1 * (speed_x + resolutional_speed) / 3;
   // cout << wheel_control[0] << ", " << wheel_control[1] << ", " <<
   // wheel_control[2] << endl;
   //	if(resolutional != 0){

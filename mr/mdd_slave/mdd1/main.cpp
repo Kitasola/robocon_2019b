@@ -110,8 +110,6 @@ int main() {
   /* //get_speed_2 = rotary_inc_2.getSpeed(); */
   /* //current_speed_1 = get_speed_1 * diameter * M_PI / 1000; */
   /* //current_speed_2 = get_speed_2 * diameter * M_PI / 1000; */
-
-  /* PidPosition pid_1 = PidPosition(2, 0, 0, 0); */
   /* PidPosition pid_2 = PidPosition(2, 0, 0, 0); */
   while (true) {
 
