@@ -39,8 +39,8 @@ int main(int argc, char **argv){
 
 	while(ros::ok()){
 		angle_calcurate(&angle_1, &angle_2);
-		ROS_INFO("angle_1 = %lf", x);
-		ROS_INFO("angle_2 = %lf", y);
+		ROS_INFO("angle_1 = %lf", angle_1);
+		ROS_INFO("angle_2 = %lf", angle_2);
 		//angle.data[0] = (M_PI / 2) - angle_1;
 		//angle.data[1] = angle_1 - angle_2;
 		//angle_check.data[0] = angle_1 * (180 / M_PI);
