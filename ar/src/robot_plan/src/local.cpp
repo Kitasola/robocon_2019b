@@ -255,10 +255,10 @@ private:
   ros::Publisher velocity_pub, reach_goal_pub;
   geometry_msgs::Twist send_twist, goal_velocity;
   double velocity_final_prev[2] = {};
-  constexpr static double VELOCITY_MIN = 500, VELOCITY_MAX = 3000,
+  constexpr static double VELOCITY_MIN = 100, VELOCITY_MAX = 3000,
                           ACCEL_MAX = 1500;
-  constexpr static double ERROR_DISTANCE_MAX = 40;
-  constexpr static double ROOT_FOLLOW = 1.7;
+  constexpr static double ERROR_DISTANCE_MAX = 50;
+  constexpr static double ROOT_FOLLOW = 0;
   std::vector<AccelMap> velocity_map[2];
   constexpr static int MAP_SCOPE = 1, MAP_SEARCH_RANGE = 5 * MAP_SCOPE;
   int map_id[2] = {};
