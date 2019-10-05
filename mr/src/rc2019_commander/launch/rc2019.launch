@@ -3,6 +3,7 @@
     <!--<machine name="ubuntu" address="ubuntu" env-loader="/home/ubuntu/robocon_2019b/mr/devel/env.sh" user="ubuntu" password="ubuntu"/>-->
     <machine name="ubuntu" address="172.20.10.12" env-loader="/home/ubuntu/robocon_2019b/mr/devel/env.sh" user="ubuntu" password="ubuntu"/>
     <node machine="ubuntu" name="motor_serial" pkg="motor_serial" type="motor_serial"/>
+    <node machine="ubuntu" name="expansion" pkg="robot_expansion" type="expansion"/>
     <node name="omuni" pkg="three_omuni" type="omuni"/>
     <node machine="ubuntu" name="gyro" pkg="robot_sensor" type="gyro"/>
     <node name="calibration" pkg="robot_calibration" type="calibration"/>
