@@ -67,16 +67,16 @@ void change_speed(double speed, double angle, double *wheel_control,
   wheel_control[0] =
       1.2 * (((-1 * speed_x * cos(M_PI / 3)) + (speed_y * sin(M_PI / 3))) +
              resolutional_speed) /
-      3;
+      1;
   // wheel_control[0] = 1.2 * (((-1 * speed_x * cos(M_PI / 3)) + (speed_y *
   // sin(M_PI / 3))) + resolutional_speed) / 3;
   wheel_control[1] =
       1.4 * (((-1 * speed_x * cos(M_PI / 3)) - (speed_y * sin(M_PI / 3))) +
              resolutional_speed) /
-      3;
+      1;
   // wheel_control[1] = 1.4 * (((-1 * speed_x * cos(M_PI / 3)) - (speed_y *
   // sin(M_PI / 3))) + resolutional_speed) / 3;
-  wheel_control[2] = 1.1 * (speed_x + resolutional_speed) / 3;
+  wheel_control[2] = 1.1 * (speed_x + resolutional_speed) / 1;
   // wheel_control[2] = 1.1 * (speed_x + resolutional_speed) / 3;
   // cout << wheel_control[0] << ", " << wheel_control[1] << ", " <<
   // wheel_control[2] << endl;
