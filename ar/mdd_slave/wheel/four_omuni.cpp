@@ -73,6 +73,7 @@ int main() {
     g_drive_led[i] = new DigitalOut(drive_led[i]);
   }
   constexpr int DRIVE_ROTARY_RANGE = 256, DRIVE_ROTARY_MULTI = 1;
+  constexpr double MIN_DRIVE_SPEED = 0;
   constexpr double DRIVE_WHEEL_DIAMETER = 101.6;
   RotaryInc drive_rotary[NUM_WHEEL] = {
       RotaryInc(PC_2, PC_3, DRIVE_WHEEL_DIAMETER * M_PI, DRIVE_ROTARY_RANGE,
@@ -84,8 +85,10 @@ int main() {
       RotaryInc(PC_10, PC_11, DRIVE_WHEEL_DIAMETER * M_PI, DRIVE_ROTARY_RANGE,
                 DRIVE_ROTARY_MULTI)};
   PidPosition drive_speed[NUM_WHEEL] = {
-      PidPosition(0.0003, 0.005, 0, 0.2), PidPosition(0.0003, 0.005, 0, 0.2),
-      PidPosition(0.0003, 0.005, 0, 0.2), PidPosition(0.0003, 0.005, 0, 0.2)};
+      PidPosition(0.00065, 0.005, 0.0000005, 0.2),
+      PidPosition(0.00028, 0.005, 0.0000007, 0.2),
+      PidPosition(0.00028, 0.005, 0.0000007, 0.2),
+      PidPosition(0.00029, 0.005, 0.0000007, 0.2)};
 
   /* 計測輪 */
   constexpr int MEASURE_ROTARY_RANGE = 256, MEASURE_ROTARY_MULTI = 2;
@@ -141,9 +144,12 @@ int main() {
       for (int j = 0; j < NUM_AXIS; ++j) {
         drive_goal[i] += DRIVE_MATRIX[i][j] * robot_velocity[j];
       }
-      spinMotor(i, drive_speed[i].control(
-                       drive_goal[i],
-                       (drive_velocity[i] = drive_rotary[i].getSpeed())));
+      double drive_control = drive_speed[i].control(
+          drive_goal[i], (drive_velocity[i] = drive_rotary[i].getSpeed()));
+      if (drive_control < MIN_DRIVE_SPEED && drive_control > -MIN_DRIVE_SPEED) {
+        drive_control = 0;
+      }
+      spinMotor(i, drive_control);
     }
 
     // Odometry

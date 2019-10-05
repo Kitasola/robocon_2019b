@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
   ros::Subscriber wheel_velocity_sub =
       n.subscribe("wheel/velocity", 100, getVelocity);
   ros::Subscriber global_sub =
-      n.subscribe("global_message", 1, checkGlobalMessage);
+      n.subscribe("global_message", 10, checkGlobalMessage);
 
   constexpr int FREQ = 100;
   ros::Rate loop_rate(FREQ);

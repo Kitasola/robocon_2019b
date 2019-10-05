@@ -4,6 +4,7 @@
 #include <pid.hpp>
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/String.h>
 #include <vector>
 
 inline double pow2(double x) { return x * x; }

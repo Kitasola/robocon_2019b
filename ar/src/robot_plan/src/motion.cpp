@@ -241,11 +241,11 @@ int main(int argc, char **argv) {
 
   while (ros::ok()) {
     if (Pi::gpio().read(START)) {
-      global_message.data = "Game Start";
-      global_message_pub.publish(global_message);
       break;
     }
   }
+  global_message.data = "Game Start";
+  global_message_pub.publish(global_message);
   goal_map[map_type].restart();
 
   constexpr double FREQ = 10;
