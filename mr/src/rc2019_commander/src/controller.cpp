@@ -11,7 +11,7 @@ rc2019_commander::button data; //button message
 double stick_x, stick_y, rotation_right_law, rotation_left_law, angle_move, velocity_move, speed;
 
 namespace akashi{
-    int map(double x, double in_min, double in_max, int out_min, int out_max) {
+    double map(double x, double in_min, double in_max, double out_min, double out_max) {
         return (double)(x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
     }
 }
