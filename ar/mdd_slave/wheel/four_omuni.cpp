@@ -85,7 +85,7 @@ int main() {
       RotaryInc(PC_10, PC_11, DRIVE_WHEEL_DIAMETER * M_PI, DRIVE_ROTARY_RANGE,
                 DRIVE_ROTARY_MULTI)};
   PidPosition drive_speed[NUM_WHEEL] = {
-      PidPosition(0.00065, 0.005, 0.0000005, 0.2),
+      PidPosition(0.00030, 0.005, 0.0000007, 0.2),
       PidPosition(0.00028, 0.005, 0.0000007, 0.2),
       PidPosition(0.00028, 0.005, 0.0000007, 0.2),
       PidPosition(0.00029, 0.005, 0.0000007, 0.2)};

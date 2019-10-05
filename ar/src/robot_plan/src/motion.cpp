@@ -240,15 +240,16 @@ int main(int argc, char **argv) {
   }
 
   while (ros::ok()) {
-    if (Pi::gpio().read(START)) {
+    if (Pi::gpio().read(START) == 1) {
+      goal_map[map_type].next();
+      planner.sendNextGoal(goal_map[map_type].getPtp());
       break;
     }
   }
   global_message.data = "Game Start";
   global_message_pub.publish(global_message);
-  goal_map[map_type].restart();
 
-  constexpr double FREQ = 10;
+  constexpr double FREQ = 50;
   ros::Rate loop_rate(FREQ);
 
   while (ros::ok()) {
@@ -317,20 +318,20 @@ int main(int argc, char **argv) {
           break;
         }
       }
-      case 11: {
-        if (Pi::gpio().read(START)) {
-          /* if (Pi::gpio().read(SHEET)) { */
-          /*   map_type = 1; */
-          /* } else { */
-          /*   map_type = 0; */
-          /* } */
-          map_type = 0;
-          goal_map[map_type].restart();
-          can_send_next_goal = true;
-          changed_phase = true;
-        }
-        break;
-      }
+        /* case 11: { */
+        /* if (Pi::gpio().read(START) == 1) { */
+        /* if (Pi::gpio().read(SHEET)) { */
+        /*   map_type = 1; */
+        /* } else { */
+        /*   map_type = 0; */
+        /* } */
+        /* map_type = 0; */
+        /* goal_map[map_type].restart(); */
+        /* can_send_next_goal = true; */
+        /* changed_phase = true; */
+        /* } */
+        /* break; */
+        /* } */
       }
 
       if (can_send_next_goal) {
