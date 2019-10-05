@@ -63,9 +63,7 @@ public:
       std_msgs::Bool msgs;
       msgs.data = true;
       reach_goal_pub.publish(msgs);
-      send_twist.linear.x = 0;
-      send_twist.linear.y = 0;
-      send_twist.angular.z = 0;
+      send_twist.angular.y = -1;
       velocity_pub.publish(send_twist);
       return;
     } else {
@@ -113,9 +111,9 @@ public:
         }
       }
     }
-
     send_twist.angular.z = moment.control(goal_point.theta * 180 / M_PI,
                                           current_point.theta * 180 / M_PI);
+
     velocity_pub.publish(send_twist);
   }
 

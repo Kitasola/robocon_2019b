@@ -222,6 +222,7 @@ int main(int argc, char **argv) {
   goal_map[0].add(5400, 5500, 0);   // Move: 小ポール横
   goal_map[0].add(start_x, start_y, 0,
                   11); // Move: スタートゾーン -> Wait: スタートスイッチ
+  goal_map[0].restart();
 
   goal_map[1].add(start_x, start_y, 0,
                   11); // Move: スタートゾーン -> Wait: スタートスイッチ
@@ -230,6 +231,7 @@ int main(int argc, char **argv) {
   goal_map[1].add(5400, 9250, 0); // Move: 大ポール横
   goal_map[1].add(start_x, start_y, 0,
                   11); // Move: 大ポール横 -> Wait: スタートスイッチ
+  goal_map[1].restart();
 
   bool changed_phase = true;
   double start;
@@ -241,15 +243,15 @@ int main(int argc, char **argv) {
 
   while (ros::ok()) {
     if (Pi::gpio().read(START) == 1) {
-      goal_map[map_type].next();
       planner.sendNextGoal(goal_map[map_type].getPtp());
+      goal_map[map_type].next();
       break;
     }
   }
   global_message.data = "Game Start";
   global_message_pub.publish(global_message);
 
-  constexpr double FREQ = 50;
+  constexpr double FREQ = 10;
   ros::Rate loop_rate(FREQ);
 
   while (ros::ok()) {
@@ -344,8 +346,8 @@ int main(int argc, char **argv) {
         global_message.data = ss.str();
         global_message_pub.publish(global_message);
 
-        goal_map[map_type].next();
         planner.sendNextGoal(goal_map[map_type].getPtp());
+        goal_map[map_type].next();
       }
 
       loop_rate.sleep();
