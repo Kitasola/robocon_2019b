@@ -141,13 +141,18 @@ int main() {
     double drive_goal[NUM_WHEEL] = {};
     double drive_velocity[NUM_WHEEL] = {};
     for (int i = 0; i < NUM_WHEEL; ++i) {
-      for (int j = 0; j < NUM_AXIS; ++j) {
-        drive_goal[i] += DRIVE_MATRIX[i][j] * robot_velocity[j];
-      }
-      double drive_control = drive_speed[i].control(
-          drive_goal[i], (drive_velocity[i] = drive_rotary[i].getSpeed()));
-      if (drive_control < MIN_DRIVE_SPEED && drive_control > -MIN_DRIVE_SPEED) {
+      double drive_control;
+      drive_velocity[i] = drive_rotary[i].getSpeed();
+      if ((int)goal_twist.angular.y == -1) {
+        drive_goal[i] = drive_velocity[i];
+        drive_speed[i].control(drive_goal[i], drive_velocity[i]);
         drive_control = 0;
+      } else {
+        for (int j = 0; j < NUM_AXIS; ++j) {
+          drive_goal[i] += DRIVE_MATRIX[i][j] * robot_velocity[j];
+        }
+        drive_control =
+            drive_speed[i].control(drive_goal[i], drive_velocity[i]);
       }
       spinMotor(i, drive_control);
     }
