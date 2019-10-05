@@ -20,25 +20,33 @@ void expansionCallback(const std_msgs::String &msg){
 }
 
 int dummy;
+bool flag_expansion_up = false;
+bool flag_expansion_down = false;
 
-void controller_callback(const three_omuni::button &msg){
+void controllerCallback(const three_omuni::button &msg){
     static int data_expansion = 0;
-    if(msg.expansion_up != false){
+    if(msg.expansion_up){
+	flag_expansion_up = true;
         srv.request.id = 2;
-        srv.request.cmd = 4;
-        srv.request.data = ++data_expansion;
+        srv.request.cmd = 73;
+        srv.request.data = 1;
     }
-    if(msg.expansion_down != false){
+    if(msg.expansion_down){
         srv.request.id = 2;
-        srv.request.cmd = 4;
-        srv.request.data = --data_expansion;
+        srv.request.cmd = 73;
+        srv.request.data = 2;
+    }
+    if(msg.expansion_up == false && msg.expansion_down == false){
+	srv.request.id = 2;
+        srv.request.cmd = 73;
+        srv.request.data = 0;
     }
 }
 
 int main(int argc, char **argv){
     ros::init(argc, argv, "expansion");
     ros::NodeHandle n;
-    ros::Subscriber expansion_sub = n.subscribe("expansion_switch_info", 10, expansionCallback);
+    ros::Subscriber expansion_sub = n.subscribe("controller_info", 10, controllerCallback);
     expansion_client = n.serviceClient<motor_serial::motor_serial>("robot_expansion");
 
     ros::spin();
