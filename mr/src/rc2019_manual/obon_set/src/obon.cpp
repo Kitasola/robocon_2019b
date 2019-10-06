@@ -4,7 +4,10 @@
 
 bool flag_hand = false;
 void controllerCallback(const three_omuni::button &msg){
-	msg.hand == true ? flag_hand = true : flag_hand = false;
+	//msg.hand == true ? flag_hand = true : flag_hand = false;
+	if(msg.hand == true){
+		flag_hand != flag_hand;
+	}
 }
 int main(int argc, char **argv){
 	ros::init(argc, argv, "robot_hand");
@@ -19,6 +22,7 @@ int main(int argc, char **argv){
 	srv.request.cmd = 40;
 	srv.request.data = data;
 	robot_hand.call(srv);
+	ROS_INFO("%d", data);
 	ros::spin();
 }
 
