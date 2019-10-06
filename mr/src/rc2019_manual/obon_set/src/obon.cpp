@@ -22,7 +22,7 @@ int main(int argc, char **argv){
 	ros::ServiceClient robot_hand = n.serviceClient<motor_serial::motor_serial>("hand_info");
 	ros::Publisher hand_pub = n.advertise<std_msgs::Int16>("check_pub", 10);
 	motor_serial::motor_serial srv;
-	ros::Rate loop_rate(10);
+	ros::Rate loop_rate(1000);
 
 	while(ros::ok()){
 		std_msgs::Int16 check;
