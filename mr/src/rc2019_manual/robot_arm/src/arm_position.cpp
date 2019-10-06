@@ -62,10 +62,10 @@ int main(int argc, char **argv){
         //std_msgs::Bool calibration;
         //if(flag_calibration){
         //if(arm_count > motion_sum) arm_count = 0;
-	if(angle_flag_prev = true){
+	/*if(angle_flag_prev = true){
         	angle_data.data[0] = 400;
         	angle_data.data[1] = 250;
-	}	
+	}*/	
         position_pub.publish(angle_data);
         ROS_INFO("%d", (int)angle_data.data[0]);
         //    calibration.data = true;
