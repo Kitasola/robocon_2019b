@@ -4,20 +4,21 @@
 #include<std_msgs/Int16.h>
 bool flag_hand = false;
 bool flag_hand_prev = false;
+bool flag_prev = false;
 void controllerCallback(const three_omuni::button &msg){
 	//msg.hand == true ? flag_hand = true : flag_hand = false;
-	if(msg.hand == true){
-		if(flag_hand_prev){
-			flag_hand = false;
-		}else{
-			flag_hand = true;
+	if(msg.hand){
+		if(flag_prev == false){
+			if(flag_hand_prev){
+				flag_hand = false;
+			}else{
+				flag_hand = true;
+			}		
+			flag_hand_prev = flag_hand;
 		}
-
-		if(flag_hand_prev == false){
-			flag_hand_prev = true;
-		}else{
-			flag_hand_prev = false;
-		}
+		flag_prev = true;
+	}else{
+		flag_prev = false;
 	}
 }
 int main(int argc, char **argv){
