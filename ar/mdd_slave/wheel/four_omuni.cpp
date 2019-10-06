@@ -89,6 +89,7 @@ int main() {
       PidPosition(0.00028, 0.005, 0.0000007, 0.2),
       PidPosition(0.00028, 0.005, 0.0000007, 0.2),
       PidPosition(0.00029, 0.005, 0.0000007, 0.2)};
+  double drive_velocity[NUM_WHEEL] = {}, drive_filter = 0.95;
 
   /* 計測輪 */
   constexpr int MEASURE_ROTARY_RANGE = 256, MEASURE_ROTARY_MULTI = 2;
@@ -139,10 +140,10 @@ int main() {
                                            goal_twist.linear.y * cos(robot_yaw),
                                        goal_twist.angular.z};
     double drive_goal[NUM_WHEEL] = {};
-    double drive_velocity[NUM_WHEEL] = {};
     for (int i = 0; i < NUM_WHEEL; ++i) {
       double drive_control;
-      drive_velocity[i] = drive_rotary[i].getSpeed();
+      drive_velocity[i] = drive_velocity[i] * drive_filter +
+                          drive_rotary[i].getSpeed() * (1 - drive_filter);
       if ((int)goal_twist.angular.y == -1) {
         drive_goal[i] = drive_velocity[i];
         drive_speed[i].control(drive_goal[i], drive_velocity[i]);
