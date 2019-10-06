@@ -13,7 +13,9 @@ void controllerCallback(const three_omuni::button &msg){
 			flag_hand = true;
 		}
 	}
-	flag_hand_prev = flag_hand;
+	if(msg.hand != flag_hand_prev){
+		flag_hand_prev = flag_hand;
+	}
 }
 int main(int argc, char **argv){
 	ros::init(argc, argv, "robot_hand");
