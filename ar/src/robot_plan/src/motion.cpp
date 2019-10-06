@@ -178,7 +178,7 @@ int main(int argc, char **argv) {
 
   // パラメータ
   // 2段目昇降機構
-  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 75, TWO_STAGE_SHEET = 74,
+  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 75, TWO_STAGE_SHEET = 75,
                 TWO_STAGE_READY = 0, TWO_STAGE_ERROR_MAX = 1; // cm
   constexpr double TWO_STAGE_TIME = 0.06;
   // ハンガー
@@ -203,23 +203,24 @@ int main(int argc, char **argv) {
   int map_type = 0;
   GoalManager goal_map[NUM_MAP] = {GoalManager(coat), GoalManager(coat)};
   goal_map[0].add(start_x, start_y, 0, 11); // Move: スタートゾーン
-  goal_map[0].add(5400, 5500, 0, 1,
+  goal_map[0].add(5400, 5500, 0);
+  goal_map[0].add(3650, 5500, 0, 1,
                   TWO_STAGE_HUNGER); // Move: 小ポール横 -> Start: 昇降
   goal_map[0].add(
-      3650, 5500, 0, 10,
+      3650, 5000, 0, 10,
       TWO_STAGE_HUNGER *
           TWO_STAGE_TIME); // Move: 小ポール横 -> Wait: 昇降完了タイマー
   /* goal_map[0].add(3650, 5500, 0); // Move: ハンガー前 */
   goal_map[0].add(
-      3650, 5000, 0, 2,
+      2850, 5000, 0, 2,
       HUNGER_WAIT_TIME); // Move: ハンガー手前 -> Wait:ハンガー完了タイマー
-  goal_map[0].add(2850, 5000, 0, 2,
-                  HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
   goal_map[0].add(2050, 5000, 0, 2,
                   HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
-  goal_map[0].add(2050, 5500, 0, 1,
+  goal_map[0].add(2050, 5500, 0, 2,
+                  HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
+  goal_map[0].add(5400, 5500, 0, 1,
                   TWO_STAGE_READY); // Move: ハンガー前 -> Start: 昇降
-  goal_map[0].add(5400, 5500, 0);   // Move: 小ポール横
+  /* goal_map[0].add(5400, 5500, 0);   // Move: 小ポール横 */
   goal_map[0].add(start_x, start_y,
                   0); // Move: スタートゾーン -> Wait: スタートスイッチ
   goal_map[0].restart();

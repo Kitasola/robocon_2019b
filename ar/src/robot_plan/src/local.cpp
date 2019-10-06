@@ -276,7 +276,7 @@ private:
   int map_id_max[2] = {};
   std_msgs::Bool msgs;
 
-  arrc::PidVelocity moment{20, 0, 0};
+  arrc::PidVelocity moment{15, 0, 0};
 };
 
 int main(int argc, char **argv) {
