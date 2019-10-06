@@ -7,9 +7,9 @@
     <node name="omuni" pkg="three_omuni" type="omuni"/>
     <node machine="ubuntu" name="gyro" pkg="robot_sensor" type="gyro"/>
     <node name="calibration" pkg="robot_calibration" type="calibration"/>
-    <node name="obon" pkg="obon_set" type="obon"/>
+    <node name="obon" pkg="obon_set" type="obon" output="screen"/>
     <node name="arm_position" pkg="robot_arm" type="arm_position"/>
-    <node name="arm_angle" pkg="robot_arm" type="arm_angle" output="screen"/>
+    <node name="arm_angle" pkg="robot_arm" type="arm_angle"/>
     <node name="controller" pkg="rc2019_commander" type="controller"/>
     <node name="joy_node" pkg="joy" type="joy_node"/>
 </launch>
