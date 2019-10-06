@@ -12,9 +12,12 @@ void controllerCallback(const three_omuni::button &msg){
 		}else{
 			flag_hand = true;
 		}
-	}
-	if(msg.hand != flag_hand_prev){
-		flag_hand_prev = flag_hand;
+
+		if(flag_hand_prev == false){
+			flag_hand_prev = true;
+		}
+	}else{
+		flag_hand_prev = false;
 	}
 }
 int main(int argc, char **argv){
