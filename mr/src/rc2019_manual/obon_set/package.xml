@@ -51,10 +51,20 @@
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>std_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend>motor_serial</build_depend>
+  <build_depend>three_omuni</build_depend>
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
   <exec_depend>roscpp</exec_depend>
   <exec_depend>std_msgs</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
+  <exec_depend>motor_serial</exec_depend>
+  <exec_depend>three_omuni</exec_depend>
+  <build_depend>motor_serial_containing_custom_srv</build_depend>
+  <exec_depend>motor_serial_containing_custom_srv</exec_depend>
+  <build_depend>three_omuni_containing_custom_msg</build_depend>
+  <exec_depend>three_omuni_containing_custom_msg</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

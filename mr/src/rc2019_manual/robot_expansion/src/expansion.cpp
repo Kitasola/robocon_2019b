@@ -20,13 +20,10 @@ void expansionCallback(const std_msgs::String &msg){
 }
 
 int dummy;
-bool flag_expansion_up = false;
-bool flag_expansion_down = false;
 
 void controllerCallback(const three_omuni::button &msg){
     static int data_expansion = 0;
     if(msg.expansion_up){
-	flag_expansion_up = true;
         srv.request.id = 2;
         srv.request.cmd = 73;
         srv.request.data = 1;
