@@ -3,11 +3,13 @@
 #include"motor_serial/motor_serial.h"
 #include<std_msgs/Int16.h>
 bool flag_hand = false;
+bool flag_hand_prev = false;
 void controllerCallback(const three_omuni::button &msg){
 	//msg.hand == true ? flag_hand = true : flag_hand = false;
 	if(msg.hand == true){
-		flag_hand != flag_hand;
+		flag_hand != flag_hand_prev;
 	}
+	flag_hand_prev = flag_hand;
 }
 int main(int argc, char **argv){
 	ros::init(argc, argv, "robot_hand");
