@@ -8,6 +8,7 @@ void controllerCallback(const three_omuni::button &msg){
 	//msg.hand == true ? flag_hand = true : flag_hand = false;
 	if(msg.hand == true){
 		flag_hand != flag_hand_prev;
+		ROS_INFO("%d", 100);
 	}
 	flag_hand_prev = flag_hand;
 }
