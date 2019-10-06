@@ -30,10 +30,21 @@ public:
         n->subscribe("robot_pose", 1, &SVelocity::getRobotPose, this);
     rate = user_rate * MAP_SCOPE;
     int start_x, start_y;
+    // コート情報の取得
+    std::string coat_color;
+    n->getParam("/coat", coat_color);
+    int coat;
+    if (coat_color == "blue") {
+      coat = 1;
+    } else if (coat_color == "red") {
+      coat = -1;
+    } else {
+      coat = 1;
+    }
     n->getParam("/ar/start_x", start_x);
     n->getParam("/ar/start_y", start_y);
     AccelMap dummy;
-    goal_point.x = dummy.position = start_x;
+    goal_point.x = dummy.position = coat * start_x;
     dummy.velocity = 0;
     velocity_map[0].push_back(dummy);
     goal_point.y = dummy.position = start_y;
@@ -60,13 +71,14 @@ public:
   void control() {
     if (hypot(goal_point.x - current_point.x, goal_point.y - current_point.y) <
         ERROR_DISTANCE_MAX) {
-      std_msgs::Bool msgs;
       msgs.data = true;
       reach_goal_pub.publish(msgs);
       send_twist.angular.y = -1;
       velocity_pub.publish(send_twist);
       return;
     } else {
+      msgs.data = false;
+      reach_goal_pub.publish(msgs);
       for (int i = 0; i < 2; ++i) {
         int search_id_min = map_id[i] - MAP_SEARCH_RANGE;
         int search_id_max = map_id[i] + MAP_SEARCH_RANGE;
@@ -114,6 +126,7 @@ public:
     send_twist.angular.z = moment.control(goal_point.theta * 180 / M_PI,
                                           current_point.theta * 180 / M_PI);
 
+    send_twist.angular.y = 0;
     velocity_pub.publish(send_twist);
   }
 
@@ -253,16 +266,17 @@ private:
   ros::Publisher velocity_pub, reach_goal_pub;
   geometry_msgs::Twist send_twist, goal_velocity;
   double velocity_final_prev[2] = {};
-  constexpr static double VELOCITY_MIN = 100, VELOCITY_MAX = 3000,
-                          ACCEL_MAX = 1500;
+  constexpr static double VELOCITY_MIN = 300, VELOCITY_MAX = 3000,
+                          ACCEL_MAX = 1000;
   constexpr static double ERROR_DISTANCE_MAX = 50;
-  constexpr static double ROOT_FOLLOW = 0;
+  constexpr static double ROOT_FOLLOW = 1.7;
   std::vector<AccelMap> velocity_map[2];
   constexpr static int MAP_SCOPE = 1, MAP_SEARCH_RANGE = 5 * MAP_SCOPE;
   int map_id[2] = {};
   int map_id_max[2] = {};
+  std_msgs::Bool msgs;
 
-  arrc::PidVelocity moment{10, 0, 0};
+  arrc::PidVelocity moment{20, 0, 0};
 };
 
 int main(int argc, char **argv) {

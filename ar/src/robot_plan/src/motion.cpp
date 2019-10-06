@@ -123,11 +123,11 @@ enum Switch {
   RESET = 10,
   CALIBRATION = 11,
   SHEET = 12,
-  TOWEL_0 = 13,
-  TOWEL_1 = 14,
-  TOWEL_2 = 15,
-  LRF = 16,
-  ODOM = 17
+  TOWEL_0 = 16,
+  TOWEL_1 = 17,
+  TOWEL_2 = 18,
+  LRF = 19,
+  ODOM = 20
 };
 Switch ALL_SWITCH[] = {START,   RESET,   CALIBRATION, SHEET, TOWEL_0,
                        TOWEL_1, TOWEL_2, LRF,         ODOM};
@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
   // 0: ハンガー, 1: シーツ
   int map_type = 0;
   GoalManager goal_map[NUM_MAP] = {GoalManager(coat), GoalManager(coat)};
-  goal_map[0].add(start_x, start_y, 0); // Move: スタートゾーン
+  goal_map[0].add(start_x, start_y, 0, 11); // Move: スタートゾーン
   goal_map[0].add(5400, 5500, 0, 1,
                   TWO_STAGE_HUNGER); // Move: 小ポール横 -> Start: 昇降
   goal_map[0].add(
@@ -220,17 +220,17 @@ int main(int argc, char **argv) {
   goal_map[0].add(2050, 5500, 0, 1,
                   TWO_STAGE_READY); // Move: ハンガー前 -> Start: 昇降
   goal_map[0].add(5400, 5500, 0);   // Move: 小ポール横
-  goal_map[0].add(start_x, start_y, 0,
-                  11); // Move: スタートゾーン -> Wait: スタートスイッチ
+  goal_map[0].add(start_x, start_y,
+                  0); // Move: スタートゾーン -> Wait: スタートスイッチ
   goal_map[0].restart();
 
-  goal_map[1].add(start_x, start_y, 0,
-                  11); // Move: スタートゾーン -> Wait: スタートスイッチ
+  goal_map[1].add(start_x, start_y,
+                  0); // Move: スタートゾーン -> Wait: スタートスイッチ
   goal_map[1].add(5400, 9250, 0); // Move: 大ポール横
   goal_map[1].add(5400, 9000, 0); // Move: 大ポール中央手前
   goal_map[1].add(5400, 9250, 0); // Move: 大ポール横
-  goal_map[1].add(start_x, start_y, 0,
-                  11); // Move: 大ポール横 -> Wait: スタートスイッチ
+  goal_map[1].add(start_x, start_y,
+                  0); // Move: 大ポール横
   goal_map[1].restart();
 
   bool changed_phase = true;
@@ -251,7 +251,7 @@ int main(int argc, char **argv) {
   global_message.data = "Game Start";
   global_message_pub.publish(global_message);
 
-  constexpr double FREQ = 10;
+  constexpr double FREQ = 1;
   ros::Rate loop_rate(FREQ);
 
   while (ros::ok()) {
@@ -320,20 +320,20 @@ int main(int argc, char **argv) {
           break;
         }
       }
-        /* case 11: { */
-        /* if (Pi::gpio().read(START) == 1) { */
-        /* if (Pi::gpio().read(SHEET)) { */
-        /*   map_type = 1; */
-        /* } else { */
-        /*   map_type = 0; */
-        /* } */
-        /* map_type = 0; */
-        /* goal_map[map_type].restart(); */
-        /* can_send_next_goal = true; */
-        /* changed_phase = true; */
-        /* } */
-        /* break; */
-        /* } */
+      case 11: {
+        if (Pi::gpio().read(START) == 1) {
+          if (Pi::gpio().read(SHEET)) {
+            map_type = 1;
+          } else {
+            map_type = 0;
+          }
+          map_type = 0;
+          goal_map[map_type].restart();
+          can_send_next_goal = true;
+          changed_phase = true;
+        }
+        break;
+      }
       }
 
       if (can_send_next_goal) {

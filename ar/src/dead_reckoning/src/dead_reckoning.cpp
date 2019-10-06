@@ -36,10 +36,23 @@ int main(int argc, char **argv) {
   constexpr int FREQ = 100;
   ros::Rate loop_rate(FREQ);
 
+  // コート情報の取得
+  std::string coat_color;
+  n.getParam("/coat", coat_color);
+  int coat;
+  if (coat_color == "blue") {
+    coat = 1;
+  } else if (coat_color == "red") {
+    coat = -1;
+  } else {
+    coat = 1;
+  }
+
   geometry_msgs::Pose2D offset_robot_pose;
   int start_x, start_y;
   n.getParam("/ar/start_x", start_x);
   n.getParam("/ar/start_y", start_y);
+  start_x *= coat;
 
   offset_robot_pose.x = 0;
   offset_robot_pose.y = 0;
