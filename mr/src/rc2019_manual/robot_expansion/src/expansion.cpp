@@ -38,6 +38,7 @@ void controllerCallback(const three_omuni::button &msg){
         srv.request.cmd = 73;
         srv.request.data = 0;
     }
+    expansion_client.call(srv);
 }
 
 int main(int argc, char **argv){
