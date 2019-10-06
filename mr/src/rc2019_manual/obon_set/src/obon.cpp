@@ -27,7 +27,12 @@ int main(int argc, char **argv){
 	while(ros::ok()){
 		std_msgs::Int16 check;
 		int data;
-		flag_hand == true ? data = 180 : data = 0;
+		//flag_hand == true ? data = 180 : data = 0;
+		if(flag_hand){
+			data = 180;
+		}else{
+			data = 0;
+		}
 		srv.request.id = 3;
 		srv.request.cmd = 40;
 		srv.request.data = data;
