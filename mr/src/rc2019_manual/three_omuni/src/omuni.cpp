@@ -62,7 +62,7 @@ void change_speed(double speed, double angle, double *wheel_control,
   // speed_y = -1 * speed * sin(true_angle);
   //}
   // double speed_y = speed * sin(angle);
-  double resolutional_speed = robot_right + robot_left;
+  double resolutional_speed = (robot_right + robot_left) / 2;
   // cout << speed_x << ", " << speed_y << endl;
   wheel_control[0] =
       1.2 * (((-1 * speed_x * cos(M_PI / 3)) + (speed_y * sin(M_PI / 3))) +
