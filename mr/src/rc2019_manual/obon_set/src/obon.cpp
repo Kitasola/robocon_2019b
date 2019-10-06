@@ -18,7 +18,7 @@ void controllerCallback(const three_omuni::button &msg){
 int main(int argc, char **argv){
 	ros::init(argc, argv, "robot_hand");
 	ros::NodeHandle n;
-	ros::Subscriber controller_sub = n.subscribe("controller_info", 10, controllerCallback);
+	ros::Subscriber controller_sub = n.subscribe("controller_info", 100, controllerCallback);
 	ros::ServiceClient robot_hand = n.serviceClient<motor_serial::motor_serial>("hand_info");
 	ros::Publisher hand_pub = n.advertise<std_msgs::Int16>("check_pub", 10);
 	motor_serial::motor_serial srv;
