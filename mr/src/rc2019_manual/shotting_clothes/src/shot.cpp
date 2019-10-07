@@ -9,7 +9,7 @@ motor_serial::motor_serial srv;
 
 void speedInit(){
     srv.request.id = 3;
-    srv.request.cmd = 30;
+    srv.request.cmd = 31;
     srv.request.data = 200;
     shot.call(srv);
 }
@@ -44,7 +44,7 @@ void controllerCallback(const three_omuni::button &button){
         srv.request.cmd = 30;
         srv.request.data = 50;
     }
-    if(button.hand){
+    /*if(button.hand){
         if(hand_flag_prev == false){
             srv.request.id = 3;
             srv.request.cmd = 40;
@@ -56,7 +56,7 @@ void controllerCallback(const three_omuni::button &button){
             srv.request.data = 180;
             hand_flag_prev = false;
         }
-    }
+    }*/
     if(times >= 8) times = 0;
 }
 int main(int argc, char **argv){
