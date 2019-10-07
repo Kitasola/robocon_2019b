@@ -98,6 +98,7 @@ bool checkThreeVelocity(int cmd, int rx_data, int &tx_data) {
 
 bool safe(int cmd, int rx_data, int &tx_data) {
   hanger_goal_speed = 0;
+  goal_three_hight = 0;
   return true;
 }
 
