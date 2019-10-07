@@ -40,7 +40,7 @@ VPATH = ..
 # Project settings
 
 PROJECT := mdd3
-LIBRARY_DIR := /home/$(USER)/arrc/nucleo_utility/library/l432kc
+LIBRARY_DIR := /home/$(USER)/nucleo_utility/library/l432kc
 
 # Project settings
 ###############################################################################

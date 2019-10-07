@@ -35,8 +35,8 @@ InterruptIn shoulder(PB_6, PullUp);
 InterruptIn elbow(PA_11, PullUp);
 */
 
-RotaryInc raw_shoulder(PA_0, PA_4, 256, 1);
-RotaryInc raw_elbow(PA_1, PA_3, 256, 1);
+RotaryInc raw_shoulder(PA_0, PA_4, 256, 2);
+RotaryInc raw_elbow(PA_1, PA_3, 256, 2);
 
 /*
 bool flag_z_shoulder = false;
@@ -189,13 +189,13 @@ int main() {
 //RotaryInc raw_shoulder(PA_0, PA_4, 512, 1);
 //RotaryInc raw_elbow(PA_1, PA_3, 512, 1);
   while (true) {
-    arm_angle[0] = (360) * (-1) * raw_shoulder.get() / RANGE;
-    arm_angle[1] = (360) * (-1) * raw_elbow.get() / RANGE;
+    arm_angle[0] = (360.0) * (-1.0) * (double)raw_shoulder.get() / 512.0;
+    arm_angle[1] = (360.0) * (-1.0) * (double)raw_elbow.get() / 512.0;
     //PidPosition se_motor[2] = {PidPosition(0.5, 0, 0.4, 0),
     //                           PidPosition(0.5, 0, 0.4, 0)};
     for(int i = 0; i < 2; ++i){
       spinMotor(two_motor[i],
-        se_motor[i].control(goal_degree[i], arm_angle[i]));
+        se_motor[i].control((double)goal_degree[i], arm_angle[i]));
     }
   }
 }

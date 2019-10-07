@@ -157,7 +157,7 @@ int main() {
   constexpr int STROKE_LOAD_LENGTH = 350;
   int current_stroke = 0, stroke_offset = -MAX_STROKE_LENGTH;
   constexpr double STROKE_DIAMETER = -42;
-  PidPosition stroke(3.0, 0, 0, 0);
+  PidPosition stroke(1.0, 0, 0, 0);
   AnalogIn stroke_reset(PA_5);
   constexpr double WAIT_RELOAD_ROCK = 2, WAIT_RELOAD_CHARGE = 0.2,
                    WAIT_ROLL_TRAY = 2;
@@ -171,7 +171,7 @@ int main() {
   while (true) {
     spinMotor(TRAY_MOTOR_ID, goal_tray_speed);
     current_stroke =
-        stroke_rotary.getSum() * STROKE_DIAMETER * M_PI - stroke_offset;
+        stroke_rotary.get() * STROKE_DIAMETER * M_PI - stroke_offset;
 
     if (!reload_mode) {
       spinMotor(STROKE_MOTOR_ID, stroke.control(goal_stroke, current_stroke));
@@ -270,5 +270,6 @@ int main() {
       break;
     }
     }
+    wait(0.01);
   }
 }
