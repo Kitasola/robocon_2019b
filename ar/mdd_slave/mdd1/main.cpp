@@ -1,8 +1,11 @@
 #include <mbed.h>
+#include <pid.hpp>
 #include <rotary_inc.hpp>
 #include <scrp_slave.hpp>
 
 ScrpSlave slave(PA_9, PA_10, PA_12, SERIAL_TX, SERIAL_RX, 0x0803e000);
+
+using namespace arrc;
 
 constexpr int NUM_PORT = 5;
 
@@ -68,6 +71,31 @@ bool serveHanger(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
+int goal_three_hight = 0;          // [mm]
+int dummy_current_three_hight = 0; // [mm]
+bool setThreeHigh(int cmd, int rx_data, int &tx_data) {
+  // rx_data, tx_data [cm]
+  goal_three_hight = rx_data * 10;
+  tx_data = dummy_current_three_hight / 10;
+  return true;
+}
+
+int three_hight_current = 0;
+bool checkThreeRegister(int cmd, int rx_data, int &tx_data) {
+  if (rx_data >= 10) {
+    tx_data = three_hight_current / 10;
+  } else {
+    tx_data = three_hight_current % 10;
+  }
+  return true;
+}
+
+int three_stage_speed = 0;
+bool checkThreeVelocity(int cmd, int rx_data, int &tx_data) {
+  tx_data = three_stage_speed;
+  return true;
+}
+
 bool safe(int cmd, int rx_data, int &tx_data) {
   hanger_goal_speed = 0;
   return true;
@@ -75,6 +103,11 @@ bool safe(int cmd, int rx_data, int &tx_data) {
 
 int main() {
   slave.addCMD(20, serveHanger);
+  slave.addCMD(30, setThreeHigh);
+  /* slave.addCMD(31, setThreeVelocity); */
+  /* slave.addCMD(32, setThreeAccel); */
+  slave.addCMD(33, checkThreeRegister);
+  slave.addCMD(34, checkThreeVelocity);
   slave.addCMD(255, safe);
 
   constexpr int NUM_HANGER_SW = 2;
@@ -90,6 +123,13 @@ int main() {
     hanger_led[i] = hanger_sw[i].read();
   }
 
+  AnalogIn three_register(PA_0);
+  constexpr int THREE_STAGE_ID = 0;
+  constexpr float THREE_REGISTER_MULTI = 720 / (210.0 / 255) * 5 / 3.3;
+  constexpr int THREE_STAGE_OFFSET = -1196; // 127};
+  constexpr double THREE_STAGE_DOWN = 0.5;
+  PidPosition three_motor(5.0, 0, 0, 0);
+
   while (true) {
     hanger_current_speed = hanger_goal_speed;
     int hanger_limit[NUM_HANGER_SW];
@@ -101,5 +141,15 @@ int main() {
       hanger_current_speed = 0;
     }
     spinMotor(1, -hanger_current_speed);
+
+    three_hight_current =
+        three_register.read() * THREE_REGISTER_MULTI - THREE_STAGE_OFFSET;
+    three_stage_speed =
+        three_motor.control(goal_three_hight, three_hight_current);
+    if (goal_three_hight < three_hight_current) {
+      three_stage_speed *= THREE_STAGE_DOWN;
+    }
+    spinMotor(THREE_STAGE_ID, three_stage_speed);
+    wait(0.01);
   }
 }
