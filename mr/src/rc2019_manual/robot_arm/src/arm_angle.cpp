@@ -15,10 +15,10 @@ constexpr int B = 286;
 constexpr double calibration_angle_1 = M_PI / 2;
 constexpr double calibration_angle_2 = M_PI - (M_PI / 3);
 
-float x, y;
+double x, y;
 
 void positionCallback(const std_msgs::Float64MultiArray &position);
-void angle_calcurate(float *angle_1, float *angle_2);
+void angle_calcurate(double *angle_1, double *angle_2);
 
 int main(int argc, char **argv){
 	ros::init(argc, argv, "robot_arm");
@@ -30,7 +30,7 @@ int main(int argc, char **argv){
 
 	motor_serial::motor_serial srv;
 
-	float angle_1 = 0, angle_2 = 0;
+	double angle_1 = 0, angle_2 = 0;
 	int ARM_ID[2] = {5, 5};
 	int ARM_CMD[2] = {61, 62};
 	angle_check.data.resize(2);
@@ -39,8 +39,8 @@ int main(int argc, char **argv){
 
 	while(ros::ok()){
 		angle_calcurate(&angle_1, &angle_2);
-		ROS_INFO("angle_1 = %lf", angle_1 * (180 / M_PI));
-		ROS_INFO("angle_2 = %lf", angle_2 * (180 / M_PI));
+		ROS_INFO("angle_1 = %lf", angle_1);
+		ROS_INFO("angle_2 = %lf", angle_2);
 		//angle.data[0] = (M_PI / 2) - angle_1;
 		//angle.data[1] = angle_1 - angle_2;
 		//angle_check.data[0] = angle_1 * (180 / M_PI);
@@ -63,15 +63,15 @@ int main(int argc, char **argv){
 }
 
 void positionCallback(const std_msgs::Float64MultiArray &position){
-	x = position.data[0];
-	y = position.data[1];
+	x = (double)position.data[0];
+	y = (double)position.data[1];
 }
 
-void angle_calcurate(float *angle_1, float *angle_2){
-	float r = sqrt(pow(x, 2) + pow(y, 2));
-	*angle_2 = (float)acos(-1 * (pow(r, 2) - pow(A, 2) - pow(B, 2)) / (2 * A * B));
-	float theta_1 = atan2(y, x);
-	float theta_2 = acos(-1 * (pow(B, 2) - pow(A, 2) - pow(r, 2)) / (2 * A * r));
-	*angle_1 = (float)theta_1 + theta_2;
+void angle_calcurate(double *angle_1, double *angle_2){
+	double r = sqrt(pow(x, 2) + pow(y, 2));
+	*angle_2 = (double)acos(-1 * (pow(r, 2) - pow(A, 2) - pow(B, 2)) / (2 * A * B));
+	double theta_1 = atan2(y, x);
+	double theta_2 = acos(-1 * (pow(B, 2) - pow(A, 2) - pow(r, 2)) / (2 * A * r));
+	*angle_1 = (double)theta_1 + theta_2;
         angle_check.data[0] = *angle_1;
 }

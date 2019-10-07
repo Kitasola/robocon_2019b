@@ -32,6 +32,8 @@ constexpr unsigned int pin_Z_2 = 17;
 bool flag_calibration = false;
 bool flag_z_1 = false;
 bool flag_z_2 = false;
+bool angle_flag = false;
+bool angle_flag_prev = false;
 int arm_count = 0;
 int count_prev = 0;
 int gpio_handle_ = 0;
@@ -60,18 +62,22 @@ int main(int argc, char **argv){
         //std_msgs::Bool calibration;
         //if(flag_calibration){
         //if(arm_count > motion_sum) arm_count = 0;
+	/*if(angle_flag_prev = true){
+        	angle_data.data[0] = 400;
+        	angle_data.data[1] = 250;
+	}*/	
         position_pub.publish(angle_data);
         ROS_INFO("%d", (int)angle_data.data[0]);
         //    calibration.data = true;
         //}else{
         //    calibration.data = false;
         //}
+	angle_flag_prev = angle_flag;
         ros::spinOnce();
         loop_rate.sleep();
     }
     return 0;
 }
-
 void controllerButton(const three_omuni::button &button){
     if(button.arm_data_1){
         angle_data.data[0] = 300;
@@ -80,10 +86,13 @@ void controllerButton(const three_omuni::button &button){
     if(button.arm_data_2){
         angle_data.data[0] = 250;
         angle_data.data[1] = 250;
+	angle_flag = true;
+    }else{
+	angle_flag = false;
     }
 }
 void controllerJoy(const three_omuni::button &button){
-    if((button.arm_data_1 == 0 && button.arm_data_2 == 0) && button.speed_half){
+    if(button.arm_data_1 == 0 && button.arm_data_2 == 0){
         angle_data.data[0] += button.move_arm_x;
         angle_data.data[1] += button.move_arm_y;
     }
