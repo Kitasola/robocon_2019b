@@ -1,7 +1,7 @@
 #include <mbed.h>
+#include <pid.hpp>
 #include <rotary_inc.hpp>
 #include <scrp_slave.hpp>
-#include <pid.hpp>
 
 using namespace arrc;
 
@@ -109,17 +109,17 @@ bool calibration(int cmd, int rx_data, int &tx_data){
 }
 */
 
-  double arm_angle[2];
-bool angleShoulder(int cmd, int rx_data, int &tx_data){
-    goal_degree[0] = rx_data;
-    tx_data = arm_angle[0]; 
-    return true;
+double arm_angle[2];
+bool angleShoulder(int cmd, int rx_data, int &tx_data) {
+  goal_degree[0] = rx_data;
+  tx_data = arm_angle[0];
+  return true;
 }
 
-bool angleElbow(int cmd, int rx_data, int &tx_data){
-    goal_degree[1] = rx_data;
-    tx_data = arm_angle[1];
-    return true;
+bool angleElbow(int cmd, int rx_data, int &tx_data) {
+  goal_degree[1] = rx_data;
+  tx_data = arm_angle[1];
+  return true;
 }
 
 int main() {
@@ -141,59 +141,59 @@ int main() {
     }
   }
   slave.addCMD(255, safe);
-  //slave.addCMD(60, calibration);
+  // slave.addCMD(60, calibration);
   slave.addCMD(61, angleShoulder);
   slave.addCMD(62, angleElbow);
-  //shoulder.rise(riseShoulder);
-  //elbow.rise(riseElbow);
-  constexpr int two_motor[2] = {0,2};
+  // shoulder.rise(riseShoulder);
+  // elbow.rise(riseElbow);
+  constexpr int two_motor[2] = {0, 2};
   double arm_angle[2];
 
   PidPosition se_motor[2] = {PidPosition(0.5, 0, 1.5, 0),
                              PidPosition(0.5, 0, 1.5, 0)};
-/*
-  while(calibration_flag == false){
-    if(start_flag == true){
+  /*
+    while(calibration_flag == false){
+      if(start_flag == true){
 
-      if(flag_z_shoulder == false){
-        spinMotor(two_motor[0],5);
-      }else if(flag_z_shoulder == true){
-        spinMotor(two_motor[0],0);
+        if(flag_z_shoulder == false){
+          spinMotor(two_motor[0],5);
+        }else if(flag_z_shoulder == true){
+          spinMotor(two_motor[0],0);
+        }
+
+        if(flag_z_elbow == false){
+          spinMotor(two_motor[1],5);
+        }else if(flag_z_elbow == true){
+          spinMotor(two_motor[1],0);
+        }
+
+       if(flag_z_shoulder == true && flag_z_elbow == true){
+          calibration_flag = true;
+       }else{
+       calibration_flag = false;
       }
-
-      if(flag_z_elbow == false){
-        spinMotor(two_motor[1],5);
-      }else if(flag_z_elbow == true){
-        spinMotor(two_motor[1],0);
-      }
-
-     if(flag_z_shoulder == true && flag_z_elbow == true){
-        calibration_flag = true;
-     }else{
-     calibration_flag = false;
+        //spinMotor(1, 0);
+        //spinMotor(3, 0);
+      }else{
+      spinMotor(two_motor[0],0);
+      spinMotor(two_motor[1],0);
+       }
+      //spinMotor(two_motor[0], 0);
+      //spinMotor(two_motor[1], 0);
+     // }else if(start_flag == false){
+      //spinMotor(two_motor[0], 30);
+      //spinMotor(two_motor[1], 30);
+      //}
     }
-      //spinMotor(1, 0);
-      //spinMotor(3, 0);
-    }else{
-    spinMotor(two_motor[0],0);
-    spinMotor(two_motor[1],0);
-     }
-    //spinMotor(two_motor[0], 0);
-    //spinMotor(two_motor[1], 0);
-   // }else if(start_flag == false){
-    //spinMotor(two_motor[0], 30);
-    //spinMotor(two_motor[1], 30);
-    //}
-  }
-  */  
-//RotaryInc raw_shoulder(PA_0, PA_4, 512, 1);
-//RotaryInc raw_elbow(PA_1, PA_3, 512, 1);
+    */
+  // RotaryInc raw_shoulder(PA_0, PA_4, 512, 1);
+  // RotaryInc raw_elbow(PA_1, PA_3, 512, 1);
   while (true) {
     arm_angle[0] = (360.0) * (-1.0) * (double)raw_shoulder.get() / 512.0;
     arm_angle[1] = (360.0) * (-1.0) * (double)raw_elbow.get() / 512.0;
     //PidPosition se_motor[2] = {PidPosition(0.5, 0, 0.4, 0),
     //                           PidPosition(0.5, 0, 0.4, 0)};
-    for(int i = 0; i < 2; ++i){
+    for (int i = 0; i < 2; ++i) {
       spinMotor(two_motor[i],
         se_motor[i].control((double)goal_degree[i], arm_angle[i]));
     }

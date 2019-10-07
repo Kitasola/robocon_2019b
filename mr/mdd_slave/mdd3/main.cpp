@@ -72,28 +72,18 @@ bool safe(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-PwmOut rock_tray_servo(PA_1);
-constexpr int TARY_ROCK_ANGLE = 40, TARY_FREE_ANGLE = 0;
+constexpr int TARY_ROCK_ANGLE = 1, TARY_FREE_ANGLE = 0;
 constexpr double WAIT_TRAY_SERVO = 1.5;
-void rockTray(int degree) {
-  rock_tray_servo.pulsewidth(map(degree, 0, 180, 0.9e-3, 2.1e-3));
-  /* rock_tray_servo.pulsewidth(map(degree, 0, 180, 780e-6, 2250e-6)); */
-  /* rock_tray_servo.pulsewidth(map(degree, 0, 180, 900e-6, 2100e-6)); */
-}
-bool rockTray(int cmd, int rx_data, int &tx_data) {
-  rockTray(rx_data);
-  return true;
+void rockTray(int level) {
+  DigitalOut rock_tray_servo(PA_1);
+  rock_tray_servo = level;
 }
 
-PwmOut hand_servo(PA_3);
-constexpr int HAND_CATCH_ANGLE = 170, HAND_RELEASE_ANGLE = 0;
+constexpr int HAND_CATCH_ANGLE = 1, HAND_RELEASE_ANGLE = 0;
 constexpr double WAIT_HAND_SERVO = 1;
-void actHand(int degree) {
-  hand_servo.pulsewidth(map(degree, 0, 180, 0.9e-3, 2.25e-3));
-}
-bool actHand(int cmd, int rx_data, int &tx_data) {
-  actHand(rx_data);
-  return true;
+void actHand(int level) {
+  DigitalOut hand_servo(PA_3);
+  hand_servo = level;
 }
 
 Timer time;
@@ -107,8 +97,9 @@ bool startShoot(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-bool setStroke(int cmd, int rx_data, int &tx_data) {
-  goal_stroke = rx_data;
+int current_stroke = 0;
+bool getStroke(int cmd, int rx_data, int &tx_data) {
+  tx_data = current_stroke;
   return true;
 }
 
@@ -137,11 +128,9 @@ int main() {
   time.start();
   slave.addCMD(30, startShoot);
   slave.addCMD(31, setTraySpeed);
-  slave.addCMD(32, setStroke);
-  slave.addCMD(33, rockTray);
+  slave.addCMD(32, getStroke);
   slave.addCMD(34, loadTray);
   slave.addCMD(35, checkStroke);
-  slave.addCMD(40, actHand);
   slave.addCMD(255, safe);
 
   constexpr int TRAY_MOTOR_ID = 2, TRAY_ENCODER_ID = 3;
@@ -155,7 +144,8 @@ int main() {
                           ENCODER_PIN[STROKE_ENCODER_ID][1], 256, 1);
   constexpr int MAX_STROKE_LENGTH = 370, MAX_STROKE_ERROR = 1;
   constexpr int STROKE_LOAD_LENGTH = 350;
-  int current_stroke = 0, stroke_offset = -MAX_STROKE_LENGTH;
+  /* int current_stroke = 0, stroke_offset = -MAX_STROKE_LENGTH; */
+  int stroke_offset = -MAX_STROKE_LENGTH;
   constexpr double STROKE_DIAMETER = -42;
   PidPosition stroke(1.0, 0, 0, 0);
   AnalogIn stroke_reset(PA_5);
