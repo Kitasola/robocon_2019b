@@ -39,7 +39,7 @@ int main(int argc, char **argv){
 		}else{
 			data = 0;
 		}
-		srv.request.id = 3;
+		srv.request.id = 6;
 		srv.request.cmd = 40;
 		srv.request.data = data;
 		robot_hand.call(srv);
