@@ -72,44 +72,34 @@ bool safe(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-constexpr int TARY_ROCK_ANGLE = 40, TARY_FREE_ANGLE = 0;
+constexpr int TARY_ROCK_ANGLE = 1, TARY_FREE_ANGLE = 0;
 constexpr double WAIT_TRAY_SERVO = 1.5;
-void rockTray(int degree) {
-  /* PwmOut rock_tray_servo(PA_1); */
-  /* rock_tray_servo.pulsewidth(map(degree, 0, 180, 0.5e-3, 2.4e-3)); */
-  /* rock_tray_servo.pulsewidth(map(degree, 0, 180, 0.9e-3, 2.25e-3)); */
-}
-bool rockTray(int cmd, int rx_data, int &tx_data) {
-  rockTray(rx_data);
-  return true;
+void rockTray(int level) {
+  DigitalOut rock_tray_servo(PA_1);
+  rock_tray_servo = level;
 }
 
-constexpr int HAND_CATCH_ANGLE = 170, HAND_RELEASE_ANGLE = 0;
+constexpr int HAND_CATCH_ANGLE = 1, HAND_RELEASE_ANGLE = 0;
 constexpr double WAIT_HAND_SERVO = 1;
-void actHand(int degree) {
-  PwmOut hand_servo(PA_3);
-  hand_servo.pulsewidth(map(degree, 0, 180, 0.5e-3, 2.4e-3));
-}
-bool actHand(int cmd, int rx_data, int &tx_data) {
-  actHand(rx_data);
-  return true;
+void actHand(int level) {
+  DigitalOut hand_servo(PA_3);
+  hand_servo = level;
 }
 
-int current_stroke = 0;
 Timer time;
 int phase = 7;
 int goal_stroke = 0;
 int goal_shoot_stroke = 0;
 bool startShoot(int cmd, int rx_data, int &tx_data) {
   goal_shoot_stroke = rx_data;
-  tx_data = current_stroke;
   time.reset();
   phase = 3;
   return true;
 }
 
-bool setStroke(int cmd, int rx_data, int &tx_data) {
-  goal_stroke = rx_data;
+int current_stroke = 0;
+bool getStroke(int cmd, int rx_data, int &tx_data) {
+  tx_data = current_stroke;
   return true;
 }
 
@@ -136,13 +126,11 @@ bool loadTray(int cmd, int rx_data, int &tx_data) {
 
 int main() {
   time.start();
-  /* slave.addCMD(30, startShoot); */
-  /* slave.addCMD(31, setTraySpeed); */
-  /* slave.addCMD(32, setStroke); */
-  /* slave.addCMD(33, rockTray); */
-  /* slave.addCMD(34, loadTray); */
-  /* slave.addCMD(35, checkStroke); */
-  slave.addCMD(40, actHand);
+  slave.addCMD(30, startShoot);
+  slave.addCMD(31, setTraySpeed);
+  slave.addCMD(32, getStroke);
+  slave.addCMD(34, loadTray);
+  slave.addCMD(35, checkStroke);
   slave.addCMD(255, safe);
 
   constexpr int TRAY_MOTOR_ID = 2, TRAY_ENCODER_ID = 3;
@@ -157,7 +145,7 @@ int main() {
   constexpr int MAX_STROKE_LENGTH = 370, MAX_STROKE_ERROR = 1;
   constexpr int STROKE_LOAD_LENGTH = 350;
   /* int current_stroke = 0, stroke_offset = -MAX_STROKE_LENGTH; */
-  int current_stroke = 0, stroke_offset = -MAX_STROKE_LENGTH;
+  int stroke_offset = -MAX_STROKE_LENGTH;
   constexpr double STROKE_DIAMETER = -42;
   PidPosition stroke(3.0, 0, 0, 0);
   AnalogIn stroke_reset(PA_5);
@@ -171,107 +159,106 @@ int main() {
   phase = 7;
 
   while (true) {
-    /* spinMotor(TRAY_MOTOR_ID, goal_tray_speed); */
-    /* current_stroke = */
-    /*     stroke_rotary.get() * STROKE_DIAMETER * M_PI - stroke_offset; */
+    spinMotor(TRAY_MOTOR_ID, goal_tray_speed);
+    current_stroke =
+        stroke_rotary.get() * STROKE_DIAMETER * M_PI - stroke_offset;
 
-    /* if (!reload_mode) { */
-    /*   spinMotor(STROKE_MOTOR_ID, stroke.control(goal_stroke,
-     * current_stroke)); */
-    /* } else { */
-    /*   if (stroke_reset.read() > 0.3) { */
-    /*     stroke_offset += current_stroke - MAX_STROKE_LENGTH; */
-    /*     reload_speed = 0; */
-    /*   } */
-    /*   spinMotor(STROKE_MOTOR_ID, reload_speed); */
-    /* } */
-    /* check_stroke = current_stroke; */
+    if (!reload_mode) {
+      spinMotor(STROKE_MOTOR_ID, stroke.control(goal_stroke, current_stroke));
+    } else {
+      if (stroke_reset.read() > 0.3) {
+        stroke_offset += current_stroke - MAX_STROKE_LENGTH;
+        reload_speed = 0;
+      }
+      spinMotor(STROKE_MOTOR_ID, reload_speed);
+    }
+    check_stroke = current_stroke;
 
-    /* switch (phase) { */
-    /* case 0: { */
-    /*   goal_stroke = STROKE_LOAD_LENGTH; */
-    /*   if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) { */
-    /*     actHand(HAND_RELEASE_ANGLE); */
-    /*     time.reset(); */
-    /*     phase = 1; */
-    /*   } */
-    /*   break; */
-    /* } */
-    /* case 1: { */
-    /*   if (time.read() > WAIT_HAND_SERVO) { */
-    /*     rockTray(TARY_ROCK_ANGLE); */
-    /*     time.reset(); */
-    /*     phase = 2; */
-    /*   } */
-    /*   break; */
-    /* } */
-    /* case 2: { */
-    /*   if (time.read() > WAIT_TRAY_SERVO) { */
-    /*     time.reset(); */
-    /*     goal_stroke = MAX_STROKE_LENGTH; */
-    /*   } */
-    /*   break; */
-    /* } */
-    /* case 3: { */
-    /*   goal_tray_speed = goal_shoot_tray_speed; */
-    /*   if (time.read() > WAIT_ROLL_TRAY) { */
-    /*     goal_stroke = goal_shoot_stroke; */
-    /*     if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) { */
-    /*       shoot_rock.write(1); */
-    /*       time.reset(); */
-    /*       phase = 4; */
-    /*     } */
-    /*   } */
-    /*   break; */
-    /* } */
-    /* case 4: { */
-    /*   if (time.read() > WAIT_RELOAD_ROCK) { */
-    /*     reload_mode = true; */
-    /*     reload_speed = RELOAD_ROCK_SPEED; */
-    /*     goal_tray_speed = 0; */
-    /*     time.reset(); */
-    /*     phase = 5; */
-    /*   } */
-    /*   break; */
-    /* } */
-    /* case 5: { */
-    /*   if (time.read() > WAIT_RELOAD_CHARGE) { */
-    /*     reload_speed = RELOAD_CHARGE_SPEED; */
-    /*     shoot_rock.write(0); */
-    /*     phase = 6; */
-    /*   } */
-    /*   break; */
-    /* } */
-    /* case 6: { */
-    /*   if (reload_speed == 0) { */
-    /*     reload_mode = false; */
-    /*     goal_stroke = STROKE_LOAD_LENGTH; */
-    /*   } */
-    /*   break; */
-    /* } */
-    /* case 7: { */
-    /*   if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) { */
-    /*     rockTray(TARY_FREE_ANGLE); */
-    /*     time.reset(); */
-    /*     phase = 8; */
-    /*   } */
-    /*   break; */
-    /* } */
-    /* case 8: { */
-    /*   if (time.read() > WAIT_TRAY_SERVO) { */
-    /*     actHand(HAND_CATCH_ANGLE); */
-    /*     time.reset(); */
-    /*     phase = 9; */
-    /*   } */
-    /*   break; */
-    /* } */
-    /* case 9: { */
-    /*   if (time.read() > WAIT_HAND_SERVO) { */
-    /*     goal_stroke = MAX_STROKE_LENGTH; */
-    /*     time.reset(); */
-    /*   } */
-    /*   break; */
-    /* } */
-    /* } */
+    switch (phase) {
+    case 0: {
+      goal_stroke = STROKE_LOAD_LENGTH;
+      if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) {
+        actHand(HAND_RELEASE_ANGLE);
+        time.reset();
+        phase = 1;
+      }
+      break;
+    }
+    case 1: {
+      if (time.read() > WAIT_HAND_SERVO) {
+        rockTray(TARY_ROCK_ANGLE);
+        time.reset();
+        phase = 2;
+      }
+      break;
+    }
+    case 2: {
+      if (time.read() > WAIT_TRAY_SERVO) {
+        time.reset();
+        goal_stroke = MAX_STROKE_LENGTH;
+      }
+      break;
+    }
+    case 3: {
+      goal_tray_speed = goal_shoot_tray_speed;
+      if (time.read() > WAIT_ROLL_TRAY) {
+        goal_stroke = goal_shoot_stroke;
+        if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) {
+          shoot_rock.write(1);
+          time.reset();
+          phase = 4;
+        }
+      }
+      break;
+    }
+    case 4: {
+      if (time.read() > WAIT_RELOAD_ROCK) {
+        reload_mode = true;
+        reload_speed = RELOAD_ROCK_SPEED;
+        goal_tray_speed = 0;
+        time.reset();
+        phase = 5;
+      }
+      break;
+    }
+    case 5: {
+      if (time.read() > WAIT_RELOAD_CHARGE) {
+        reload_speed = RELOAD_CHARGE_SPEED;
+        shoot_rock.write(0);
+        phase = 6;
+      }
+      break;
+    }
+    case 6: {
+      if (reload_speed == 0) {
+        reload_mode = false;
+        goal_stroke = STROKE_LOAD_LENGTH;
+      }
+      break;
+    }
+    case 7: {
+      if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) {
+        rockTray(TARY_FREE_ANGLE);
+        time.reset();
+        phase = 8;
+      }
+      break;
+    }
+    case 8: {
+      if (time.read() > WAIT_TRAY_SERVO) {
+        actHand(HAND_CATCH_ANGLE);
+        time.reset();
+        phase = 9;
+      }
+      break;
+    }
+    case 9: {
+      if (time.read() > WAIT_HAND_SERVO) {
+        goal_stroke = MAX_STROKE_LENGTH;
+        time.reset();
+      }
+      break;
+    }
+    }
   }
 }
