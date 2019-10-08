@@ -35,9 +35,9 @@ int main(int argc, char **argv){
 		int data;
 		//flag_hand == true ? data = 180 : data = 0;
 		if(flag_hand){
-			data = 180;
+			data = 50;
 		}else{
-			data = 0;
+			data = 150;
 		}
 		srv.request.id = 6;
 		srv.request.cmd = 40;
