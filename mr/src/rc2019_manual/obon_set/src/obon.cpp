@@ -35,7 +35,7 @@ int main(int argc, char **argv){
 		int data;
 		//flag_hand == true ? data = 180 : data = 0;
 		if(flag_hand){
-			data = 30;
+			data = 90;
 		}else{
 			data = 150;
 		}
