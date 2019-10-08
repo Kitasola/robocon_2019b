@@ -267,7 +267,7 @@ private:
   geometry_msgs::Twist send_twist, goal_velocity;
   double velocity_final_prev[2] = {};
   constexpr static double VELOCITY_MIN = 300, VELOCITY_MAX = 3000,
-                          ACCEL_MAX = 1000;
+                          ACCEL_MAX = 500;
   constexpr static double ERROR_DISTANCE_MAX = 50;
   constexpr static double ROOT_FOLLOW = 1.7;
   std::vector<AccelMap> velocity_map[2];

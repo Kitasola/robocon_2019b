@@ -126,10 +126,10 @@ int main() {
 
   AnalogIn three_register(PA_0);
   constexpr int THREE_STAGE_ID = 0;
-  constexpr float THREE_REGISTER_MULTI = 720 / (210.0 / 255) * 5 / 3.3;
+  constexpr float THREE_REGISTER_MULTI = -720 / (210.0 / 255) * 5 / 3.3;
   constexpr int THREE_STAGE_OFFSET = -1196; // 127};
-  constexpr double THREE_STAGE_DOWN = 0.5;
-  PidPosition three_motor(5.0, 0, 0, 0);
+  constexpr double THREE_STAGE_DOWN = 0.3;
+  PidPosition three_motor(4.0, 0, 0, 0);
 
   while (true) {
     hanger_current_speed = hanger_goal_speed;

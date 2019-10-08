@@ -77,7 +77,7 @@ void actSolenoid(int port, int level) {
 }
 
 bool actSolenoid(int cmd, int rx_data, int &tx_data) {
-  actSolenoid(cmd - 40, rx_data);
+  actSolenoid(cmd - 38, rx_data);
   return true;
 }
 
