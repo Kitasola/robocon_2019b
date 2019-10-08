@@ -124,6 +124,11 @@ bool loadTray(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
+bool sendPoint(int cmd, int rx_data, int &tx_data){
+    actHand(rx_data);
+    return true;
+}
+
 int main() {
   time.start();
   slave.addCMD(30, startShoot);
@@ -131,6 +136,7 @@ int main() {
   slave.addCMD(32, getStroke);
   slave.addCMD(34, loadTray);
   slave.addCMD(35, checkStroke);
+  slave.addCMD(110, sendPoint);
   slave.addCMD(255, safe);
 
   constexpr int TRAY_MOTOR_ID = 2, TRAY_ENCODER_ID = 3;

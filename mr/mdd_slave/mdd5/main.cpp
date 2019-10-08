@@ -197,5 +197,6 @@ int main() {
       spinMotor(two_motor[i],
         se_motor[i].control((double)goal_degree[i], arm_angle[i]));
     }
+   // wait(0.01);
   }
 }

@@ -10,7 +10,7 @@ ScrpSlave slave(PA_9, PA_10, PA_12, SERIAL_TX, SERIAL_RX, 0x0803e000);
 constexpr int NUM_PORT = 5;
 // 0: Motor, 1: Encoder, 2: Other
 constexpr int NUM_MOTOR_PORT = 4;
-constexpr int MAX_PWM = 250;
+constexpr int MAX_PWM = 255;
 constexpr double MAX_PWM_MBED = 0.95;
 constexpr float PERIOD = 1 / 1000.0;
 constexpr PinName MOTOR_PIN[NUM_MOTOR_PORT][3] = {{PB_0, PB_1, PB_3},
@@ -78,9 +78,10 @@ bool loadLaundry(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-int goal_height;
+//double goal_height = 0;
+int extension_flag = 0;
 bool expansionRotary(int cmd, int rx_data, int &tx_data) {
-  goal_height = rx_data;
+  extension_flag = rx_data;
   return true;
 }
 
@@ -110,14 +111,36 @@ int main() {
   constexpr int motor = 2;
   double robot_height;
   RotaryInc extension_rotary_inc(PA_0, PA_4, 512, 1);
-  PidPosition pid_rotary_inc = PidPosition(1, 0, 0, 0);
+//  PidPosition pid_rotary_inc = PidPosition(100, 0, 0, 0);
+  constexpr double MAX_HIEGHT = 10.5;
 
   while (true) {
 
-    robot_height = extension_rotary_inc.getSum() / 512;
-
-    spinMotor(motor, pid_rotary_inc.control(goal_height, robot_height));
-
+    robot_height = (double)extension_rotary_inc.get() / 512.0;
+    
+    switch(extension_flag){
+        case 0 : spinMotor(motor, 0);
+        break;
+        case 1 : if(robot_height <= MAX_HIEGHT){
+                    spinMotor(motor, 255);
+                 }else if(robot_height > MAX_HIEGHT){
+                    spinMotor(motor, 0);
+                 }
+        break;
+        case 2 : if(robot_height >= 0){
+                    spinMotor(motor, -255);
+                 }else if(robot_height < 0){
+                    spinMotor(motor, 0);
+                 }
+        break;
+    }
+    //spinMotor(motor, pid_rotary_inc.control(goal_height, robot_height));
+    /*while(robot_height < goal_height){
+    robot_height = (double)extension_rotary_inc.get() / 512.0;
+    spinMotor(motor, 1000);
+    }
+    spinMotor(motor, 0);
+    */
     switch (load_mode) {
     case -1:
       laundry_speed = -LAUNDRY_SPEED;
@@ -165,5 +188,6 @@ int main() {
       break;
     }
     spinMotor(LAUNDRY_MOTOR_ID, laundry_speed);
+    wait(0.01);
   }
 }
