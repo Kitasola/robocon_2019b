@@ -10,7 +10,7 @@ motor_serial::motor_serial srv;
 void speedInit(){
 	srv.request.id = 3;
 	srv.request.cmd = 31;
-	srv.request.data = 200;
+	srv.request.data = 10;
 	shot.call(srv);
 }
 bool shooting_prev = false;
