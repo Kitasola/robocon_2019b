@@ -45,8 +45,8 @@ int main(int argc, char **argv){
 		//angle_check.data[1] = angle_2 * (180 / M_PI);
 		if(angle_1 >= 3.14) angle_1 = 3.14;
 		if(angle_2 >= 3.14) angle_2 = 3.14;
-		ROS_INFO("angle_1 = %f", angle_1);
-		ROS_INFO("angle_2 = %f", angle_2);
+		ROS_INFO("angle_1 = %f", 3.14);
+		ROS_INFO("angle_2 = %f", 3.14);
 		angle.data[0] = (angle_1 - calibration_angle_1) * (180 / M_PI);
 		angle.data[1] = (angle_2 - calibration_angle_2) * (180 / M_PI);
 		ROS_INFO("angle_1 = %d", (int)angle.data[0]);
