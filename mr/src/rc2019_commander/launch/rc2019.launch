@@ -10,8 +10,8 @@
     <node name="laundry_basket" pkg="laundry_basket" type="laundry_basket"/>
     <node name="obon" pkg="obon_set" type="obon"/>
     <node name="arm_position" pkg="robot_arm" type="arm_position"/>
-    <node name="arm_angle" pkg="robot_arm" type="arm_angle"/>
-    <node name="shot" pkg="shotting_clothes" type="shot" output="screen"/>
+    <node name="arm_angle" pkg="robot_arm" type="arm_angle" output="screen"/>
+    <node name="shot" pkg="shotting_clothes" type="shot"/>
     <node name="controller" pkg="rc2019_commander" type="controller"/>
     <node name="joy_node" pkg="joy" type="joy_node"/>
 </launch>
