@@ -44,7 +44,7 @@ int main() {
   /* constexpr double MAIN_FREQUENCY = 1000; */
   constexpr double TOPIC_FREQUENCY = 50;
 
-  constexpr double PWM_PERIOD = 50; // 20 kHz
+  constexpr double PWM_PERIOD = 100; // 20 kHz
 
   /* 駆動輪 */
   constexpr double INVERCE_ROOT_2 = 1 / sqrt(2);
