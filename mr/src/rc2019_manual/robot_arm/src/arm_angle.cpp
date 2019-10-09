@@ -47,6 +47,8 @@ int main(int argc, char **argv){
 		//angle_check.data[1] = angle_2 * (180 / M_PI);
 		angle.data[0] = (angle_1 - calibration_angle_1) * (180 / M_PI);
 		angle.data[1] = (angle_2 - calibration_angle_2) * (180 / M_PI);
+		ROS_INFO("angle_1 = %d", (int)angle.data[0]);
+		ROS_INFO("angle_2 = %d", (int)angle.data[1]);
 		angle_check.data[0] = angle.data[0];
 		angle_check.data[1] = angle.data[1];
 		for(int i = 0; i < 2; ++i){
