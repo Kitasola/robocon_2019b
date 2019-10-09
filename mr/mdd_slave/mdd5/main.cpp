@@ -9,7 +9,6 @@ ScrpSlave slave(PA_9, PA_10, PA_12, SERIAL_TX, SERIAL_RX, 0x0803e000);
 
 constexpr int NUM_PORT = 5;
 // 0: Motor, 1: Encoder, 2: Other
-constexpr int PORT_FUNCTION[NUM_PORT] = {0, 2, 2, 0, 2};
 
 constexpr int NUM_MOTOR_PORT = 4;
 constexpr int MAX_PWM = 250;
@@ -24,9 +23,12 @@ constexpr int NUM_ENCODER_PORT = 4;
 constexpr int RANGE = 256;
 constexpr PinName ENCODER_PIN[NUM_ENCODER_PORT][2] = {
     {PA_0, PA_4}, {PA_1, PA_3}, {PA_8, PA_7}, {PB_6, PA_11}};
-RotaryInc *rotary[NUM_ENCODER_PORT];
-double goal_degree[2] = {0.0};
+double goal_degree[2] = {-10.0, -10.0};
 
+AnalogIn shoulder(PB_0);
+AnalogIn elbow(PA_0);
+double test_data_1, test_data_2;
+double raw_shoulder, raw_elbow;
 /*
 bool calibration_flag = false;
 bool start_flag = false;
@@ -35,8 +37,8 @@ InterruptIn shoulder(PB_6, PullUp);
 InterruptIn elbow(PA_11, PullUp);
 */
 
-RotaryInc raw_shoulder(PA_0, PA_4, 256, 2);
-RotaryInc raw_elbow(PA_1, PA_3, 256, 2);
+//RotaryInc raw_shoulder(PA_0, PA_4, 256, 2);
+//RotaryInc raw_elbow(PA_1, PA_3, 256, 2);
 
 /*
 bool flag_z_shoulder = false;
@@ -112,6 +114,9 @@ bool calibration(int cmd, int rx_data, int &tx_data){
 double arm_angle[2];
 bool angleShoulder(int cmd, int rx_data, int &tx_data) {
   goal_degree[0] = rx_data;
+  if(goal_degree[0] >= 5){
+    goal_degree[0] = 5;
+  }
   tx_data = arm_angle[0];
   return true;
 }
@@ -122,35 +127,31 @@ bool angleElbow(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
+bool getdata_1(int cmd, int rx_data,int &tx_data){
+    tx_data = arm_angle[0];
+}
+
+bool getdata_2(int cmd, int rx_data,int &tx_data){
+    // tx_data = elbow.read()*100;
+    tx_data = raw_elbow*100;
+}
+
+
 int main() {
-  if (PORT_FUNCTION[0] == 0) {
-    slave.addCMD(2, spinMotor);
-  }
-  if (PORT_FUNCTION[1] == 0) {
-    rotary[0] = new RotaryInc(ENCODER_PIN[0][0], ENCODER_PIN[0][1], RANGE, 1);
-  }
-  for (int i = 2; i < NUM_PORT; ++i) {
-    switch (PORT_FUNCTION[i]) {
-    case 0:
-      slave.addCMD(i + 1, spinMotor);
-      break;
-    case 1:
-      rotary[i - 1] =
-          new RotaryInc(ENCODER_PIN[i - 1][0], ENCODER_PIN[i - 1][1], RANGE, 1);
-      break;
-    }
-  }
   slave.addCMD(255, safe);
   // slave.addCMD(60, calibration);
   slave.addCMD(61, angleShoulder);
   slave.addCMD(62, angleElbow);
+  slave.addCMD(120, getdata_1);
+  slave.addCMD(121, getdata_2);
   // shoulder.rise(riseShoulder);
   // elbow.rise(riseElbow);
-  constexpr int two_motor[2] = {0, 2};
-  double arm_angle[2];
+  constexpr int two_motor[2] = {1, 2};
+  //double raw_shoulder = shoulder.read();
+  //double raw_elbow = elbow.read();
 
-  PidPosition se_motor[2] = {PidPosition(0.5, 0, 1.5, 0),
-                             PidPosition(0.5, 0, 1.5, 0)};
+  PidPosition se_motor[2] = {PidPosition(1.0, 0, 0.0, 0),
+                             PidPosition(1.0, 0, 0.0, 0)};
   /*
     while(calibration_flag == false){
       if(start_flag == true){
@@ -189,14 +190,25 @@ int main() {
   // RotaryInc raw_shoulder(PA_0, PA_4, 512, 1);
   // RotaryInc raw_elbow(PA_1, PA_3, 512, 1);
   while (true) {
-    arm_angle[0] = (360.0) * (-1.0) * (double)raw_shoulder.get() / 512.0;
-    arm_angle[1] = (360.0) * (-1.0) * (double)raw_elbow.get() / 512.0;
+    raw_shoulder = shoulder.read();
+    raw_elbow = elbow.read();
+
+    arm_angle[0] = map(raw_shoulder, 0.0, 1.0, 0.0, 270.0) - 252;
+    arm_angle[1] = map(raw_elbow, 0.0, 1.0, 300.0, -30.0) - 258;
+
     //PidPosition se_motor[2] = {PidPosition(0.5, 0, 0.4, 0),
     //                           PidPosition(0.5, 0, 0.4, 0)};
-    for (int i = 0; i < 2; ++i) {
-      spinMotor(two_motor[i],
-        se_motor[i].control((double)goal_degree[i], arm_angle[i]));
+    //for (int i = 0; i < 1; ++i) {
+      spinMotor(two_motor[1],
+        se_motor[1].control((double)goal_degree[1], arm_angle[1]));
+    //}
+    if(arm_angle[0] >= 5){
+        spinMotor(two_motor[0], -50);
+    }else{
+        spinMotor(two_motor[0], se_motor[0].control((double)goal_degree[0], arm_angle[0]));
     }
+    //spinMotor(two_motor[0], se_motor[0].control((double)goal_degree[0], arm_angle[0]));
+    //spinMotor(two_motor[1], 80);
    // wait(0.01);
   }
 }
