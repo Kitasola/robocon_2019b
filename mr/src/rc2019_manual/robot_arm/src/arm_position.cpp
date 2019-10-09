@@ -80,8 +80,8 @@ int main(int argc, char **argv){
 }
 void controllerButton(const three_omuni::button &button){
     if(button.arm_data_1){
-        angle_data.data[0] = 330;
-        angle_data.data[1] = 100;
+        angle_data.data[0] = 355;
+        angle_data.data[1] = 80;
     }
     if(button.arm_data_2){
         angle_data.data[0] = 250;
