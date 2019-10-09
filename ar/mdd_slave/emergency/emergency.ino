@@ -1,5 +1,5 @@
 constexpr int NUM_ROBOT_SW = 2, NUM_EMERGENCY = 1, NUM_CHECK_LED = 1;
-constexpr int REMOTE = 6, ROBOT[NUM_ROBOT_SW] = {7, 8}, EMERGENCY[NUM_EMERGENCY] = {12}, CHECK_LED[NUM_CHECK_LED] = {11}, ACT = 13;
+constexpr int REMOTE = 9, ROBOT[NUM_ROBOT_SW] = {7, 8}, EMERGENCY[NUM_EMERGENCY] = {12}, CHECK_LED[NUM_CHECK_LED] = {6}, ACT = 13;
 void setup() {
   pinMode(REMOTE, INPUT_PULLUP);
   for (int i = 0; i < NUM_ROBOT_SW; ++i) {
@@ -22,7 +22,7 @@ void loop() {
   prev_robot_level = current_robot_level;
   current_robot_level = true;
   for(int i = 0; i < NUM_ROBOT_SW; ++i) {
-    current_robot_level = current_robot_level && digitalRead(ROBOT[i]);
+    current_robot_level = current_robot_level && !digitalRead(ROBOT[i]);
   }
   
   if(run) {
@@ -42,6 +42,6 @@ void loop() {
   for(int i  = 0; i < NUM_EMERGENCY; ++i){
     digitalWrite(EMERGENCY[i], run);
   }
-  digitalWrite(ACT, run);
-  digitalWrite(CHECK_LED[0], current_robot_level);
+  digitalWrite(ACT, current_robot_level);
+  digitalWrite(CHECK_LED[0], run);
 }
