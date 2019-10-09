@@ -12,9 +12,10 @@
     <param name="baud" value="115200"/> 
   </node>
 
-  <param name="/coat" value="blue"/>
+  <param name="/coat" value="red"/>
   <param name="/ar/start_x" value="5600"/>
-  <param name="/ar/start_y" value="1950"/>
+  <param name="/ar/start_y" value="1990"/>
+  <param name="/ar/start_yaw" value="180"/>
   <node machine="ar" name="motor_serial" pkg="motor_serial" type="motor_serial"/>
   <node name="local_planner" pkg="robot_plan" type="local_planner"/>
   <node name="motion_planner" pkg="robot_plan" type="motion_planner"/>

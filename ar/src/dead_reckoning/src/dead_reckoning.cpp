@@ -50,9 +50,12 @@ int main(int argc, char **argv) {
 
   geometry_msgs::Pose2D offset_robot_pose;
   int start_x, start_y;
+  double start_yaw;
   n.getParam("/ar/start_x", start_x);
   n.getParam("/ar/start_y", start_y);
+  n.getParam("/ar/start_yaw", start_yaw);
   start_x *= coat;
+  start_yaw = coat * start_yaw / 180.0 * M_PI;
 
   offset_robot_pose.x = 0;
   offset_robot_pose.y = 0;
@@ -71,16 +74,17 @@ int main(int argc, char **argv) {
     robot_relative_pose.x -= offset_robot_pose.x;
     robot_relative_pose.y -= offset_robot_pose.y;
     robot_relative_pose.theta -= offset_robot_pose.theta;
-    if (robot_relative_pose.theta > M_PI) {
-      robot_relative_pose.theta -= 2 * M_PI;
-    } else if (robot_relative_pose.theta < -M_PI) {
-      robot_relative_pose.theta += 2 * M_PI;
-    }
+    /* if (robot_relative_pose.theta > M_PI) { */
+    /*   robot_relative_pose.theta -= 2 * M_PI; */
+    /* } else if (robot_relative_pose.theta < -M_PI) { */
+    /*   robot_relative_pose.theta += 2 * M_PI; */
+    /* } */
 
     // 相対位置を絶対位置に変換する
     robot_pose = robot_relative_pose;
     robot_pose.x += start_x;
     robot_pose.y += start_y;
+    robot_pose.theta += start_yaw;
     robot_pose_pub.publish(robot_pose);
 
     loop_rate.sleep();
