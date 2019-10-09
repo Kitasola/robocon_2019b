@@ -26,6 +26,7 @@ void controllerCallback(const three_omuni::button &button){
             srv.request.cmd = 34;
             srv.request.data = 1;
             loading_flag_prev = true;
+	    ROS_INFO("loading_false");
         }else if(loading_flag_prev == true){
             srv.request.id = 3;
             srv.request.cmd = 34;
@@ -37,12 +38,14 @@ void controllerCallback(const three_omuni::button &button){
             srv.request.data = times;
             shot.call(srv);
             ++times;
+	    ROS_INFO("loading true");
         }
     }
     if(button.shooting){
         srv.request.id = 3;
         srv.request.cmd = 30;
         srv.request.data = 50;
+	ROS_INFO("OK");
     }
     /*if(button.hand){
         if(hand_flag_prev == false){
