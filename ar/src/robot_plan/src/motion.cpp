@@ -120,17 +120,18 @@ using Pi = Pigpiod;
 // スイッチ基板のピンアサイン
 enum Switch {
   START = 18,
+  EMERGENCY = 19,
   RESET = 10,
   CALIBRATION = 11,
   SHEET = 12,
   TOWEL_0 = 16,
   TOWEL_1 = 17,
   TOWEL_2 = 18,
-  LRF = 19,
+  LRF = 22,
   ODOM = 20
 };
-Switch ALL_SWITCH[] = {START,   RESET,   CALIBRATION, SHEET, TOWEL_0,
-                       TOWEL_1, TOWEL_2, LRF,         ODOM};
+Switch ALL_SWITCH[] = {START,   EMERGENCY, RESET,   CALIBRATION, SHEET,
+                       TOWEL_0, TOWEL_1,   TOWEL_2, LRF,         ODOM};
 
 ros::ServiceClient motor_speed;
 int send(int id, int cmd, int data) {
@@ -257,6 +258,13 @@ int main(int argc, char **argv) {
 
   while (ros::ok()) {
     ros::spinOnce();
+    if (Pi::gpio().read(EMERGENCY) == 0) {
+      send(4, 100, 1);
+      send(4, 101, 1);
+    } else {
+      send(4, 100, 0);
+      send(4, 101, 0);
+    }
     /* if (Pi::gpio().read(RESET)) { */
     /*   global_message.data = "Robo_Pose Reset Both"; */
     /*   global_message_pub.publish(global_message); */
