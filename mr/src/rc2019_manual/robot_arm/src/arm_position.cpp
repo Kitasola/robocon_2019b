@@ -94,8 +94,8 @@ void controllerButton(const three_omuni::button &button) {
     angle_data.data[1] = 80;
   }
   if (button.arm_data_2) {
-    angle_data.data[0] = 250;
-    angle_data.data[1] = 250;
+    angle_data.data[0] = 512;
+    angle_data.data[1] = 414;
     angle_flag = true;
   } else {
     angle_flag = false;
