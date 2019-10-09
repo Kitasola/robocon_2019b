@@ -76,8 +76,8 @@ int main(int argc, char **argv) {
             angle_data.data[1] = 250;
     }*/
     position_pub.publish(angle_data);
-    ROS_INFO("%d", (int)angle_data.data[0]);
-    ROS_INFO("%d", (int)angle_data.data[1]);
+    ROS_INFO("angle_1 : %d", (int)angle_data.data[0]);
+    ROS_INFO("angle_2 : %d", (int)angle_data.data[1]);
     //    calibration.data = true;
     //}else{
     //    calibration.data = false;
