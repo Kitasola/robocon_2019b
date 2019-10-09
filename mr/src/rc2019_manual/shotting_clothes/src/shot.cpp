@@ -52,7 +52,7 @@ void controllerCallback(const three_omuni::button &button){
 		if(shooting_prev == false){
 			srv.request.id = 3;
 			srv.request.cmd = 30;
-			srv.request.data = 20;
+			srv.request.data = 200;
 			shot.call(srv);
 			ROS_INFO("OK");
 			shooting_prev = true;
