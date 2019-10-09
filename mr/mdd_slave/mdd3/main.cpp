@@ -124,6 +124,12 @@ bool loadTray(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
+bool actServo(int cmd, int rx_data, int &tx_data) {
+  actHand(rx_data % 10);
+  rockTray(rx_data / 10);
+  return true;
+}
+
 int main() {
   time.start();
   slave.addCMD(30, startShoot);
@@ -131,6 +137,7 @@ int main() {
   slave.addCMD(32, getStroke);
   slave.addCMD(34, loadTray);
   slave.addCMD(35, checkStroke);
+  slave.addCMD(36, actServo);
   slave.addCMD(255, safe);
 
   constexpr int TRAY_MOTOR_ID = 2, TRAY_ENCODER_ID = 3;
@@ -147,11 +154,11 @@ int main() {
   /* int current_stroke = 0, stroke_offset = -MAX_STROKE_LENGTH; */
   int stroke_offset = -MAX_STROKE_LENGTH;
   constexpr double STROKE_DIAMETER = -42;
-  PidPosition stroke(1.0, 0, 0, 0);
+  PidPosition stroke(5.0, 0, 0, 0);
   AnalogIn stroke_reset(PA_5);
   constexpr double WAIT_RELOAD_ROCK = 2, WAIT_RELOAD_CHARGE = 0.2,
                    WAIT_ROLL_TRAY = 2;
-  constexpr int RELOAD_ROCK_SPEED = 10, RELOAD_CHARGE_SPEED = 10;
+  constexpr int RELOAD_ROCK_SPEED = 10, RELOAD_CHARGE_SPEED = 100;
   int reload_speed = 0;
   bool reload_mode = false;
   DigitalOut shoot_rock(PA_6);
@@ -161,7 +168,7 @@ int main() {
   while (true) {
     spinMotor(TRAY_MOTOR_ID, goal_tray_speed);
     current_stroke =
-        stroke_rotary.get() * STROKE_DIAMETER * M_PI - stroke_offset;
+        stroke_rotary.get() / 256.0 * STROKE_DIAMETER * M_PI - stroke_offset;
 
     if (!reload_mode) {
       spinMotor(STROKE_MOTOR_ID, stroke.control(goal_stroke, current_stroke));
