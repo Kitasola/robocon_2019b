@@ -76,4 +76,6 @@ void angle_calcurate(double *angle_1, double *angle_2){
 	double theta_2 = acos(-1 * (pow(B, 2) - pow(A, 2) - pow(r, 2)) / (2 * A * r));
 	*angle_1 = (double)theta_1 + theta_2;
         angle_check.data[0] = *angle_1;
+	if(*angle_1 > M_PI) *angle_1 = M_PI;
+	if(*angle_2 > M_PI) *angle_2 = M_PI;
 }
