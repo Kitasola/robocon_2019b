@@ -275,6 +275,11 @@ public:
     }
   }
 
+  ~SVelocity() {
+    send_twist.angular.y = -1;
+    velocity_pub.publish(send_twist);
+  }
+
 private:
   int rate = 0;
   geometry_msgs::Pose2D current_point = {}, goal_point = {}, start_point = {};
