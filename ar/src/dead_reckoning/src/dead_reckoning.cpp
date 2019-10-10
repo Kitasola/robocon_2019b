@@ -74,17 +74,17 @@ int main(int argc, char **argv) {
     robot_relative_pose.x -= offset_robot_pose.x;
     robot_relative_pose.y -= offset_robot_pose.y;
     robot_relative_pose.theta -= offset_robot_pose.theta;
-    /* if (robot_relative_pose.theta > M_PI) { */
-    /*   robot_relative_pose.theta -= 2 * M_PI; */
-    /* } else if (robot_relative_pose.theta < -M_PI) { */
-    /*   robot_relative_pose.theta += 2 * M_PI; */
-    /* } */
 
     // 相対位置を絶対位置に変換する
     robot_pose = robot_relative_pose;
     robot_pose.x += start_x;
     robot_pose.y += start_y;
     robot_pose.theta += start_yaw;
+    if (robot_pose.theta > M_PI) {
+      robot_pose.theta -= 2 * M_PI;
+    } else if (robot_pose.theta <= -M_PI) {
+      robot_pose.theta += 2 * M_PI;
+    }
     robot_pose_pub.publish(robot_pose);
 
     loop_rate.sleep();

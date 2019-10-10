@@ -72,13 +72,10 @@ public:
     if (hypot(goal_point.x - current_point.x, goal_point.y - current_point.y) <
         ERROR_DISTANCE_MAX) {
       msgs.data = true;
-      reach_goal_pub.publish(msgs);
       send_twist.angular.y = -1;
-      velocity_pub.publish(send_twist);
-      return;
     } else {
       msgs.data = false;
-      reach_goal_pub.publish(msgs);
+      send_twist.angular.y = WHEEL_DEBUG_MODE;
       for (int i = 0; i < 2; ++i) {
         int search_id_min = map_id[i] - MAP_SEARCH_RANGE;
         int search_id_max = map_id[i] + MAP_SEARCH_RANGE;
@@ -123,11 +120,30 @@ public:
         }
       }
     }
-    send_twist.angular.z = moment.control(goal_point.theta * 180 / M_PI,
-                                          current_point.theta * 180 / M_PI);
 
-    send_twist.angular.y = 0;
+    if (goal_point.theta - current_point.theta > M_PI) {
+      goal_point.theta -= 2 * M_PI;
+    } else if (goal_point.theta - current_point.theta < -M_PI) {
+      goal_point.theta += 2 * M_PI;
+    }
+
+    if (abs(goal_point.theta - current_point.theta) < ERROR_ANGLE_MAX) {
+      msgs.data = true;
+      send_twist.angular.y = -1;
+    } else {
+      msgs.data = false;
+      send_twist.angular.y = WHEEL_DEBUG_MODE;
+      send_twist.angular.z = moment.control(goal_point.theta * 180 / M_PI,
+                                            current_point.theta * 180 / M_PI);
+      if (send_twist.angular.z > MAX_MOMENT) {
+        send_twist.angular.z = MAX_MOMENT;
+      } else if (send_twist.angular.z < -MAX_MOMENT) {
+        send_twist.angular.z = -MAX_MOMENT;
+      }
+    }
+
     velocity_pub.publish(send_twist);
+    reach_goal_pub.publish(msgs);
   }
 
   void setParam() {
@@ -268,7 +284,8 @@ private:
   double velocity_final_prev[2] = {};
   constexpr static double VELOCITY_MIN = 300, VELOCITY_MAX = 3000,
                           ACCEL_MAX = 500;
-  constexpr static double ERROR_DISTANCE_MAX = 50;
+  constexpr static double ERROR_DISTANCE_MAX = 50,
+                          ERROR_ANGLE_MAX = 3.0 / 180 * M_PI;
   constexpr static double ROOT_FOLLOW = 1.7;
   std::vector<AccelMap> velocity_map[2];
   constexpr static int MAP_SCOPE = 1, MAP_SEARCH_RANGE = 5 * MAP_SCOPE;
@@ -277,6 +294,9 @@ private:
   std_msgs::Bool msgs;
 
   arrc::PidVelocity moment{15, 0, 0};
+  constexpr static int MAX_MOMENT = 1000;
+
+  constexpr static int WHEEL_DEBUG_MODE = 0;
 };
 
 int main(int argc, char **argv) {
