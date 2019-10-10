@@ -98,7 +98,8 @@ bool startShoot(int cmd, int rx_data, int &tx_data) {
 }
 
 int current_stroke = 0;
-bool getStroke(int cmd, int rx_data, int &tx_data) {
+bool setStroke(int cmd, int rx_data, int &tx_data) {
+  goal_stroke = rx_data;
   tx_data = current_stroke;
   return true;
 }
@@ -115,9 +116,11 @@ bool checkStroke(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
+int GLOBAL_STROKE_LOAD_LENGTH;
 bool loadTray(int cmd, int rx_data, int &tx_data) {
   if (rx_data == 1) {
     phase = 0;
+    goal_stroke = GLOBAL_STROKE_LOAD_LENGTH;
   } else if (rx_data == -1) {
     phase = 7;
   }
@@ -134,7 +137,7 @@ int main() {
   time.start();
   slave.addCMD(30, startShoot);
   slave.addCMD(31, setTraySpeed);
-  slave.addCMD(32, getStroke);
+  slave.addCMD(32, setStroke);
   slave.addCMD(34, loadTray);
   slave.addCMD(35, checkStroke);
   slave.addCMD(36, actServo);
@@ -149,12 +152,13 @@ int main() {
   constexpr int STROKE_MOTOR_ID = 0, STROKE_ENCODER_ID = 0;
   RotaryInc stroke_rotary(ENCODER_PIN[STROKE_ENCODER_ID][0],
                           ENCODER_PIN[STROKE_ENCODER_ID][1], 256, 1);
-  constexpr int MAX_STROKE_LENGTH = 370, MAX_STROKE_ERROR = 1;
+  constexpr int MAX_STROKE_LENGTH = 370, MAX_STROKE_ERROR = 2;
   constexpr int STROKE_LOAD_LENGTH = 350;
+  GLOBAL_STROKE_LOAD_LENGTH = STROKE_LOAD_LENGTH;
   /* int current_stroke = 0, stroke_offset = -MAX_STROKE_LENGTH; */
   int stroke_offset = -MAX_STROKE_LENGTH;
   constexpr double STROKE_DIAMETER = -42;
-  PidPosition stroke(5.0, 0, 0, 0);
+  PidPosition stroke(6.0, 0, 0, 0);
   AnalogIn stroke_reset(PA_5);
   constexpr double WAIT_RELOAD_ROCK = 2, WAIT_RELOAD_CHARGE = 0.2,
                    WAIT_ROLL_TRAY = 2;
@@ -183,7 +187,6 @@ int main() {
 
     switch (phase) {
     case 0: {
-      goal_stroke = STROKE_LOAD_LENGTH;
       if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) {
         actHand(HAND_RELEASE_ANGLE);
         time.reset();
@@ -267,6 +270,6 @@ int main() {
       break;
     }
     }
-   // wait(0.01);
+    wait(0.01);
   }
 }
