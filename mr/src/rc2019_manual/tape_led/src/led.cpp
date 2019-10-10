@@ -22,10 +22,11 @@ void calibrationCallback(const std_msgs::String &msg){
 bool warning(){
 	bool current_data;
 	if(ros::Pigpiod::gpio().read(WARNING_PIN) == 1){
-		current_data = true;
+		flag_warning = true;
 	}else{
-		current_data = false;
+		flag_warning = false;
 	}
+	return flag_warning;
 }
 
 int main(int argc, char **argv){
