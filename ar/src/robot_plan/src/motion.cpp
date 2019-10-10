@@ -218,6 +218,8 @@ int main(int argc, char **argv) {
       HUNGER_WAIT_TIME); // Move: ハンガー手前 -> Wait:ハンガー完了タイマー
   goal_map[0].add(2050, 4000, start_yaw, 2,
                   HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
+  goal_map[0].add(2050, 4000, start_yaw, 2,
+                  HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
   goal_map[0].add(
       start_x, start_y, start_yaw, 1,
       TWO_STAGE_READY); // Move: スタートゾーン -> Wait: スタートスイッチ
