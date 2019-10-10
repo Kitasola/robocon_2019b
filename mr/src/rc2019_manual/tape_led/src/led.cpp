@@ -1,18 +1,17 @@
 #include<ros/ros.h>
-#include"motor_serial/motor_serial.h"
+#include "motor_serial/motor_serial.h"
 #include<pigpiod_if2.h>
 #include<pigpiod.hpp>
-
-using ros:Pigpiod;
+#include<std_msgs/String.h>
+using ros::Pigpiod;
 
 bool flag_nomal = false; //5
 bool flag_warning = false; //yellow 1
 bool flag_calibration = false; //green 2
 bool flag_red_coat = false; //red 3
 bool flag_blue_coat = false; //blue 4
-constexpr int WARNING_PIN = 1;
-
-Pigpiod::gpio().set(WARNING_PIN, ros::IN, ros::PULL_UP);	
+constexpr int WARNING_PIN = 16;
+int gpio_handle;
 
 void calibrationCallback(const std_msgs::String &msg){
 	if(msg.data == "gyro")flag_calibration = true;
@@ -36,6 +35,8 @@ int main(int argc, char **argv){
 	ros::Subscriber calibration_sub = n.subscribe("calibration", 10, calibrationCallback);
 	motor_serial::motor_serial srv;
 	int led_data = 0;
+	gpio_handle = Pigpiod::gpio().checkHandle();
+	Pigpiod::gpio().set(WARNING_PIN, ros::IN, ros::PULL_UP);	
 	ros::Rate loop_rate(100);
 
 	while(ros::ok()){
@@ -49,7 +50,7 @@ int main(int argc, char **argv){
 		}
 
 		srv.request.id = 6;
-		srv.request.cmd = 1;
+		srv.request.cmd = 100;
 		srv.request.data = led_data;
 			
 		ros::spinOnce();
