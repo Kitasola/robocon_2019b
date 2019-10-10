@@ -3,7 +3,9 @@
 #include<pigpiod_if2.h>
 #include<pigpiod.hpp>
 #include<std_msgs/String.h>
+
 using ros::Pigpiod;
+std_msgs::String msg;
 
 bool flag_nomal = false; //5
 bool flag_warning = false; //yellow 1
@@ -34,6 +36,7 @@ int main(int argc, char **argv){
 	ros::NodeHandle n;
 	ros::ServiceClient tape_led = n.serviceClient<motor_serial::motor_serial>("tape_led");
 	ros::Subscriber calibration_sub = n.subscribe("calibration", 10, calibrationCallback);
+	ros::Publisher led_pub = n.advertise<std_msgs::String>("led_info", 10);
 	motor_serial::motor_serial srv;
 	int led_data = 0;
 	gpio_handle = Pigpiod::gpio().checkHandle();
@@ -44,19 +47,20 @@ int main(int argc, char **argv){
 		flag_warning = warning();	
 		if(flag_warning){
 			led_data = 1;
-			ROS_INFO("RED");
+			msg.data = "RED";
 		}else if(flag_calibration){
 			led_data = 2;
-			ROS_INFO("GREEN");
+			msg.data = "GREEN";
 		}else{
 			led_data = 0;
-			ROS_INFO("NOMAL");
+			msg.data = "NOMAL";
 		}
 
 		srv.request.id = 6;
 		srv.request.cmd = 100;
 		srv.request.data = led_data;
 		tape_led.call(srv);
+		led_pub.publish(msg);
 			
 		ros::spinOnce();
 		loop_rate.sleep();
