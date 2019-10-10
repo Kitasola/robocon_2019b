@@ -36,7 +36,6 @@ void controllerCallback(const three_omuni::button &button){
 				srv.request.data = -1;
 				shot.call(srv);
 				loading_flag_prev = false;
-				shot.call(srv);
 				srv.request.id = 4;
 				srv.request.cmd = 20;
 				srv.request.data = times;
