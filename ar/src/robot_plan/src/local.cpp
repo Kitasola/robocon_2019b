@@ -128,8 +128,8 @@ public:
     }
 
     if (abs(goal_point.theta - current_point.theta) < ERROR_ANGLE_MAX) {
-      msgs.data = true;
-      send_twist.angular.y = -1;
+      /* msgs.data = true; */
+      /* send_twist.angular.y = -1; */
     } else {
       msgs.data = false;
       send_twist.angular.y = WHEEL_DEBUG_MODE;

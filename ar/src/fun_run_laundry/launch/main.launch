@@ -12,7 +12,7 @@
     <param name="baud" value="115200"/> 
   </node>
 
-  <param name="/coat" value="red"/>
+  <param name="/coat" value="blue"/>
   <param name="/ar/start_x" value="5600"/>
   <param name="/ar/start_y" value="1990"/>
   <param name="/ar/start_yaw" value="180"/>

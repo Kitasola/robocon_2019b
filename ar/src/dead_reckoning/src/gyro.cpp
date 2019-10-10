@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
   std::string coat_color;
   n.getParam("/coat", coat_color);
   int first_yaw;
-  n.getParam("/first_yaw", first_yaw);
+  n.getParam("/ar/start_yaw", first_yaw);
   if (coat_color == "blue") {
     first_yaw *= 1;
   } else if (coat_color == "red") {

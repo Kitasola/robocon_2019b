@@ -256,11 +256,11 @@ int main(int argc, char **argv) {
   while (ros::ok()) {
     ros::spinOnce();
     if (Pi::gpio().read(EMERGENCY) == 0) {
-      send(4, 100, 1);
-      send(4, 101, 1);
-    } else {
       send(4, 100, 0);
       send(4, 101, 0);
+    } else {
+      send(4, 100, 2);
+      send(4, 101, 2);
     }
     /* if (Pi::gpio().read(RESET)) { */
     /*   global_message.data = "Robo_Pose Reset Both"; */
