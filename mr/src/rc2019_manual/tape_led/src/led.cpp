@@ -44,10 +44,13 @@ int main(int argc, char **argv){
 		flag_warning = warning();	
 		if(flag_warning){
 			led_data = 1;
+			ROS_INFO("RED");
 		}else if(flag_calibration){
 			led_data = 2;
+			ROS_INFO("GREEN");
 		}else{
 			led_data = 0;
+			ROS_INFO("NOMAL");
 		}
 
 		srv.request.id = 6;

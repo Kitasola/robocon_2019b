@@ -4,7 +4,7 @@
     <machine name="ubuntu" address="172.20.10.12" env-loader="/home/ubuntu/robocon_2019b/mr/devel/env.sh" user="ubuntu" password="ubuntu"/>
     <node machine="ubuntu" name="motor_serial" pkg="motor_serial" type="motor_serial"/>
     <node machine="ubuntu" name="expansion" pkg="robot_expansion" type="expansion"/>
-    <node machine="ubuntu" name="led" pkg="tape_led" type="led"/>
+    <node machine="ubuntu" name="led" pkg="tape_led" type="led" output="screen"/>
     <node name="omuni" pkg="three_omuni" type="omuni"/>
     <node machine="ubuntu" name="gyro" pkg="robot_sensor" type="gyro"/>
     <node name="calibration" pkg="robot_calibration" type="calibration"/>
@@ -12,7 +12,7 @@
     <node name="obon" pkg="obon_set" type="obon"/>
     <node name="arm_position" pkg="robot_arm" type="arm_position"/>
     <node name="arm_angle" pkg="robot_arm" type="arm_angle"/>
-    <node name="shot" pkg="shotting_clothes" type="shot" output="screen"/>
+    <node name="shot" pkg="shotting_clothes" type="shot"/>
     <node name="controller" pkg="rc2019_commander" type="controller"/>
     <node name="joy_node" pkg="joy" type="joy_node"/>
 </launch>
