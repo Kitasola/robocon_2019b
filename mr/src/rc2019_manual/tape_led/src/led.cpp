@@ -53,6 +53,7 @@ int main(int argc, char **argv){
 		srv.request.id = 6;
 		srv.request.cmd = 100;
 		srv.request.data = led_data;
+		tape_led.call(srv);
 			
 		ros::spinOnce();
 		loop_rate.sleep();
