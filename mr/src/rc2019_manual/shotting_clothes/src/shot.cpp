@@ -75,7 +75,6 @@ void controllerCallback(const three_omuni::button &button) {
     }*/
   if (times > 8)
     times = 1;
->>>>>>> 93a67ed006226f3a140bb910d6f343def2d62880
 }
 int main(int argc, char **argv) {
   ros::init(argc, argv, "shotting_cloths");
