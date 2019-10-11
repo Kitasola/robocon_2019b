@@ -18,7 +18,7 @@ bool loading_prev = false;
 void controllerCallback(const three_omuni::button &button) {
   static bool loading_flag_prev = true;
   static bool hand_flag_prev = false;
-  static int times = 8;
+  static int times = 1;
   static std::once_flag flag;
   std::call_once(flag, speedInit);
   if (button.loading) {
@@ -40,7 +40,7 @@ void controllerCallback(const three_omuni::button &button) {
         srv.request.cmd = 20;
         srv.request.data = times;
         shot.call(srv);
-        --times;
+        ++times;
         ROS_INFO("loading true");
       }
       loading_prev = true;
@@ -73,8 +73,9 @@ void controllerCallback(const three_omuni::button &button) {
     hand_flag_prev = false;
     }
     }*/
-  if (times <= 0)
-    times = 8;
+  if (times > 8)
+    times = 1;
+>>>>>>> 93a67ed006226f3a140bb910d6f343def2d62880
 }
 int main(int argc, char **argv) {
   ros::init(argc, argv, "shotting_cloths");
