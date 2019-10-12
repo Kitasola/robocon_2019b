@@ -288,7 +288,7 @@ private:
   geometry_msgs::Twist send_twist, goal_velocity;
   double velocity_final_prev[2] = {};
   constexpr static double VELOCITY_MIN = 300, VELOCITY_MAX = 3000,
-                          ACCEL_MAX = 500;
+                          ACCEL_MAX = 300;
   constexpr static double ERROR_DISTANCE_MAX = 50,
                           ERROR_ANGLE_MAX = 1.0 / 180 * M_PI;
   constexpr static double ROOT_FOLLOW = 1.7;
@@ -298,7 +298,7 @@ private:
   int map_id_max[2] = {};
   std_msgs::Bool msgs;
 
-  arrc::PidVelocity moment{15, 0, 0};
+  arrc::PidVelocity moment{12, 0, 0};
   constexpr static int MAX_MOMENT = 1000;
 
   constexpr static int WHEEL_DEBUG_MODE = 0;

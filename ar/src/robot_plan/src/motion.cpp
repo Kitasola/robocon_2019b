@@ -181,12 +181,12 @@ int main(int argc, char **argv) {
 
   // パラメータ
   // 2段目昇降機構
-  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 76, TWO_STAGE_SHEET = 76,
+  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 77, TWO_STAGE_SHEET = 77,
                 TWO_STAGE_READY = 0, TWO_STAGE_ERROR_MAX = 1; // cm
   constexpr double TWO_STAGE_TIME = 0.06;
   // ハンガー
   constexpr int HUNGER_ID = 1, HUNGER_SPEED = 200;
-  constexpr double HUNGER_WAIT_TIME = HUNGER_SPEED * 0.01;
+  constexpr double HUNGER_WAIT_TIME = HUNGER_SPEED * 0.02;
   // 3段目昇降機構
   constexpr int THREE_STAGE_ID = 1, THREE_STAGE_SHEET = 74;
   constexpr double THREE_STAGE_TIME = 0.06;
@@ -206,23 +206,28 @@ int main(int argc, char **argv) {
   int map_type = 0;
   GoalManager goal_map[NUM_MAP] = {GoalManager(coat), GoalManager(coat)};
   goal_map[0].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
-  goal_map[0].add(3650, 4000, start_yaw, 1,
+  goal_map[0].add(3650, 3850, start_yaw);
+  goal_map[0].add(3650, 3850, start_yaw, 1,
                   TWO_STAGE_HUNGER); // Move: 小ポール横 -> Start: 昇降
   goal_map[0].add(
-      3650, 4000, start_yaw, 10,
+      3650, 3850, start_yaw, 10,
       TWO_STAGE_HUNGER *
           TWO_STAGE_TIME); // Move: 小ポール横 -> Wait: 昇降完了タイマー
-  /* goal_map[0].add(3650, 5500, 0); // Move: ハンガー前 */
-  goal_map[0].add(
-      2850, 4000, start_yaw, 2,
-      HUNGER_WAIT_TIME); // Move: ハンガー手前 -> Wait:ハンガー完了タイマー
-  goal_map[0].add(2050, 4000, start_yaw, 2,
+  /* /1* goal_map[0].add(3650, 5500, 0); // Move: ハンガー前 *1/ */
+  /* goal_map[0].add( */
+  /*     2850, 3850, start_yaw, 2, */
+  /*     HUNGER_WAIT_TIME); // Move: ハンガー手前 -> Wait:ハンガー完了タイマー
+   */
+  /* goal_map[0].add(2050, 3850, start_yaw, 2, */
+  /*                 HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait:
+   * ハンガー */
+  goal_map[0].add(3650, 3850, start_yaw, 2,
                   HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
-  goal_map[0].add(2050, 4000, start_yaw, 2,
-                  HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
   goal_map[0].add(
-      start_x, start_y, start_yaw, 1,
+      start_x, start_y - 500, start_yaw, 1,
       TWO_STAGE_READY); // Move: スタートゾーン -> Wait: スタートスイッチ
+  goal_map[0].add(start_x, start_y - 500, start_yaw,
+                  11); // Move: スタートゾーン -> Wait: スタートスイッチ
   goal_map[0].restart();
 
   goal_map[1].add(start_x, start_y,
@@ -330,11 +335,11 @@ int main(int argc, char **argv) {
       }
       case 11: {
         if (Pi::gpio().read(START) == 1) {
-          if (Pi::gpio().read(SHEET)) {
-            map_type = 1;
-          } else {
-            map_type = 0;
-          }
+          /* if (Pi::gpio().read(SHEET)) { */
+          /*   map_type = 1; */
+          /* } else { */
+          /*   map_type = 0; */
+          /* } */
           map_type = 0;
           goal_map[map_type].restart();
           can_send_next_goal = true;
