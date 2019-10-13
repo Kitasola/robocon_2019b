@@ -224,9 +224,12 @@ int main(int argc, char **argv) {
    * ハンガー */
   goal_map[0].add(3650, HUNGER_POSITION_Y, start_yaw, 2,
                   HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
+  goal_map[0].add(3650, HUNGER_POSITION_Y, start_yaw, 1,
+                  TWO_STAGE_READY); // Move: 次ハンガー手前 -> Wait: ハンガー
   goal_map[0].add(
-      start_x, start_y - 500, start_yaw, 1,
-      TWO_STAGE_READY); // Move: スタートゾーン -> Wait: スタートスイッチ
+      start_x, start_y - 500, start_yaw, 10,
+      TWO_STAGE_HUNGER *
+          TWO_STAGE_TIME); // Move: スタートゾーン -> Wait: スタートスイッチ
   goal_map[0].add(start_x, start_y - 500, start_yaw,
                   11); // Move: スタートゾーン -> Wait: スタートスイッチ
   goal_map[0].restart();
