@@ -288,7 +288,7 @@ private:
   geometry_msgs::Twist send_twist, goal_velocity;
   double velocity_final_prev[2] = {};
   constexpr static double VELOCITY_MIN = 300, VELOCITY_MAX = 3000,
-                          ACCEL_MAX = 300;
+                          ACCEL_MAX = 100;
   constexpr static double ERROR_DISTANCE_MAX = 50,
                           ERROR_ANGLE_MAX = 1.0 / 180 * M_PI;
   constexpr static double ROOT_FOLLOW = 1.7;
