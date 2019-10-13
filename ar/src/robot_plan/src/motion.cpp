@@ -343,6 +343,8 @@ int main(int argc, char **argv) {
           /* } */
           map_type = 0;
           goal_map[map_type].restart();
+          global_message.data = "Game Start";
+          global_message_pub.publish(global_message);
           can_send_next_goal = true;
           changed_phase = true;
         }
