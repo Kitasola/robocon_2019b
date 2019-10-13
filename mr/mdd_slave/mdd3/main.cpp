@@ -187,6 +187,7 @@ int main() {
 
     switch (phase) {
     case 0: {
+      goal_stroke = STROKE_LOAD_LENGTH;
       if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) {
         actHand(HAND_RELEASE_ANGLE);
         time.reset();
@@ -205,7 +206,7 @@ int main() {
     case 2: {
       if (time.read() > WAIT_TRAY_SERVO) {
         time.reset();
-        goal_stroke = STROKE_LOAD_LENGTH;
+        goal_stroke = STROKE_READY_LENGTH;
       }
       break;
     }
@@ -264,7 +265,7 @@ int main() {
     }
     case 9: {
       if (time.read() > WAIT_HAND_SERVO) {
-        goal_stroke = STROKE_LOAD_LENGTH;
+        goal_stroke = STROKE_READY_LENGTH;
         time.reset();
       }
       break;
