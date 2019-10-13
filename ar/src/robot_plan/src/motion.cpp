@@ -204,7 +204,7 @@ int main(int argc, char **argv) {
   // map_type
   // 0: ハンガー, 1: シーツ
   int map_type = 0;
-  constexpr int HUNGER_POSITION_Y = 4000 - 520;
+  constexpr int HUNGER_POSITION_Y = 4500 - 520;
   GoalManager goal_map[NUM_MAP] = {GoalManager(coat), GoalManager(coat)};
   goal_map[0].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
   goal_map[0].add(3650, HUNGER_POSITION_Y, start_yaw);
