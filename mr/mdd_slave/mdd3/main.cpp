@@ -153,7 +153,7 @@ int main() {
   RotaryInc stroke_rotary(ENCODER_PIN[STROKE_ENCODER_ID][0],
                           ENCODER_PIN[STROKE_ENCODER_ID][1], 256, 1);
   constexpr int MAX_STROKE_LENGTH = 370, MAX_STROKE_ERROR = 2;
-  constexpr int STROKE_LOAD_LENGTH = 350;
+  constexpr int STROKE_LOAD_LENGTH = 350, STROKE_READY_LENGTH = 200;
   GLOBAL_STROKE_LOAD_LENGTH = STROKE_LOAD_LENGTH;
   /* int current_stroke = 0, stroke_offset = -MAX_STROKE_LENGTH; */
   int stroke_offset = -MAX_STROKE_LENGTH;
@@ -205,7 +205,7 @@ int main() {
     case 2: {
       if (time.read() > WAIT_TRAY_SERVO) {
         time.reset();
-        goal_stroke = MAX_STROKE_LENGTH;
+        goal_stroke = STROKE_LOAD_LENGTH;
       }
       break;
     }
@@ -264,7 +264,7 @@ int main() {
     }
     case 9: {
       if (time.read() > WAIT_HAND_SERVO) {
-        goal_stroke = MAX_STROKE_LENGTH;
+        goal_stroke = STROKE_LOAD_LENGTH;
         time.reset();
       }
       break;
