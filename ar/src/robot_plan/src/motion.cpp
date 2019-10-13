@@ -204,13 +204,14 @@ int main(int argc, char **argv) {
   // map_type
   // 0: ハンガー, 1: シーツ
   int map_type = 0;
+  constexpr int HUNGER_POSITION_Y = 4000 - 520;
   GoalManager goal_map[NUM_MAP] = {GoalManager(coat), GoalManager(coat)};
   goal_map[0].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
-  goal_map[0].add(3650, 3850, start_yaw);
-  goal_map[0].add(3650, 3850, start_yaw, 1,
+  goal_map[0].add(3650, HUNGER_POSITION_Y, start_yaw);
+  goal_map[0].add(3650, HUNGER_POSITION_Y, start_yaw, 1,
                   TWO_STAGE_HUNGER); // Move: 小ポール横 -> Start: 昇降
   goal_map[0].add(
-      3650, 3850, start_yaw, 10,
+      3650, HUNGER_POSITION_Y, start_yaw, 10,
       TWO_STAGE_HUNGER *
           TWO_STAGE_TIME); // Move: 小ポール横 -> Wait: 昇降完了タイマー
   /* /1* goal_map[0].add(3650, 5500, 0); // Move: ハンガー前 *1/ */
@@ -221,7 +222,7 @@ int main(int argc, char **argv) {
   /* goal_map[0].add(2050, 3850, start_yaw, 2, */
   /*                 HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait:
    * ハンガー */
-  goal_map[0].add(3650, 3850, start_yaw, 2,
+  goal_map[0].add(3650, HUNGER_POSITION_Y, start_yaw, 2,
                   HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
   goal_map[0].add(
       start_x, start_y - 500, start_yaw, 1,
