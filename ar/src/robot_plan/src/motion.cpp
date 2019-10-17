@@ -123,15 +123,12 @@ enum Switch {
   EMERGENCY = 19,
   RESET = 10,
   CALIBRATION = 11,
-  SHEET = 12,
-  TOWEL_0 = 16,
-  TOWEL_1 = 17,
-  TOWEL_2 = 18,
-  LRF = 22,
-  ODOM = 20
+  HUNGER_1 = 22,
+  HUNGER_2 = 23,
+  HUNGER_3 = 24
 };
-Switch ALL_SWITCH[] = {START,   EMERGENCY, RESET,   CALIBRATION, SHEET,
-                       TOWEL_0, TOWEL_1,   TOWEL_2, LRF,         ODOM};
+Switch ALL_SWITCH[] = {START,    EMERGENCY, RESET,   CALIBRATION,
+                       HUNGER_1, HUNGER_2,  HUNGER_3};
 
 ros::ServiceClient motor_speed;
 int send(int id, int cmd, int data) {
@@ -200,7 +197,7 @@ int main(int argc, char **argv) {
   // action_type
   // 0: 通過, 1: 2段目昇降, 2: ハンガー, 3: バスタオル, 4: 3段目昇降, 5:
   // シーツ, 10: 一定時間待機, 11: スタートスイッチ
-  constexpr int NUM_MAP = 2;
+  constexpr int NUM_MAP = 3;
   // map_type
   // 0: ハンガー, 1: シーツ
   int map_type = 0;
@@ -234,14 +231,37 @@ int main(int argc, char **argv) {
                   11); // Move: スタートゾーン -> Wait: スタートスイッチ
   goal_map[0].restart();
 
-  goal_map[1].add(start_x, start_y,
-                  0); // Move: スタートゾーン -> Wait: スタートスイッチ
-  goal_map[1].add(5400, 9250, 0); // Move: 大ポール横
-  goal_map[1].add(5400, 9000, 0); // Move: 大ポール中央手前
-  goal_map[1].add(5400, 9250, 0); // Move: 大ポール横
-  goal_map[1].add(start_x, start_y,
-                  0); // Move: 大ポール横
+  goal_map[1].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
+  goal_map[1].add(2850, HUNGER_POSITION_Y, start_yaw); // Move: 小ポール横
+  goal_map[1].add(2850, HUNGER_POSITION_Y, start_yaw, 1,
+                  TWO_STAGE_HUNGER); // Start: 昇降
+  goal_map[1].add(2850, HUNGER_POSITION_Y, start_yaw, 10,
+                  TWO_STAGE_HUNGER * TWO_STAGE_TIME); // Wait: 昇降完了タイマー
+  goal_map[1].add(2850, HUNGER_POSITION_Y, start_yaw, 2,
+                  HUNGER_WAIT_TIME); // Start: ハンガー
+  goal_map[1].add(2850, HUNGER_POSITION_Y, start_yaw, 1,
+                  TWO_STAGE_READY); // Start: 昇降
+  goal_map[1].add(start_x, start_y - 500, start_yaw, 10,
+                  TWO_STAGE_HUNGER * TWO_STAGE_TIME); // Wait: 昇降完了タイマー
+  goal_map[1].add(start_x, start_y - 500, start_yaw,
+                  11); // Move: スタートゾーン -> Wait: スタートスイッチ
   goal_map[1].restart();
+
+  goal_map[2].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
+  goal_map[2].add(2100, HUNGER_POSITION_Y, start_yaw); // Move: 小ポール横
+  goal_map[2].add(2100, HUNGER_POSITION_Y, start_yaw, 1,
+                  TWO_STAGE_HUNGER); // Start: 昇降
+  goal_map[2].add(2100, HUNGER_POSITION_Y, start_yaw, 10,
+                  TWO_STAGE_HUNGER * TWO_STAGE_TIME); // Wait: 昇降完了タイマー
+  goal_map[2].add(2100, HUNGER_POSITION_Y, start_yaw, 2,
+                  HUNGER_WAIT_TIME); // Start: ハンガー
+  goal_map[2].add(2100, HUNGER_POSITION_Y, start_yaw, 1,
+                  TWO_STAGE_READY); // Start: 昇降
+  goal_map[2].add(start_x, start_y - 500, start_yaw, 10,
+                  TWO_STAGE_HUNGER * TWO_STAGE_TIME); // Wait: 昇降完了タイマー
+  goal_map[2].add(start_x, start_y - 500, start_yaw,
+                  11); // Move: スタートゾーン -> Wait: スタートスイッチ
+  goal_map[2].restart();
 
   bool changed_phase = true;
   double start;
@@ -339,12 +359,15 @@ int main(int argc, char **argv) {
       }
       case 11: {
         if (Pi::gpio().read(START) == 1) {
-          /* if (Pi::gpio().read(SHEET)) { */
-          /*   map_type = 1; */
-          /* } else { */
-          /*   map_type = 0; */
-          /* } */
-          map_type = 0;
+          if (Pi::gpio().read(HUNGER_1) == 1) {
+            map_type = 0;
+          } else if (Pi::gpio().read(HUNGER_2) == 1) {
+            map_type = 1;
+          } else if (Pi::gpio().read(HUNGER_3) == 1) {
+            map_type = 2;
+          }
+          global_message.data = "Robot Pose Reset";
+          global_message_pub.publish(global_message);
           goal_map[map_type].restart();
           can_send_next_goal = true;
           changed_phase = true;
