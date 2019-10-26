@@ -1,0 +1,5 @@
+*.o
+test/*/test
+test/*/*.cpp
+!test/*/test.cpp
+test/*/*.hpp
