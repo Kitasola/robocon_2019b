@@ -3,10 +3,10 @@
 #include "../include/serial.hpp"
 #include <chrono>
 #include <cstring>
+#include <iostrem>
 #include <mutex>
 #include <pthread.h>
 #include <queue>
-#include <ros/console.h>
 #include <string>
 #include <thread>
 #include <unistd.h>
@@ -25,12 +25,12 @@ MotorSerial::MotorSerial(const char *dev_file, int baudrate, int rede,
     thread_loop_flag_ = false;
     timeout_ = timeout;
     rede_pin_ = rede;
-    ROS_DEBUG_STREAM("MotorSerial Initialize Success");
+    cout << "MotorSerial Initialize Success" << endl;
   } else {
-    ROS_ERROR_STREAM("Serial Initialize Failed");
+    cout << "Serial Initialize Failed" << endl;
   }
 
-  Pigpiod::gpio().set(rede_pin_, ros::OUT, 0);
+  Pigpiod::gpio().set(rede_pin_, OUT, 0);
 }
 
 void MotorSerial::setTimeOut(int timeout) { timeout_ = timeout; }
@@ -85,7 +85,7 @@ short MotorSerial::sending(unsigned char id, unsigned char cmd, short data) {
     }
   }
   if (serial_.available() < 0) {
-    ROS_ERROR_STREAM("Serial Com Error");
+    cout << "Serial Com Error" << endl;
   }
   return (recent_receive_data_ = receive_array[2] + (receive_array[3] << 8));
 }
@@ -113,7 +113,7 @@ short MotorSerial::send(unsigned char id, unsigned char cmd, short data,
       sch_params.sched_priority = 1;
       if (pthread_setschedparam(send_thread_.native_handle(), SCHED_RR,
                                 &sch_params)) {
-        ROS_ERROR_STREAM("Failed to set Thread scheduling");
+        cout << "Failed to set Thread scheduling" << endl;
       }
     }
     return 0;

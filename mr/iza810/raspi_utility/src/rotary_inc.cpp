@@ -1,7 +1,6 @@
 #include "../include/pigpiod.hpp"
 #include "../include/rotary_inc.hpp"
 #include <pigpiod_if2.h>
-#include <ros/console.h>
 
 using namespace arrc_raspi;
 
@@ -11,8 +10,8 @@ RotaryInc::RotaryInc(int user_A, int user_B, int multiplier) {
 
   gpio_handle_ = Pigpiod::gpio().checkHandle();
 
-  Pigpiod::gpio().set(pin_A_, ros::IN, ros::PULL_UP);
-  Pigpiod::gpio().set(pin_B_, ros::IN, ros::PULL_UP);
+  Pigpiod::gpio().set(pin_A_, IN, PULL_UP);
+  Pigpiod::gpio().set(pin_B_, IN, PULL_UP);
 
   set_watchdog(gpio_handle_, pin_A_, 0);
   set_watchdog(gpio_handle_, pin_B_, 0);
@@ -37,7 +36,7 @@ RotaryInc::RotaryInc(int user_A, int user_B, int multiplier, int user_Z) {
   RotaryInc(user_A, user_B, multiplier);
   pin_Z_ = user_Z;
 
-  Pigpiod::gpio().set(pin_Z_, ros::IN, ros::PULL_UP);
+  Pigpiod::gpio().set(pin_Z_, IN, PULL_UP);
   set_watchdog(gpio_handle_, pin_Z_, 0);
 
   id_Z_ = callback_ex(gpio_handle_, pin_Z_, RISING_EDGE, rotaryZ, this);
