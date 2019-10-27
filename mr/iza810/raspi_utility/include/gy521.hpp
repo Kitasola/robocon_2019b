@@ -31,12 +31,8 @@ public:
   Gy521(unsigned int dev_id = 0x68, int bit = 2, int calibration = 1000,
         double user_reg = 1.0);
   void update();
-  void start(double start = 0) {
-    clock_gettime(CLOCK_REALTIME, &now_);
-    yaw_ = start;
-  }
-  double getYaw() { return yaw_; }
-  double getDiffYaw() { return diff_yaw_; }
+  double yaw;
+  double diff_yaw;
   double checkStatus();
   Gy521Param checkParam();
 

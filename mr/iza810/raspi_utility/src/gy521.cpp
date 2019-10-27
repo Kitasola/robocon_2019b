@@ -58,6 +58,7 @@ Gy521::Gy521(unsigned int dev_id, int bit, int calibration, double user_reg) {
   param_.aver /= calibration;
 
   yaw_ = diff_yaw_ = 0;
+  clock_gettime(CLOCK_REALTIME, &now_);
   cout << param_.LSB << ", " << param_.aver << ", " << param_.pose << endl;
 }
 
@@ -67,14 +68,14 @@ void Gy521::update() {
   clock_gettime(CLOCK_REALTIME, &now_);
   gyro_z_prev_ = gyro_z_now_;
   gyro_z_now_ = ((double)gyro_z - param_.aver) / param_.LSB;
-  diff_yaw_ = (gyro_z_now_ + gyro_z_prev_) / 2 *
-              (now_.tv_sec - prev_.tv_sec +
-               (long double)(now_.tv_nsec - prev_.tv_nsec) / 1.0e+9);
-  yaw_ += diff_yaw_;
-  if (yaw_ > 180) {
-    yaw_ -= 360;
-  } else if (yaw_ <= -180) {
-    yaw_ += 360;
+  diff_yaw = (gyro_z_now_ + gyro_z_prev_) / 2 *
+             (now_.tv_sec - prev_.tv_sec +
+              (long double)(now_.tv_nsec - prev_.tv_nsec) / 1.0e+9);
+  yaw += diff_yaw;
+  if (yaw > 180) {
+    yaw -= 360;
+  } else if (yaw <= -180) {
+    yaw += 360;
   }
 }
 
