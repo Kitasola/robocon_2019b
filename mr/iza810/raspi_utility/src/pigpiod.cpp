@@ -3,12 +3,12 @@
 
 using namespace arrc_raspi;
 
-const char *ros::PIGPIOD_HOST = "localhost";
-const char *ros::PIGPIOD_PORT = "8888";
+const char *arrc_raspi::PIGPIOD_HOST = "localhost";
+const char *arrc_raspi::PIGPIOD_PORT = "8888";
 
 Pigpiod::Pigpiod() {
-  gpio_handle_ = pigpio_start(const_cast<char *>(ros::PIGPIOD_HOST),
-                              const_cast<char *>(ros::PIGPIOD_PORT));
+  gpio_handle_ = pigpio_start(const_cast<char *>(PIGPIOD_HOST),
+                              const_cast<char *>(PIGPIOD_PORT));
 }
 
 void Pigpiod::write(int pin, int level) {

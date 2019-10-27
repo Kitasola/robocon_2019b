@@ -1,6 +1,7 @@
 #ifndef ARRC_RASPI_PIGPIOD_HPP
 #define ARRC_RASPI_PIGPIOD_HPP
 #include <pigpiod_if2.h>
+#define pigpio Pigpiod::gpio()
 
 namespace arrc_raspi {
 extern const char *PIGPIOD_HOST;
@@ -32,5 +33,5 @@ private:
   Pigpiod();
   ~Pigpiod();
 };
-};
+}; // namespace arrc_raspi
 #endif

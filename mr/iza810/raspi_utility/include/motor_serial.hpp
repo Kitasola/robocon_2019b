@@ -9,7 +9,7 @@
 #include <thread>
 
 namespace arrc_raspi {
-struct SendDataFormat{
+struct SendDataFormat {
   unsigned char id;
   unsigned char cmd;
   short argData;
@@ -39,5 +39,5 @@ private:
   std::queue<SendDataFormat> send_data_queue_;
   std::mutex mtx_;
 };
-};
+}; // namespace arrc_raspi
 #endif
