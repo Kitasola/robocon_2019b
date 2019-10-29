@@ -46,7 +46,7 @@ int main() {
 
   // Check GPIO
   constexpr int RUN_LED = 13;
-  pigpio.set(RUN_LED, OUT, 0);
+  pigpio.set(RUN_LED, OUT, 1);
   constexpr int EMERGENCY_PIN = 14;
   pigpio.set(EMERGENCY_PIN, IN, PULL_UP);
 
@@ -55,8 +55,10 @@ int main() {
   // Calibration
   UPDATELOOP(controller, !(controller.button(START) && controller.button(UP))) {
   }
+  pigpio.write(RUN_LED, 0);
   constexpr double START_YAW = 0;
   Gy521 gyro(0x68, 2, 1000, 1.01);
+  pigpio.write(RUN_LED, 1);
 
   // Wheel ver three omuni
   constexpr int NUM_WHEEL = 3, WHEEL_MDD_ID[NUM_WHEEL] = {1, 2, 3},
@@ -114,6 +116,7 @@ int main() {
     if (should_reset) {
       gyro.yaw = 0;
     }
+    cout << gyro.yaw << endl;
     timer.update();
     timer.reset();
 
@@ -305,5 +308,6 @@ int main() {
   }
   cout << "Main Finish" << endl;
   ms.send(255, 255, 0);
+  pigpio.write(RUN_LED, 0);
   return finish_mode;
 }
