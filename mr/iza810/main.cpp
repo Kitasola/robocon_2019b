@@ -44,13 +44,17 @@ int main() {
   // DualShock3
   DualShock3 controller;
 
-  // Check LED
+  // Check GPIO
   constexpr int RUN_LED = 13;
   pigpio.set(RUN_LED, OUT, 0);
+  constexpr int EMERGENCY_PIN = 14;
+  pigpio.set(EMERGENCY_PIN, IN, PULL_UP);
+
+  // Tape LED
 
   // Calibration
-  UPDATELOOP(controller,
-             !(controller.button(RIGHT) && controller.button(SQUARE))) {}
+  UPDATELOOP(controller, !(controller.button(START) && controller.button(UP))) {
+  }
   constexpr double START_YAW = 0;
   Gy521 gyro(0x68, 2, 1000, 1.01);
 
@@ -62,9 +66,29 @@ int main() {
                 MAX_WHEEL_SPEED = 250;
   PidPosition robot_pose(0.0, 0.0, 0.0, MAX_ROBOT_MOMENT);
 
+  // Leg
+  constexpr int LEG_MDD_ID = 2, LEG_CMD = 12;
+
+  // Shoot
+  constexpr int SHOOT_MDD_ID = 4, SHOOT_STROKE_CMD = 30, SHOOT_ROLL_CMD = 31;
+  constexpr int SHOOT_CHARGE_STROKE = 350, SHOOT_ROLL_SPEED = 100;
+
+  // Load
+  constexpr int LOAD_MDD_ID = 4, LOAD_CMD = 13;
+  constexpr int MAX_LOAD_TARY = 8, NUM_STEP_TRAY = 1;
+  constexpr int NUM_LOAD_ARM = 6;
+  constexpr int LOAD_ARM_POSITION[NUM_LOAD_ARM][2] = {{0, 0}, {0, 0}, {0, 0},
+                                                      {0, 0}, {0, 0}, {0, 0}};
+
+  // Hand
+  constexpr int HAND_MDD_ID = 6, HAND_CMD = 12;
+  constexpr int HAND_CLOSE_ANGLE = 12, HAND_OPEN_ANGLE = 170;
+  constexpr double WAIT_HAND_TIME = 1.5;
+
   // Laundry
   constexpr int LAUNDRY_MDD_ID = 3, LAUNDRY_CMD = 20;
   constexpr int LAUNDRY_ARM_X = 360, LAUNDRY_ARM_Y = 860;
+  int laundry_mode = 0;
 
   // Arm
   constexpr int ARM_MDD_ID = 6, SHOULDER_CMD = 29, ELBO_CMD = 20;
@@ -74,14 +98,34 @@ int main() {
   constexpr double ARM_STICK_SPEED = 0.1;
 
   Timer timer;
+  int finish_mode = 1;
   cout << "Main Start" << endl;
   // MainLoop
   UPDATELOOP(controller,
              !(controller.button(START) && controller.button(CROSS))) {
+    // Reset
+    int should_reset = false;
+    if (controller.button(START) && controller.button(UP)) {
+      should_reset = true;
+    }
+
     // Sensor Update
     gyro.update();
+    if (should_reset) {
+      gyro.yaw = 0;
+    }
     timer.update();
     timer.reset();
+
+    // Emergency
+    static bool emergency_stop = false;
+    if (controller.press(SELECT)) {
+      emergency_stop = !emergency_stop;
+      finish_mode = emergency_stop ? 0 : 1;
+    }
+    if (emergency_stop) {
+      continue;
+    }
 
     // Wheel Goal Input Manual
     double stick_x = controller.stick(LEFT_X) / 128;
@@ -109,32 +153,124 @@ int main() {
     arm_goal_y += arm_diff_x * cos(gyro.yaw / 180 * M_PI) +
                   arm_diff_y * sin(gyro.yaw / 180 * M_PI);
 
-    // Shoot
-    static int phase = 0;
-    switch (phase) {
-    case 0:
-      if (controller.press(SQUARE)) {
-        phase = 1;
-      }
-      break;
-    case 1:
-
-      break;
-    }
-
     // Laundry
-    static int laundry_mode = 0;
+    if (should_reset) {
+      if (laundry_mode == 1) {
+        laundry_mode = 2;
+      }
+    }
     if (controller.button(CROSS) && laundry_mode == 2) {
       laundry_mode = 0;
-      ms.send(LAUNDRY_MDD_ID, LAUNDRY_CMD, laundry_mode);
     } else if (controller.press(CROSS) && laundry_mode == 0) {
       laundry_mode = 2;
-      ms.send(LAUNDRY_MDD_ID, LAUNDRY_CMD, laundry_mode);
     }
-    // 排出のための腕回避
+    // Arm avoid laundry
     if (laundry_mode == 0) {
       arm_goal_x = LAUNDRY_ARM_X;
       arm_goal_y = LAUNDRY_ARM_Y;
+    }
+    ms.send(LAUNDRY_MDD_ID, LAUNDRY_CMD, laundry_mode);
+
+    // Leg Input
+
+    // Shoot & Load & Hand
+    static int phase = 0;
+    static int tray_position = 0;
+    static int load_arm_id = 0;
+    static bool changed_phase = false;
+    static Timer hand_time;
+    hand_time.update();
+    switch (phase) {
+    // Tary Up or Down
+    case -1:
+      if (changed_phase) {
+        tray_position += NUM_STEP_TRAY;
+        if (tray_position > MAX_LOAD_TARY) {
+          tray_position = 0;
+        }
+        changed_phase = false;
+      }
+      if (controller.press(SQUARE)) {
+        phase = 0;
+        changed_phase = true;
+      }
+      break;
+    case 1:
+      if (changed_phase) {
+        ms.send(HAND_MDD_ID, HAND_CMD, HAND_CLOSE_ANGLE);
+        hand_time.reset();
+        changed_phase = false;
+      }
+      if (hand_time.wait(WAIT_HAND_TIME)) {
+        phase = 2;
+        changed_phase = true;
+      }
+      break;
+    case 4:
+      if (changed_phase) {
+        ms.send(LOAD_MDD_ID, LOAD_CMD, 1);
+        changed_phase = false;
+      }
+      if (controller.press(SQUARE)) {
+        phase = 5;
+        changed_phase = true;
+      }
+      break;
+    case 6:
+      if (changed_phase) {
+        ms.send(SHOOT_MDD_ID, SHOOT_ROLL_CMD, SHOOT_ROLL_SPEED);
+        ms.send(SHOOT_MDD_ID, SHOOT_STROKE_CMD, SHOOT_CHARGE_STROKE);
+        changed_phase = false;
+      }
+      if (controller.press(SQUARE)) {
+        phase = 7;
+        changed_phase = true;
+      }
+      break;
+    case 8:
+      if (changed_phase) {
+        ms.send(LOAD_MDD_ID, LOAD_CMD, -1);
+        laundry_mode = 1;
+        changed_phase = false;
+      }
+      if (controller.press(SQUARE)) {
+        phase = 9;
+        changed_phase = true;
+      }
+      break;
+    case 10:
+      if (changed_phase) {
+        ms.send(HAND_MDD_ID, HAND_CMD, HAND_OPEN_ANGLE);
+        hand_time.reset();
+        changed_phase = false;
+      }
+      if (hand_time.wait(WAIT_HAND_TIME)) {
+        phase = 2;
+        changed_phase = true;
+      }
+      break;
+    case 11:
+      if (changed_phase) {
+        changed_phase = false;
+      }
+      if (controller.press(SQUARE)) {
+        phase = -1;
+        changed_phase = true;
+      }
+      break;
+    // Arm Next Goal
+    default:
+      if (changed_phase) {
+        load_arm_id = (load_arm_id + 1) % NUM_LOAD_ARM;
+        arm_goal_x = LOAD_ARM_POSITION[load_arm_id][0];
+        arm_goal_y = LOAD_ARM_POSITION[load_arm_id][1];
+        changed_phase = false;
+      }
+      if (controller.press(SQUARE)) {
+        ++phase;
+        changed_phase = true;
+      }
+      break;
     }
 
     // Wheel Output
@@ -167,7 +303,7 @@ int main() {
             angle_shoulder / M_PI * 180 + OFFSET_SHOULDER_ANGLE);
     ms.send(ARM_MDD_ID, ELBO_CMD, angle_elbo / M_PI * 180 + OFFSET_ELBO_ANGLE);
   }
-finish:
   cout << "Main Finish" << endl;
   ms.send(255, 255, 0);
+  return finish_mode;
 }
