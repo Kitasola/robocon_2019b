@@ -38,17 +38,18 @@ double calcTriangleTheta(double a, double b, double c) {
 }
 
 int main() {
+  // Check GPIO
+  Pigpiod &pigpio = Pigpiod::gpio();
+  constexpr int RUN_LED = 13;
+  pigpio.set(RUN_LED, OUT, 1);
+  constexpr int EMERGENCY_PIN = 14;
+  pigpio.set(EMERGENCY_PIN, IN, PULL_UP);
+
   // Serial
   MotorSerial ms;
 
   // DualShock3
   DualShock3 controller;
-
-  // Check GPIO
-  constexpr int RUN_LED = 13;
-  pigpio.set(RUN_LED, OUT, 0);
-  constexpr int EMERGENCY_PIN = 14;
-  pigpio.set(EMERGENCY_PIN, IN, PULL_UP);
 
   // Tape LED
 
