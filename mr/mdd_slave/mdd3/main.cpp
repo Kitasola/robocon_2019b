@@ -97,10 +97,8 @@ bool startShoot(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-int current_stroke = 0;
-bool setStroke(int cmd, int rx_data, int &tx_data) {
-  goal_stroke = rx_data;
-  tx_data = current_stroke;
+bool setReady(int cmd, int rx_data, int &tx_data) {
+  phase = 10;
   return true;
 }
 
@@ -137,10 +135,10 @@ int main() {
   time.start();
   slave.addCMD(30, startShoot);
   slave.addCMD(31, setTraySpeed);
-  slave.addCMD(32, setStroke);
+  slave.addCMD(32, setReady);
+  slave.addCMD(33, checkStroke);
   slave.addCMD(34, loadTray);
-  slave.addCMD(35, checkStroke);
-  slave.addCMD(36, actServo);
+  slave.addCMD(35, actServo);
   slave.addCMD(255, safe);
 
   constexpr int TRAY_MOTOR_ID = 2, TRAY_ENCODER_ID = 3;
@@ -150,13 +148,14 @@ int main() {
   int current_tray_speed = 0;
 
   constexpr int STROKE_MOTOR_ID = 0, STROKE_ENCODER_ID = 0;
+  constexpr double STROKE_MOTOR_UP_DECAY = 0.7;
   RotaryInc stroke_rotary(ENCODER_PIN[STROKE_ENCODER_ID][0],
                           ENCODER_PIN[STROKE_ENCODER_ID][1], 256, 1);
-  constexpr int MAX_STROKE_LENGTH = 370, MAX_STROKE_ERROR = 2;
+  constexpr int MAX_STROKE_LENGTH = 370, MAX_STROKE_ERROR = 4;
   constexpr int STROKE_LOAD_LENGTH = 350, STROKE_READY_LENGTH = 200;
   GLOBAL_STROKE_LOAD_LENGTH = STROKE_LOAD_LENGTH;
-  /* int current_stroke = 0, stroke_offset = -MAX_STROKE_LENGTH; */
-  int stroke_offset = -MAX_STROKE_LENGTH;
+  int current_stroke = 0, stroke_offset = -MAX_STROKE_LENGTH;
+  /* int stroke_offset = -MAX_STROKE_LENGTH; */
   constexpr double STROKE_DIAMETER = -42;
   PidPosition stroke(6.0, 0, 0, 0);
   AnalogIn stroke_reset(PA_5);
@@ -173,14 +172,21 @@ int main() {
     spinMotor(TRAY_MOTOR_ID, goal_tray_speed);
     current_stroke =
         stroke_rotary.get() / 256.0 * STROKE_DIAMETER * M_PI - stroke_offset;
+    // リミットスイッチによるストロークのリセット
+    if (stroke_reset.read() > 0.3) {
+      stroke_offset += current_stroke - MAX_STROKE_LENGTH;
+      reload_speed = 0;
+    }
 
     if (!reload_mode) {
-      spinMotor(STROKE_MOTOR_ID, stroke.control(goal_stroke, current_stroke));
-    } else {
-      if (stroke_reset.read() > 0.3) {
-        stroke_offset += current_stroke - MAX_STROKE_LENGTH;
-        reload_speed = 0;
+      if (goal_stroke > current_stroke) {
+        spinMotor(STROKE_MOTOR_ID, stroke.control(goal_stroke, current_stroke));
+      } else {
+        spinMotor(STROKE_MOTOR_ID,
+                  STROKE_MOTOR_UP_DECAY *
+                      stroke.control(goal_stroke, current_stroke));
       }
+    } else {
       spinMotor(STROKE_MOTOR_ID, reload_speed);
     }
     check_stroke = current_stroke;
@@ -206,7 +212,7 @@ int main() {
     case 2: {
       if (time.read() > WAIT_TRAY_SERVO) {
         time.reset();
-        goal_stroke = STROKE_READY_LENGTH;
+        goal_stroke = MAX_STROKE_LENGTH;
       }
       break;
     }
@@ -234,6 +240,8 @@ int main() {
     }
     case 5: {
       if (time.read() > WAIT_RELOAD_CHARGE) {
+        stroke_offset += current_stroke;
+        goal_stroke = MAX_STROKE_LENGTH;
         reload_speed = RELOAD_CHARGE_SPEED;
         shoot_rock.write(0);
         phase = 6;
@@ -241,7 +249,7 @@ int main() {
       break;
     }
     case 6: {
-      if (reload_speed == 0) {
+      if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) {
         reload_mode = false;
         goal_stroke = STROKE_LOAD_LENGTH;
       }
@@ -265,9 +273,13 @@ int main() {
     }
     case 9: {
       if (time.read() > WAIT_HAND_SERVO) {
-        goal_stroke = STROKE_READY_LENGTH;
+        goal_stroke = MAX_STROKE_LENGTH;
         time.reset();
       }
+      break;
+    }
+    case 10: {
+      goal_stroke = STROKE_READY_LENGTH;
       break;
     }
     }
