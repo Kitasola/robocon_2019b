@@ -3,8 +3,8 @@
 #include <pigpiod_if2.h>
 
 namespace arrc_raspi {
-const char *PIGPIOD_HOST = "localhost";
-const char *PIGPIOD_PORT = "8888";
+extern const char *PIGPIOD_HOST;
+extern const char *PIGPIOD_PORT;
 
 constexpr int LOW = 0;
 constexpr int HIGH = 1;

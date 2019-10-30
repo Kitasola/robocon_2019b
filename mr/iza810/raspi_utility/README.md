@@ -29,8 +29,8 @@
 ```cpp
 arrc_raspi::Pigpiod::gpio()
 ```
-* ホスト名`arrc_raspi::PIGPIOD_HOST`, ポート`arrc_raspi::PIGPIOD_PORT`のpigpiodデーモンのハンドルを取得するコンストラクタ
-* デフォルトではlocalhost, 8888. 他のRasPiのGPIO操作などする時はオブジェクト生成前に変更すること 
+* ホスト名`arrc_raspi::PIGPIOD_HOST`, ポート`arrc_raspi::PIGPIOD_PORT`のpigpiodデーモンのハンドルを取得するコンストラクタ(デフォルトではlocalhost, 8888).
+* 上記の2つの変数はオブジェクト生成前にグローバル領域に定義すること. 
 (変更すると他のpigpiodを使うライブラリでも変更される)
 
 ```cpp
