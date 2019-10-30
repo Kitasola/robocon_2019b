@@ -157,7 +157,7 @@ int main() {
   int current_stroke = 0, stroke_offset = -MAX_STROKE_LENGTH;
   /* int stroke_offset = -MAX_STROKE_LENGTH; */
   constexpr double STROKE_DIAMETER = -42;
-  PidPosition stroke(6.0, 0, 0, 0);
+  PidPosition stroke(10, 0, 0, 0);
   AnalogIn stroke_reset(PA_5);
   constexpr double WAIT_RELOAD_ROCK = 2, WAIT_RELOAD_CHARGE = 0.2,
                    WAIT_ROLL_TRAY = 2;
@@ -166,7 +166,7 @@ int main() {
   bool reload_mode = false;
   DigitalOut shoot_rock(PA_6);
   goal_stroke = MAX_STROKE_LENGTH;
-  phase = 7;
+  phase = 10;
 
   while (true) {
     spinMotor(TRAY_MOTOR_ID, goal_tray_speed);
