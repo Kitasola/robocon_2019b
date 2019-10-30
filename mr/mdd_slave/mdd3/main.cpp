@@ -151,17 +151,17 @@ int main() {
   constexpr double STROKE_MOTOR_UP_DECAY = 0.7;
   RotaryInc stroke_rotary(ENCODER_PIN[STROKE_ENCODER_ID][0],
                           ENCODER_PIN[STROKE_ENCODER_ID][1], 256, 1);
-  constexpr int MAX_STROKE_LENGTH = 370, MAX_STROKE_ERROR = 4;
+  constexpr int MAX_STROKE_LENGTH = 370, MAX_STROKE_ERROR = 2;
   constexpr int STROKE_LOAD_LENGTH = 350, STROKE_READY_LENGTH = 200;
   GLOBAL_STROKE_LOAD_LENGTH = STROKE_LOAD_LENGTH;
   int current_stroke = 0, stroke_offset = -MAX_STROKE_LENGTH;
   /* int stroke_offset = -MAX_STROKE_LENGTH; */
   constexpr double STROKE_DIAMETER = -42;
-  PidPosition stroke(10, 0, 0, 0);
+  PidPosition stroke(15, 0, 0, 0);
   AnalogIn stroke_reset(PA_5);
   constexpr double WAIT_RELOAD_ROCK = 2, WAIT_RELOAD_CHARGE = 0.2,
                    WAIT_ROLL_TRAY = 2;
-  constexpr int RELOAD_ROCK_SPEED = 10, RELOAD_CHARGE_SPEED = 100;
+  constexpr int RELOAD_ROCK_SPEED = 10, RELOAD_CHARGE_SPEED = 200;
   int reload_speed = 0;
   bool reload_mode = false;
   DigitalOut shoot_rock(PA_6);
@@ -179,12 +179,17 @@ int main() {
     }
 
     if (!reload_mode) {
-      if (goal_stroke > current_stroke) {
-        spinMotor(STROKE_MOTOR_ID, stroke.control(goal_stroke, current_stroke));
+      if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) {
+        spinMotor(STROKE_MOTOR_ID, 0);
       } else {
-        spinMotor(STROKE_MOTOR_ID,
-                  STROKE_MOTOR_UP_DECAY *
-                      stroke.control(goal_stroke, current_stroke));
+        if (goal_stroke > current_stroke) {
+          spinMotor(STROKE_MOTOR_ID,
+                    stroke.control(goal_stroke, current_stroke));
+        } else {
+          spinMotor(STROKE_MOTOR_ID,
+                    STROKE_MOTOR_UP_DECAY *
+                        stroke.control(goal_stroke, current_stroke));
+        }
       }
     } else {
       spinMotor(STROKE_MOTOR_ID, reload_speed);
@@ -240,8 +245,6 @@ int main() {
     }
     case 5: {
       if (time.read() > WAIT_RELOAD_CHARGE) {
-        stroke_offset += current_stroke;
-        goal_stroke = MAX_STROKE_LENGTH;
         reload_speed = RELOAD_CHARGE_SPEED;
         shoot_rock.write(0);
         phase = 6;
@@ -249,7 +252,8 @@ int main() {
       break;
     }
     case 6: {
-      if (abs(goal_stroke - current_stroke) < MAX_STROKE_ERROR) {
+      if (stroke_reset.read() > 0.3) {
+        reload_speed = 0;
         reload_mode = false;
         goal_stroke = STROKE_LOAD_LENGTH;
       }
