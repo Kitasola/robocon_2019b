@@ -1,11 +1,10 @@
 #ifndef ARRC_RASPI_PIGPIOD_HPP
 #define ARRC_RASPI_PIGPIOD_HPP
 #include <pigpiod_if2.h>
-#define pigpio Pigpiod::gpio()
 
 namespace arrc_raspi {
-extern const char *PIGPIOD_HOST;
-extern const char *PIGPIOD_PORT;
+const char *PIGPIOD_HOST = "localhost";
+const char *PIGPIOD_PORT = "8888";
 
 constexpr int LOW = 0;
 constexpr int HIGH = 1;
