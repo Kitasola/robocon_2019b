@@ -78,10 +78,10 @@ int main() {
   // Wheel ver three omuni
   constexpr int NUM_WHEEL = 3, WHEEL_MDD_ID[NUM_WHEEL] = {1, 1, 4},
                 WHEEL_CMD[NUM_WHEEL] = {2, 5, 3};
-  constexpr double WHEEL_OFFSET_THETA[NUM_WHEEL] = {M_PI / 3, M_PI * 2 / 3, 0};
-  constexpr int MAX_ROBOT_SPEED = 250, MAX_ROBOT_MOMENT = 100,
+  constexpr double WHEEL_OFFSET_THETA[NUM_WHEEL] = {2 * M_PI / 3, -2 * M_PI / 3, 0};
+  constexpr int MAX_ROBOT_SPEED = 200, MAX_ROBOT_MOMENT = 100,
                 MAX_WHEEL_SPEED = 250;
-  PidPosition robot_pose(0.0, 0.0, 0.0, MAX_ROBOT_MOMENT);
+  PidPosition robot_pose(10.0 * 0.7, 0, 0.0, MAX_ROBOT_MOMENT);
 
   // Leg
   constexpr int LEG_MDD_ID = 2, LEG_CMD = 12;
@@ -91,7 +91,7 @@ int main() {
   constexpr int SHOOT_CHARGE_STROKE = 350, SHOOT_ROLL_SPEED = 100;
 
   // Load
-  constexpr int LOAD_MDD_ID = 4, LOAD_CMD = 13;
+  constexpr int LOAD_MDD_ID = 4, LOAD_CMD = 34;
   constexpr int MAX_LOAD_TARY = 8, NUM_STEP_TRAY = 1;
   constexpr int NUM_LOAD_ARM = 6;
   constexpr int LOAD_ARM_POSITION[NUM_LOAD_ARM][2] = {{0, 0}, {0, 0}, {0, 0},
@@ -108,11 +108,11 @@ int main() {
   int laundry_mode = 0;
 
   // Arm
-  constexpr int ARM_MDD_ID = 6, SHOULDER_CMD = 29, ELBO_CMD = 20;
+  constexpr int ARM_MDD_ID = 6, SHOULDER_CMD = 60, ELBO_CMD = 61;
   constexpr int FRONT_ARM_LENGTH = 400 + 100, SECOND_ARM_LENGTH = 500;
   constexpr int ARM_START_X = 0, ARM_START_Y = 0;
   constexpr double OFFSET_SHOULDER_ANGLE = 0, OFFSET_ELBO_ANGLE = 10;
-  constexpr double ARM_STICK_SPEED = 0.1;
+  constexpr double ARM_STICK_SPEED = 1;
 
   Timer timer;
   int finish_mode = 1;
@@ -149,8 +149,8 @@ int main() {
     double stick_x = controller.stick(LEFT_X) / 128.0;
     double stick_y = -controller.stick(LEFT_Y) / 128.0;
     double robot_theta = atan2(stick_y, stick_x) - gyro.yaw / 180 * M_PI;
-    double robot_speed = MAX_ROBOT_SPEED * hypot(stick_x, stick_y) *
-                         (0.3 * fabs(cos(2 * robot_theta) + 0.7));
+    double robot_speed = MAX_ROBOT_SPEED * hypot(stick_x, stick_y);
+      //*                         (0.3 * fabs(cos(2 * robot_theta) + 0.7));
     cout << robot_speed << ", ";
     if (!controller.button(L1)) {
       robot_speed *= 0.5;
@@ -301,7 +301,7 @@ int main() {
     double dummy_max = MAX_WHEEL_SPEED;
     for (int i = 0; i < NUM_WHEEL; ++i) {
       wheel_goal_speed[i] =
-          robot_speed * cos(robot_theta + WHEEL_OFFSET_THETA[i]) + moment;
+          robot_speed * cos(robot_theta - WHEEL_OFFSET_THETA[i]) + moment;
       if (wheel_goal_speed[i] > dummy_max) {
         dummy_max = wheel_goal_speed[i];
       }
@@ -314,12 +314,14 @@ int main() {
     cout << endl;
 
     // Arm Output
+    cout << arm_goal_x << ", " << arm_goal_y << endl;
     double arm_radius = hypot(arm_goal_x, arm_goal_y);
     double angle_shoulder =
         calcTriangleTheta(SECOND_ARM_LENGTH, arm_radius, FRONT_ARM_LENGTH) +
         atan2(arm_goal_y, arm_goal_x);
     double angle_elbo =
         calcTriangleTheta(FRONT_ARM_LENGTH, SECOND_ARM_LENGTH, arm_radius);
+    cout << angle_elbo << ", " << angle_shoulder << endl;
     ms.send(ARM_MDD_ID, SHOULDER_CMD,
             angle_shoulder / M_PI * 180 + OFFSET_SHOULDER_ANGLE);
     ms.send(ARM_MDD_ID, ELBO_CMD, angle_elbo / M_PI * 180 + OFFSET_ELBO_ANGLE);
