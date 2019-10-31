@@ -76,10 +76,10 @@ int main() {
   pigpio.write(RUN_LED, 1);
 
   // Wheel ver three omuni
-  constexpr int NUM_WHEEL = 3, WHEEL_MDD_ID[NUM_WHEEL] = {1, 2, 3},
-                WHEEL_CMD[NUM_WHEEL] = {2, 2, 2};
-  constexpr double WHEEL_OFFSET_THETA[NUM_WHEEL] = {};
-  constexpr int MAX_ROBOT_SPEED = 200, MAX_ROBOT_MOMENT = 100,
+  constexpr int NUM_WHEEL = 3, WHEEL_MDD_ID[NUM_WHEEL] = {1, 1, 4},
+                WHEEL_CMD[NUM_WHEEL] = {2, 5, 3};
+  constexpr double WHEEL_OFFSET_THETA[NUM_WHEEL] = {M_PI / 3, M_PI * 2 / 3, 0};
+  constexpr int MAX_ROBOT_SPEED = 250, MAX_ROBOT_MOMENT = 100,
                 MAX_WHEEL_SPEED = 250;
   PidPosition robot_pose(0.0, 0.0, 0.0, MAX_ROBOT_MOMENT);
 
@@ -131,7 +131,7 @@ int main() {
     if (should_reset) {
       gyro.yaw = 0;
     }
-    cout << gyro.yaw << endl;
+    /* cout << gyro.yaw << endl; */
     timer.update();
     timer.reset();
 
@@ -146,11 +146,12 @@ int main() {
     }
 
     // Wheel Goal Input Manual
-    double stick_x = controller.stick(LEFT_X) / 128;
-    double stick_y = -controller.stick(LEFT_Y) / 128;
+    double stick_x = controller.stick(LEFT_X) / 128.0;
+    double stick_y = -controller.stick(LEFT_Y) / 128.0;
     double robot_theta = atan2(stick_y, stick_x) - gyro.yaw / 180 * M_PI;
     double robot_speed = MAX_ROBOT_SPEED * hypot(stick_x, stick_y) *
-                         (0.3 * abs(cos(2 * robot_theta) + 0.7));
+                         (0.3 * fabs(cos(2 * robot_theta) + 0.7));
+    cout << robot_speed << ", ";
     if (!controller.button(L1)) {
       robot_speed *= 0.5;
     }
@@ -292,7 +293,7 @@ int main() {
     }
 
     // Wheel Output
-    double diff_yaw = goal_yaw - gyro.yaw;
+    double diff_yaw = goal_yaw- gyro.yaw;
     diff_yaw = diff_yaw - (int)diff_yaw / 180 * 360;
     double moment = robot_pose.control(diff_yaw);
 
@@ -308,7 +309,9 @@ int main() {
     for (int i = 0; i < NUM_WHEEL; ++i) {
       wheel_goal_speed[i] *= dummy_max / MAX_WHEEL_SPEED;
       ms.send(WHEEL_MDD_ID[i], WHEEL_CMD[i], wheel_goal_speed[i]);
+      cout << wheel_goal_speed[i] << ", ";
     }
+    cout << endl;
 
     // Arm Output
     double arm_radius = hypot(arm_goal_x, arm_goal_y);
