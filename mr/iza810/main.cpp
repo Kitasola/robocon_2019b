@@ -47,7 +47,7 @@ int main() {
   // Check Pins
   constexpr int RUN_LED = 13;
   pigpio.set(RUN_LED, OUT, 1);
-  constexpr int EMERGENCY_PIN = 14;
+  constexpr int EMERGENCY_PIN = 15;
   pigpio.set(EMERGENCY_PIN, IN, PULL_UP);
 
   // Serial
