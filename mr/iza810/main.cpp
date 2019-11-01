@@ -59,6 +59,10 @@ int main() {
 
   // Tape LED
 
+  // GY521
+  constexpr double START_YAW = 0;
+  Gy521 gyro(0x68, 2, 1.01);
+  gyro.yaw = START_YAW;
   // Calibration
   Timer calibration_timer;
   bool level = true;
@@ -70,15 +74,14 @@ int main() {
       calibration_timer.reset();
     }
   }
-  pigpio.write(RUN_LED, 0);
-  constexpr double START_YAW = 0;
-  Gy521 gyro(0x68, 2, 1000, 1.01);
+  gyro.calibration();
   pigpio.write(RUN_LED, 1);
 
   // Wheel ver three omuni
   constexpr int NUM_WHEEL = 3, WHEEL_MDD_ID[NUM_WHEEL] = {1, 1, 4},
                 WHEEL_CMD[NUM_WHEEL] = {2, 5, 3};
-  constexpr double WHEEL_OFFSET_THETA[NUM_WHEEL] = {2 * M_PI / 3, -2 * M_PI / 3, 0};
+  constexpr double WHEEL_OFFSET_THETA[NUM_WHEEL] = {2 * M_PI / 3, -2 * M_PI / 3,
+                                                    0};
   constexpr int MAX_ROBOT_SPEED = 200, MAX_ROBOT_MOMENT = 100,
                 MAX_WHEEL_SPEED = 250;
   PidPosition robot_pose(10.0 * 0.7, 0, 0.0, MAX_ROBOT_MOMENT);
@@ -150,7 +153,7 @@ int main() {
     double stick_y = -controller.stick(LEFT_Y) / 128.0;
     double robot_theta = atan2(stick_y, stick_x) - gyro.yaw / 180 * M_PI;
     double robot_speed = MAX_ROBOT_SPEED * hypot(stick_x, stick_y);
-      //*                         (0.3 * fabs(cos(2 * robot_theta) + 0.7));
+    //*                         (0.3 * fabs(cos(2 * robot_theta) + 0.7));
     cout << robot_speed << ", ";
     if (!controller.button(L1)) {
       robot_speed *= 0.5;
@@ -293,7 +296,7 @@ int main() {
     }
 
     // Wheel Output
-    double diff_yaw = goal_yaw- gyro.yaw;
+    double diff_yaw = goal_yaw - gyro.yaw;
     diff_yaw = diff_yaw - (int)diff_yaw / 180 * 360;
     double moment = robot_pose.control(diff_yaw);
 
