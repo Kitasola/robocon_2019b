@@ -97,8 +97,8 @@ int main() {
   constexpr int LOAD_MDD_ID = 4, LOAD_CMD = 34;
   constexpr int MAX_LOAD_TARY = 8, NUM_STEP_TRAY = 1;
   constexpr int NUM_LOAD_ARM = 6;
-  constexpr int LOAD_ARM_POSITION[NUM_LOAD_ARM][2] = {{0, 0}, {0, 0}, {0, 0},
-                                                      {0, 0}, {0, 0}, {0, 0}};
+  constexpr int LOAD_ARM_POSITION[NUM_LOAD_ARM][2] = {
+      {210, -140}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
 
   // Hand
   constexpr int HAND_MDD_ID = 6, HAND_CMD = 12;
@@ -107,15 +107,15 @@ int main() {
 
   // Laundry
   constexpr int LAUNDRY_MDD_ID = 3, LAUNDRY_CMD = 20;
-  constexpr int LAUNDRY_ARM_X = 360, LAUNDRY_ARM_Y = 860;
+  constexpr int LAUNDRY_ARM_X = 400, LAUNDRY_ARM_Y = 480;
   int laundry_mode = 0;
 
   // Arm
-  constexpr int ARM_MDD_ID = 6, SHOULDER_CMD = 60, ELBO_CMD = 61;
-  constexpr int FRONT_ARM_LENGTH = 400 + 100, SECOND_ARM_LENGTH = 500;
+  constexpr int ARM_MDD_ID = 5, SHOULDER_CMD = 60, ELBO_CMD = 61;
+  constexpr int FRONT_ARM_LENGTH = 290 + 175, SECOND_ARM_LENGTH = 410;
   constexpr int ARM_START_X = 0, ARM_START_Y = 0;
-  constexpr double OFFSET_SHOULDER_ANGLE = 0, OFFSET_ELBO_ANGLE = 10;
-  constexpr double ARM_STICK_SPEED = 1;
+  constexpr double OFFSET_SHOULDER_ANGLE = -10, OFFSET_ELBO_ANGLE = 33;
+  constexpr double ARM_STICK_SPEED = 10;
 
   Timer timer;
   int finish_mode = 1;
@@ -143,23 +143,25 @@ int main() {
     if (controller.press(SELECT)) {
       emergency_stop = !emergency_stop;
       finish_mode = emergency_stop ? 0 : 1;
+      ms.send(255, 255, 0);
     }
     if (emergency_stop) {
       continue;
     }
 
     // Wheel Goal Input Manual
-    double stick_x = controller.stick(LEFT_X) / 128.0;
-    double stick_y = -controller.stick(LEFT_Y) / 128.0;
+    double stick_x = controller.stick(RIGHT_X) / 128.0;
+    double stick_y = -controller.stick(RIGHT_Y) / 128.0;
     double robot_theta = atan2(stick_y, stick_x) - gyro.yaw / 180 * M_PI;
     double robot_speed = MAX_ROBOT_SPEED * hypot(stick_x, stick_y);
     //*                         (0.3 * fabs(cos(2 * robot_theta) + 0.7));
-    cout << robot_speed << ", ";
     if (!controller.button(L1)) {
       robot_speed *= 0.5;
     }
     static double goal_yaw = START_YAW;
-    if (controller.press(LEFT)) {
+    if (controller.press(UP)) {
+      goal_yaw = 0;
+    } else if (controller.press(LEFT)) {
       goal_yaw = 90;
     } else if (controller.press(RIGHT)) {
       goal_yaw = -90;
@@ -168,12 +170,13 @@ int main() {
     // Arm Goal Input Manual
     static double arm_goal_x = ARM_START_X;
     static double arm_goal_y = ARM_START_Y;
-    double arm_diff_x = ARM_STICK_SPEED * controller.stick(RIGHT_X) / 128;
-    double arm_diff_y = ARM_STICK_SPEED * -controller.stick(RIGHT_Y) / 128;
-    arm_goal_x += arm_diff_x * sin(gyro.yaw / 180 * M_PI) -
-                  arm_diff_y * cos(gyro.yaw / 180 * M_PI);
-    arm_goal_y += arm_diff_x * cos(gyro.yaw / 180 * M_PI) +
-                  arm_diff_y * sin(gyro.yaw / 180 * M_PI);
+    double arm_diff_x = ARM_STICK_SPEED * controller.stick(LEFT_X) / 128;
+    double arm_diff_y = ARM_STICK_SPEED * -controller.stick(LEFT_Y) / 128;
+    arm_goal_x += arm_diff_x * cos(-gyro.yaw / 180 * M_PI) +
+                  -arm_diff_y * sin(-gyro.yaw / 180 * M_PI);
+    arm_goal_y += arm_diff_x * sin(-gyro.yaw / 180 * M_PI) +
+                  arm_diff_y * cos(-gyro.yaw / 180 * M_PI);
+    cout << arm_goal_x << ", " << arm_goal_y << endl;
 
     // Laundry
     if (should_reset) {
@@ -181,7 +184,7 @@ int main() {
         laundry_mode = 2;
       }
     }
-    if (controller.button(CROSS) && laundry_mode == 2) {
+    if (controller.press(CROSS) && laundry_mode == 2) {
       laundry_mode = 0;
     } else if (controller.press(CROSS) && laundry_mode == 0) {
       laundry_mode = 2;
@@ -196,7 +199,7 @@ int main() {
     // Leg Input
 
     // Shoot & Load & Hand
-    static int phase = 0;
+    static int phase = -1;
     static int tray_position = 0;
     static int load_arm_id = 0;
     static bool changed_phase = false;
@@ -312,25 +315,25 @@ int main() {
     for (int i = 0; i < NUM_WHEEL; ++i) {
       wheel_goal_speed[i] *= dummy_max / MAX_WHEEL_SPEED;
       ms.send(WHEEL_MDD_ID[i], WHEEL_CMD[i], wheel_goal_speed[i]);
-      cout << wheel_goal_speed[i] << ", ";
     }
-    cout << endl;
 
     // Arm Output
-    cout << arm_goal_x << ", " << arm_goal_y << endl;
     double arm_radius = hypot(arm_goal_x, arm_goal_y);
     double angle_shoulder =
         calcTriangleTheta(SECOND_ARM_LENGTH, arm_radius, FRONT_ARM_LENGTH) +
         atan2(arm_goal_y, arm_goal_x);
     double angle_elbo =
         calcTriangleTheta(FRONT_ARM_LENGTH, SECOND_ARM_LENGTH, arm_radius);
-    cout << angle_elbo << ", " << angle_shoulder << endl;
+    /* cout << angle_elbo / M_PI * 180 << ", " << angle_shoulder / M_PI * 180 */
+    /*      << endl; */
     ms.send(ARM_MDD_ID, SHOULDER_CMD,
             angle_shoulder / M_PI * 180 + OFFSET_SHOULDER_ANGLE);
     ms.send(ARM_MDD_ID, ELBO_CMD, angle_elbo / M_PI * 180 + OFFSET_ELBO_ANGLE);
   }
   cout << "Main Finish" << endl;
-  ms.send(255, 255, 0);
+  /* ms.send(255, 255, 0); */
+  ms.send(ARM_MDD_ID, ELBO_CMD, 45);
+  ms.send(ARM_MDD_ID, SHOULDER_CMD, 70);
   pigpio.write(RUN_LED, 0);
   return finish_mode;
 }
