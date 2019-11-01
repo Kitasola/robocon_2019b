@@ -235,6 +235,7 @@ int main(int argc, char **argv) {
   int map_type = 0;
   constexpr int HUNGER_POSITION_Y = 4500 - 520;
   GoalManager goal_map[NUM_MAP] = {GoalManager(coat), GoalManager(coat)};
+  //位置: 後判定
   goal_map[0].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
   goal_map[0].add(3650, HUNGER_POSITION_Y, start_yaw);
   goal_map[0].add(3650, HUNGER_POSITION_Y, start_yaw, 1,
@@ -354,6 +355,7 @@ int main(int argc, char **argv) {
         start = now;
         // 伸縮
         send(TWO_STAGE_ID, 30, goal_map[map_type].now.action_value);
+        planner.should_stop_emergency = true;
         can_send_next_goal = true;
         changed_phase = true;
         break;
@@ -384,6 +386,7 @@ int main(int argc, char **argv) {
       }
       case 10: {
         if (now - start > goal_map[map_type].now.action_value) {
+          planner.should_stop_emergency = true;
           can_send_next_goal = true;
           changed_phase = true;
           break;
