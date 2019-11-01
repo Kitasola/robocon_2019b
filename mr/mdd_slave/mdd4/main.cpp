@@ -71,23 +71,21 @@ bool spinMotor(int cmd, int rx_data, int &tx_data) {
 }
 
 bool safe(int cmd, int rx_data, int &tx_data) {
-  for (int i = 0; i < 4; ++i) {
-    spinMotor(i, 0);
-  }
+  spinMotor(0, 0);
+  spinMotor(1, 0);
   return true;
 }
 
-int goal_tray_point = 0, current_point = 0;
+int goal_tray_point = 0, current_point = 0, phase = 0;
 bool loadTray(int cmd, int rx_data, int &tx_data) {
-  goal_tray_point = rx_data;
+  if (rx_data == -1) {
+    phase = -1;
+    goal_tray_point = 0;
+  } else {
+    phase = 0;
+    goal_tray_point = rx_data;
+  }
   tx_data = current_point;
-  return true;
-}
-
-double current_speed_3;
-bool d3_speed(int cmd, int rx_data, int &tx_data) {
-  goal_speed_3 = (double)rx_data / 100;
-  tx_data = current_speed_3;
   return true;
 }
 
@@ -95,60 +93,58 @@ int main() {
   slave.addCMD(255, safe);
   slave.addCMD(3, spinMotor);
   slave.addCMD(20, loadTray);
-  constexpr int TARY_MOTOR_ID = 0, MAX_TARY_MOTOR_SPEED = -100; // 下向き
+  constexpr int TRAY_MOTOR_ID = 0, MAX_TRAY_MOTOR_SPEED = -100; // 下向き
+  int tray_motor_polor = 0;
   DigitalIn slit(PA_0);
   slit.mode(PullUp);
   constexpr int LIGHT = 1, DARK = 0;
   int current_slit = LIGHT, prev_slit = LIGHT;
+  DigitalIn limit_higher(PB_6);
+  limit_higher.mode(PullUp);
   DigitalIn limit_lower(PA_11);
   limit_lower.mode(PullUp);
-  DigitalOut limit_led(PB_7);
-  int phase = 0, current_tray_point = 0;
+  DigitalOut limit_led_higher(PB_7);
+  DigitalOut limit_led_lower(PB_7);
+  int current_tray_point = 0;
 
-  /* constexpr int motor_3 = 1; */
-  /* RotaryInc rotary_inc_3(PA_8, PA_7, 512, 1); */
-
-  /* PidPosition pid_3 = PidPosition(1, 0, 0.5, 0); */
   while (true) {
-
-    /*     double get_speed_3 = rotary_inc_3.getSpeed(); */
-    /*     current_speed_3 = get_speed_3 * diameter * M_PI / 1000; */
-    /*     spinMotor(motor_3, pid_3.control((double)goal_speed_3,
-     * current_speed_3)); */
-
     prev_slit = current_slit;
     current_slit = slit.read();
-    limit_led = limit_lower.read();
-
-    switch (phase) {
-    case 0:
+    limit_led_lower = limit_lower.read();
+    limit_led_higher = limit_higher.read();
+    if (tray_motor_polor > 0) {
       if (current_slit == LIGHT && prev_slit == DARK) {
         ++current_tray_point;
       }
-      if (limit_lower.read() == 1) {
-        current_tray_point = 7;
-        if (goal_tray_point == 8) {
-          goal_tray_point = 0;
-          phase = 1;
-        }
-      }
-      break;
-    case 1:
+    } else if (tray_motor_polor < 0) {
       if (current_slit == DARK && prev_slit == LIGHT) {
         --current_tray_point;
       }
-      if (current_tray_point == 0) {
-        phase = 0;
+    }
+    if (limit_higher.read() == 1) {
+      current_tray_point = 0;
+    } else if (limit_lower.read() == 1) {
+      current_tray_point = 7;
+    }
+
+    switch (phase) {
+    case -1:
+      if (limit_lower.read() != 1) {
+        tray_motor_polor = -1;
+      } else {
+        tray_motor_polor = 0;
+      }
+    case 0:
+      if (current_tray_point < goal_tray_point) {
+        tray_motor_polor = 1;
+      } else if (current_tray_point > goal_tray_point) {
+        tray_motor_polor = -1;
+      } else {
+        tray_motor_polor = 0;
       }
       break;
     }
-    if (current_tray_point < goal_tray_point) {
-      spinMotor(TARY_MOTOR_ID, MAX_TARY_MOTOR_SPEED);
-    } else if (current_tray_point > goal_tray_point) {
-      spinMotor(TARY_MOTOR_ID, -MAX_TARY_MOTOR_SPEED);
-    } else {
-      spinMotor(TARY_MOTOR_ID, 0);
-    }
+    spinMotor(TRAY_MOTOR_ID, tray_motor_polor * MAX_TRAY_MOTOR_SPEED);
     current_point = current_tray_point;
   }
 }
