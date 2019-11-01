@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -Wall -std=c++11
+CXXFLAGS = -Wall -std=c++17
 GPIOLDFLAGS = -lpigpiod_if2 -pthread -lrt
 INCLUE = -I../../include
 
