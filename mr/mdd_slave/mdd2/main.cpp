@@ -78,7 +78,7 @@ bool loadLaundry(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
-//double goal_height = 0;
+// double goal_height = 0;
 int extension_flag = 0;
 bool expansionRotary(int cmd, int rx_data, int &tx_data) {
   extension_flag = rx_data;
@@ -111,36 +111,31 @@ int main() {
   constexpr int motor = 2;
   double robot_height;
   RotaryInc extension_rotary_inc(PA_0, PA_4, 512, 1);
-//  PidPosition pid_rotary_inc = PidPosition(100, 0, 0, 0);
   constexpr double MAX_HIEGHT = 10.5;
 
   while (true) {
 
     robot_height = (double)extension_rotary_inc.get() / 512.0;
-    
-    switch(extension_flag){
-        case 0 : spinMotor(motor, 0);
-        break;
-        case 1 : if(robot_height <= MAX_HIEGHT){
-                    spinMotor(motor, 255);
-                 }else if(robot_height > MAX_HIEGHT){
-                    spinMotor(motor, 0);
-                 }
-        break;
-        case 2 : if(robot_height >= 0){
-                    spinMotor(motor, -255);
-                 }else if(robot_height < 0){
-                    spinMotor(motor, 0);
-                 }
-        break;
+
+    switch (extension_flag) {
+    case 0:
+      spinMotor(motor, 0);
+      break;
+    case 1:
+      if (robot_height <= MAX_HIEGHT) {
+        spinMotor(motor, MAX_PWM);
+      } else if (robot_height > MAX_HIEGHT) {
+        spinMotor(motor, 0);
+      }
+      break;
+    case 2:
+      if (robot_height >= 0) {
+        spinMotor(motor, -MAX_PWM);
+      } else if (robot_height < 0) {
+        spinMotor(motor, 0);
+      }
+      break;
     }
-    //spinMotor(motor, pid_rotary_inc.control(goal_height, robot_height));
-    /*while(robot_height < goal_height){
-    robot_height = (double)extension_rotary_inc.get() / 512.0;
-    spinMotor(motor, 1000);
-    }
-    spinMotor(motor, 0);
-    */
     switch (load_mode) {
     case -1:
       laundry_speed = -LAUNDRY_SPEED;
