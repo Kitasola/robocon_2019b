@@ -28,11 +28,11 @@ struct Gy521Param {
 
 class Gy521 {
 public:
-  Gy521(unsigned int dev_id = 0x68, int bit = 2, int calibration = 1000,
-        double user_reg = 1.0);
+  Gy521(unsigned int dev_id = 0x68, int bit = 2, double user_reg = 1.0);
+  void calibration(int calibration = 1000);
   void update();
-  double yaw;
-  double diff_yaw;
+  double yaw = 0;
+  double diff_yaw = 0;
   double checkStatus();
   Gy521Param checkParam();
 
@@ -42,8 +42,9 @@ private:
                 enum Gy521RegisterMap register_l) {
     return (i2c_.read(register_h) << 8) + i2c_.read(register_l);
   }
-  double yaw_;
-  double diff_yaw_;
+  int bit_ = 2;
+  double user_reg_ = 1.0;
+  bool finished_calibration = false;
   double gyro_z_now_ = 0;
   double gyro_z_prev_ = 0;
   timespec now_, prev_;

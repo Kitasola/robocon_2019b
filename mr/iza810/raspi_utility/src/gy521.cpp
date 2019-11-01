@@ -7,7 +7,7 @@
 using namespace arrc_raspi;
 using namespace std;
 
-Gy521::Gy521(unsigned int dev_id, int bit, int calibration, double user_reg) {
+Gy521::Gy521(unsigned int dev_id, int bit, double user_reg) {
   if (i2c_.init(dev_id)) {
     if ((unsigned int)i2c_.read(Gy521RegisterMap(WHO_AM_I)) == dev_id) {
       if (i2c_.read(Gy521RegisterMap(PWR_MGMT_1)) == 0x40) {
@@ -21,12 +21,17 @@ Gy521::Gy521(unsigned int dev_id, int bit, int calibration, double user_reg) {
   } else {
     cout << "I2C Initialize Failed" << endl;
   }
+  // AccelSensar, Max:2[g], LSB:16384[LSB/g]
+  i2c_.write(Gy521RegisterMap(AFS_SEL), 0x00);
+  bit_ = bit;
+  user_reg_ = user_reg;
+  i2c_.write(Gy521RegisterMap(FS_SEL), bit_ << 3);
+}
 
+void Gy521::calibration(int calibration) {
   // Skew Detection
   short accel_x = 0, accel_y = 0, accel_z = 0;
   double accel_x_aver = 0, accel_y_aver = 0, accel_z_aver = 0;
-  // AccelSensar, Max:2[g], LSB:16384[LSB/g]
-  i2c_.write(Gy521RegisterMap(AFS_SEL), 0x00);
 
   cout << "Calibration Phase Accel Start." << endl;
   for (int i = 0; i < calibration; ++i) {
@@ -45,8 +50,7 @@ Gy521::Gy521(unsigned int dev_id, int bit, int calibration, double user_reg) {
 
   cout << "Calibration Phase Gyro Start." << endl;
   // Gyro init
-  i2c_.write(Gy521RegisterMap(FS_SEL), bit << 3);
-  param_.LSB = GY521_LSB_MAP[bit] * param_.pose / user_reg;
+  param_.LSB = GY521_LSB_MAP[bit_] * param_.pose / user_reg_;
 
   // Calibration gyroZAver(deg/s)
   short gyro_z;
@@ -57,12 +61,13 @@ Gy521::Gy521(unsigned int dev_id, int bit, int calibration, double user_reg) {
   }
   param_.aver /= calibration;
 
-  yaw_ = diff_yaw_ = 0;
   clock_gettime(CLOCK_REALTIME, &now_);
   cout << param_.LSB << ", " << param_.aver << ", " << param_.pose << endl;
 }
-
 void Gy521::update() {
+  if (finished_calibration) {
+    return;
+  }
   short gyro_z = gyroRead2(GYRO_ZOUT_H, GYRO_ZOUT_L);
   prev_ = now_;
   clock_gettime(CLOCK_REALTIME, &now_);

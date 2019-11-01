@@ -103,8 +103,6 @@ void arrc_raspi::Pigpiod::delay(double micro_sec)
 arrc_raspi::Gy521::Gy521(int bit = 2, int calibration = 1000, double user_reg = 1.0)
 ```
 * I2Cの初期化, レンジの設定, キャリブレーションをするコンストラクタ
-* キャリブレーションには静止状態の値が必要なので実行中は静止させて下さい
-* calibrationは大きいほどキャリブレーションに時間がかかりますが精度が上がります
 * user_regは角速度の倍率を設定出来るので校正などに使用して下さい
 * bitによって以下の表のようにレンジを変更できます
 
@@ -116,6 +114,14 @@ arrc_raspi::Gy521::Gy521(int bit = 2, int calibration = 1000, double user_reg = 
   3 | 2000 |
   
   なお実用的には設定したレンジの半分程度までと考えてください
+
+```cpp
+void arrc_raspi::Gy521::calibration(double calibration)
+```
+* ジャイロのキャリブレーションを行います
+* 静止状態の値が必要なので実行中は静止させて下さい
+* calibrationの値は大きいほどキャリブレーションに時間がかかりますが精度が上がります
+* この関数を実行する前にupdate()は実行できません
 
 ```cpp
 void arrc_raspi::Gy521::update()
