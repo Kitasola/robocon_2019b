@@ -131,9 +131,9 @@ int main() {
 
     // Sensor Update
     gyro.update();
-    if (should_reset) {
-      gyro.yaw = 0;
-    }
+    /* if (should_reset) { */
+    /*   gyro.yaw = 0; */
+    /* } */
     /* cout << gyro.yaw << endl; */
     timer.update();
     timer.reset();
@@ -286,6 +286,7 @@ int main() {
     // Arm Next Goal
     default:
       if (changed_phase) {
+        laundry_mode = 1;
         load_arm_id = (load_arm_id + 1) % NUM_LOAD_ARM;
         arm_goal_x = LOAD_ARM_POSITION[load_arm_id][0];
         arm_goal_y = LOAD_ARM_POSITION[load_arm_id][1];
