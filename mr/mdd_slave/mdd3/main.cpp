@@ -65,9 +65,10 @@ bool spinMotor(int cmd, int rx_data, int &tx_data) {
   return spinMotor(cmd - 2, rx_data);
 }
 
+int GLOBAL_MOTOR_ID[2] = {};
 bool safe(int cmd, int rx_data, int &tx_data) {
-  for (int i = 0; i < 4; ++i) {
-    spinMotor(i, 0);
+  for (int i = 0; i < 2; ++i) {
+    spinMotor(GLOBAL_MOTOR_ID[i], 0);
   }
   return true;
 }
@@ -142,12 +143,14 @@ int main() {
   slave.addCMD(255, safe);
 
   constexpr int TRAY_MOTOR_ID = 2, TRAY_ENCODER_ID = 3;
+  GLOBAL_MOTOR_ID[1] = TRAY_MOTOR_ID;
   /* RotaryInc tray_rotary(ENCODER_PIN[TRAY_ENCODER_ID][0], */
   /*                       ENCODER_PIN[TRAY_ENCODER_ID][1], 512, 1); */
   /* PidPosition tray_speed(1.0, 0, 0, 0); */
   int current_tray_speed = 0;
 
   constexpr int STROKE_MOTOR_ID = 0, STROKE_ENCODER_ID = 0;
+  GLOBAL_MOTOR_ID[0] = STROKE_MOTOR_ID;
   constexpr double STROKE_MOTOR_UP_DECAY = 0.7;
   RotaryInc stroke_rotary(ENCODER_PIN[STROKE_ENCODER_ID][0],
                           ENCODER_PIN[STROKE_ENCODER_ID][1], 256, 1);
