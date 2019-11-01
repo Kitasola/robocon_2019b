@@ -67,13 +67,6 @@ bool spinMotor(int cmd, int rx_data, int &tx_data) {
   return spinMotor(cmd - 2, rx_data);
 }
 
-bool safe(int cmd, int rx_data, int &tx_data) {
-  for (int i = 0; i < 4; ++i) {
-    spinMotor(i, 0);
-  }
-  return true;
-}
-
 double arm_current_angle[2];
 int arm_goal_angle[2] = {};
 bool getArmGoal(int cmd, int rx_data, int &tx_data) {
@@ -85,6 +78,14 @@ bool getArmGoal(int cmd, int rx_data, int &tx_data) {
 double arm_raw_data[2] = {};
 bool checkArmRegister(int cmd, int rx_data, int &tx_data) {
   tx_data = arm_raw_data[rx_data % 2] * 1000;
+  return true;
+}
+
+constexpr int FIRST_ANGLE[2] = {45, 45};
+bool safe(int cmd, int rx_data, int &tx_data) {
+  for (int i = 0; i < 2; ++i) {
+    arm_goal_angle[i] = FIRST_ANGLE[i];
+  }
   return true;
 }
 
@@ -103,8 +104,8 @@ int main() {
       PidVelocity(5.0 * 0.7, 5.0 * 1.2 / 0.5, 5.0 * 0.075 * 0.5, MAX_PWM),
       PidVelocity(5.0 * 0.7, 5.0 * 1.2 / 0.2, 5.0 * 0.075 * 0.4, MAX_PWM)};
   constexpr int ARM_ANGLE_ERROR[2] = {1, 3}, ARM_SPEED_MIN[2] = {0, 10};
-  arm_goal_angle[0] = 80;
-  arm_goal_angle[1] = 45;
+  arm_goal_angle[0] = FIRST_ANGLE[0];
+  arm_goal_angle[1] = FIRST_ANGLE[1];
   while (true) {
     for (int i = 0; i < 2; ++i) {
       arm_raw_data[i] = arm_joint[i].read();
