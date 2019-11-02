@@ -82,10 +82,10 @@ int main() {
                 WHEEL_CMD[NUM_WHEEL] = {2, 5, 3};
   constexpr double WHEEL_OFFSET_THETA[NUM_WHEEL] = {2 * M_PI / 3, -2 * M_PI / 3,
                                                     0};
-  constexpr int MAX_ROBOT_SPEED = 200, MAX_ROBOT_MOMENT = 100,
+  constexpr int MAX_ROBOT_SPEED = 250, MAX_ROBOT_MOMENT = 100,
                 MAX_WHEEL_SPEED = 250;
-  constexpr double MAX_YAW_CONTROL = 0.1;
-  PidPosition robot_pose(10.0 * 0.7, 0, 0.0, MAX_ROBOT_MOMENT);
+  constexpr double MAX_YAW_CONTROL = 1;
+  PidPosition robot_pose(13.0 * 0.7, 0, 0.0, MAX_ROBOT_MOMENT);
 
   // Leg
   constexpr int LEG_MDD_ID = 2, LEG_CMD = 12;
@@ -101,8 +101,8 @@ int main() {
   constexpr int MAX_LOAD_TARY = 8, NUM_STEP_TRAY = 1;
   constexpr int NUM_LOAD_ARM = 7;
   constexpr int LOAD_ARM_POSITION[NUM_LOAD_ARM][2] = {
-      {210, -150}, {230, 0},   {270, 200}, {630, 100},
-      {400, 480},  {630, 100}, {270, 200}};
+      {210, -150}, {230, 0},   {270, 200}, {600, 130},
+      {400, 480},  {600, 130}, {270, 200}};
 
   // Hand
   constexpr int HAND_MDD_ID = 6, HAND_CMD = 40;
