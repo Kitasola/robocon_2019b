@@ -179,6 +179,10 @@ int main() {
     static double arm_goal_y = ARM_START_Y;
     double arm_diff_x = ARM_STICK_SPEED * controller.stick(LEFT_X) / 128;
     double arm_diff_y = ARM_STICK_SPEED * -controller.stick(LEFT_Y) / 128;
+    if (!controller.button(L1)) {
+      arm_diff_x *= 0.5;
+      arm_diff_y *= 0.5;
+    }
     arm_goal_x += arm_diff_x * cos(-gyro.yaw / 180 * M_PI) +
                   -arm_diff_y * sin(-gyro.yaw / 180 * M_PI);
     arm_goal_y += arm_diff_x * sin(-gyro.yaw / 180 * M_PI) +
