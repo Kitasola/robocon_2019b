@@ -81,7 +81,7 @@ void rockTray(int level) {
 }
 
 constexpr int HAND_CATCH_ANGLE = 1, HAND_RELEASE_ANGLE = 0;
-constexpr double WAIT_HAND_SERVO = 1;
+constexpr double WAIT_HAND_SERVO = 3;
 void actHand(int level) {
   DigitalOut hand_servo(PA_3);
   hand_servo = level;
