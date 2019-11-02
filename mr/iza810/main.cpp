@@ -90,23 +90,26 @@ int main() {
   constexpr int LEG_MDD_ID = 2, LEG_CMD = 12;
 
   // Shoot
-  constexpr int SHOOT_MDD_ID = 4, SHOOT_STROKE_CMD = 30, SHOOT_ROLL_CMD = 31;
+  constexpr int SHOOT_MDD_ID = 3, SHOOT_STROKE_CMD = 30, SHOOT_ROLL_CMD = 31,
+                SHOOT_READY_CMD = 32;
   constexpr int SHOOT_CHARGE_STROKE = 350, SHOOT_ROLL_SPEED = 100;
+  ms.send(SHOOT_MDD_ID, SHOOT_READY_CMD, 1);
 
   // Load
-  constexpr int LOAD_MDD_ID = 4, LOAD_CMD = 34;
+  constexpr int LOAD_MDD_ID = 3, LOAD_CMD = 34;
   constexpr int MAX_LOAD_TARY = 8, NUM_STEP_TRAY = 1;
   constexpr int NUM_LOAD_ARM = 6;
   constexpr int LOAD_ARM_POSITION[NUM_LOAD_ARM][2] = {
-      {210, -140}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
+      {210, -140}, {350, 200}, {660, 110}, {400, 480}, {660, 110}, {410, 200}};
 
   // Hand
-  constexpr int HAND_MDD_ID = 6, HAND_CMD = 12;
-  constexpr int HAND_CLOSE_ANGLE = 12, HAND_OPEN_ANGLE = 170;
-  constexpr double WAIT_HAND_TIME = 1.5;
+  constexpr int HAND_MDD_ID = 6, HAND_CMD = 40;
+  constexpr int HAND_CLOSE_ANGLE = 150, HAND_OPEN_ANGLE = 130;
+  constexpr double WAIT_HAND_TIME = 3;
+  ms.send(HAND_MDD_ID, HAND_CMD, HAND_OPEN_ANGLE);
 
   // Laundry
-  constexpr int LAUNDRY_MDD_ID = 3, LAUNDRY_CMD = 20;
+  constexpr int LAUNDRY_MDD_ID = 3, LAUNDRY_CMD = 10;
   constexpr int LAUNDRY_ARM_X = 400, LAUNDRY_ARM_Y = 480;
   int laundry_mode = 0;
 
@@ -176,7 +179,6 @@ int main() {
                   -arm_diff_y * sin(-gyro.yaw / 180 * M_PI);
     arm_goal_y += arm_diff_x * sin(-gyro.yaw / 180 * M_PI) +
                   arm_diff_y * cos(-gyro.yaw / 180 * M_PI);
-    cout << arm_goal_x << ", " << arm_goal_y << endl;
 
     // Laundry
     if (should_reset) {
@@ -201,7 +203,7 @@ int main() {
     // Shoot & Load & Hand
     static int phase = -1;
     static int tray_position = 0;
-    static int load_arm_id = 0;
+    static int load_arm_id = -1;
     static bool changed_phase = false;
     static Timer hand_time;
     hand_time.update();
@@ -227,6 +229,7 @@ int main() {
         changed_phase = false;
       }
       if (hand_time.wait(WAIT_HAND_TIME)) {
+        cout << hand_time.read() << endl;
         phase = 2;
         changed_phase = true;
       }
@@ -270,7 +273,7 @@ int main() {
         changed_phase = false;
       }
       if (hand_time.wait(WAIT_HAND_TIME)) {
-        phase = 2;
+        phase = 11;
         changed_phase = true;
       }
       break;
@@ -290,6 +293,8 @@ int main() {
         load_arm_id = (load_arm_id + 1) % NUM_LOAD_ARM;
         arm_goal_x = LOAD_ARM_POSITION[load_arm_id][0];
         arm_goal_y = LOAD_ARM_POSITION[load_arm_id][1];
+        cout << phase << ": " << load_arm_id << ", " << arm_goal_x << ", "
+             << arm_goal_y << endl;
         changed_phase = false;
       }
       if (controller.press(SQUARE)) {
@@ -325,16 +330,12 @@ int main() {
         atan2(arm_goal_y, arm_goal_x);
     double angle_elbo =
         calcTriangleTheta(FRONT_ARM_LENGTH, SECOND_ARM_LENGTH, arm_radius);
-    /* cout << angle_elbo / M_PI * 180 << ", " << angle_shoulder / M_PI * 180 */
-    /*      << endl; */
     ms.send(ARM_MDD_ID, SHOULDER_CMD,
             angle_shoulder / M_PI * 180 + OFFSET_SHOULDER_ANGLE);
     ms.send(ARM_MDD_ID, ELBO_CMD, angle_elbo / M_PI * 180 + OFFSET_ELBO_ANGLE);
   }
   cout << "Main Finish" << endl;
-  /* ms.send(255, 255, 0); */
-  ms.send(ARM_MDD_ID, ELBO_CMD, 45);
-  ms.send(ARM_MDD_ID, SHOULDER_CMD, 70);
+  ms.send(255, 255, 0);
   pigpio.write(RUN_LED, 0);
   return finish_mode;
 }

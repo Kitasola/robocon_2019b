@@ -7,7 +7,7 @@ namespace arrc_raspi {
 class Timer {
 public:
   Timer() { reset(); }
-  void reset() { prev = std::chrono::high_resolution_clock::now(); }
+  void reset() { start = prev = std::chrono::high_resolution_clock::now(); }
   void update() {
     now = std::chrono::high_resolution_clock::now();
     duration_time =
@@ -15,11 +15,16 @@ public:
                                                                           prev)
             .count() *
         1.0e-9;
+    elapsed_time =
+        (long double)std::chrono::duration_cast<std::chrono::nanoseconds>(now -
+                                                                          start)
+            .count() *
+        1.0e-9;
     prev = now;
   }
   long double read() { return duration_time; }
   bool wait(long double wait_time) {
-    return duration_time > wait_time ? true : false;
+    return elapsed_time > wait_time ? true : false;
   }
   void sleep(long double sleep_time) {
     std::this_thread::sleep_for(
@@ -27,8 +32,8 @@ public:
   }
 
 private:
-  std::chrono::high_resolution_clock::time_point now, prev;
-  long double duration_time;
+  std::chrono::high_resolution_clock::time_point now, prev, start;
+  long double duration_time, elapsed_time;
   bool timer_stop = false;
 };
 } // namespace arrc_raspi
