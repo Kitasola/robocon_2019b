@@ -94,16 +94,14 @@ int main() {
                 SHOOT_READY_CMD = 32;
   constexpr int SHOOT_CHARGE_STROKE = 350, SHOOT_ROLL_SPEED = 100,
                 SHOOT_READ_STROKE = 200, MAX_LOAD_LENGTH = 370;
-  ms.send(SHOOT_MDD_ID, SHOOT_READY_CMD, SHOOT_READ_STROKE);
 
   // Load
   constexpr int LOAD_MDD_ID = 3, LOAD_CMD = 34;
   constexpr int MAX_LOAD_TARY = 8, NUM_STEP_TRAY = 1;
   constexpr int NUM_LOAD_ARM = 7;
   constexpr int LOAD_ARM_POSITION[NUM_LOAD_ARM][2] = {
-      {210, -150}, {210, 0},   {270, 200}, {615, 119},
-      {400, 480},  {615, 119}, {270, 200}};
-  /* ms.send(LOAD_MDD_ID, LOAD_CMD, -1); */
+      {210, -150}, {230, 0},   {270, 200}, {630, 100},
+      {400, 480},  {630, 100}, {270, 200}};
 
   // Hand
   constexpr int HAND_MDD_ID = 6, HAND_CMD = 40;
@@ -111,11 +109,13 @@ int main() {
                 HAND_OPEN_ANGLE = 30;
   constexpr double WAIT_HAND_TIME = 3;
   ms.send(HAND_MDD_ID, HAND_CMD, HAND_CATCH_ANGLE);
+  ms.send(LOAD_MDD_ID, LOAD_CMD, -1);
+  ms.send(SHOOT_MDD_ID, SHOOT_READY_CMD, SHOOT_READ_STROKE);
 
   // Laundry
   constexpr int LAUNDRY_MDD_ID = 2, LAUNDRY_CMD = 10;
   constexpr int LAUNDRY_ARM_X = 400, LAUNDRY_ARM_Y = 480;
-  int laundry_mode = 0;
+  int laundry_mode = -1;
 
   // Arm
   constexpr int ARM_MDD_ID = 5, SHOULDER_CMD = 60, ELBO_CMD = 61;
@@ -195,12 +195,12 @@ int main() {
       }
     }
     if (controller.press(CROSS) && laundry_mode == 2) {
-      laundry_mode = 0;
-    } else if (controller.press(CROSS) && laundry_mode == 0) {
+      laundry_mode = -1;
+    } else if (controller.press(CROSS) && laundry_mode == -1) {
       laundry_mode = 2;
     }
     // Arm avoid laundry
-    if (laundry_mode == 0) {
+    if (laundry_mode == -1) {
       arm_goal_x = LAUNDRY_ARM_X;
       arm_goal_y = LAUNDRY_ARM_Y;
     }
@@ -328,7 +328,6 @@ int main() {
       }
       break;
     }
-    cout << phase << ", " << load_arm_id << ":";
 
     // Wheel Output
     double diff_yaw = goal_yaw - gyro.yaw;
@@ -350,7 +349,6 @@ int main() {
     }
 
     // Arm Output
-    cout << arm_goal_x << ", " << arm_goal_y << endl;
     double arm_radius = hypot(arm_goal_x, arm_goal_y);
     double angle_shoulder =
         calcTriangleTheta(SECOND_ARM_LENGTH, arm_radius, FRONT_ARM_LENGTH) +
@@ -362,9 +360,10 @@ int main() {
     ms.send(ARM_MDD_ID, ELBO_CMD, angle_elbo / M_PI * 180 + OFFSET_ELBO_ANGLE);
   }
   cout << "Main Finish" << endl;
-  ms.send(HAND_MDD_ID, HAND_CMD, HAND_OPEN_ANGLE);
-  ms.send(SHOOT_MDD_ID, SHOOT_READY_CMD, SHOOT_READ_STROKE);
   ms.send(255, 255, 0);
+  ms.send(SHOOT_MDD_ID, SHOOT_READY_CMD, SHOOT_READ_STROKE);
+  ms.send(HAND_MDD_ID, HAND_CMD, HAND_OPEN_ANGLE);
+  ms.send(LAUNDRY_MDD_ID, LAUNDRY_MDD_ID, 1);
   pigpio.write(RUN_LED, 0);
   return finish_mode;
 }
