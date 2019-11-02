@@ -92,24 +92,28 @@ int main() {
   // Shoot
   constexpr int SHOOT_MDD_ID = 3, SHOOT_STROKE_CMD = 30, SHOOT_ROLL_CMD = 31,
                 SHOOT_READY_CMD = 32;
-  constexpr int SHOOT_CHARGE_STROKE = 350, SHOOT_ROLL_SPEED = 100;
-  ms.send(SHOOT_MDD_ID, SHOOT_READY_CMD, 1);
+  constexpr int SHOOT_CHARGE_STROKE = 350, SHOOT_ROLL_SPEED = 100,
+                SHOOT_READ_STROKE = 200, MAX_LOAD_LENGTH = 370;
+  ms.send(SHOOT_MDD_ID, SHOOT_READY_CMD, SHOOT_READ_STROKE);
 
   // Load
   constexpr int LOAD_MDD_ID = 3, LOAD_CMD = 34;
   constexpr int MAX_LOAD_TARY = 8, NUM_STEP_TRAY = 1;
-  constexpr int NUM_LOAD_ARM = 6;
+  constexpr int NUM_LOAD_ARM = 7;
   constexpr int LOAD_ARM_POSITION[NUM_LOAD_ARM][2] = {
-      {210, -140}, {350, 200}, {660, 110}, {400, 480}, {660, 110}, {410, 200}};
+      {210, -150}, {210, 0},   {270, 200}, {615, 119},
+      {400, 480},  {615, 119}, {270, 200}};
+  /* ms.send(LOAD_MDD_ID, LOAD_CMD, -1); */
 
   // Hand
   constexpr int HAND_MDD_ID = 6, HAND_CMD = 40;
-  constexpr int HAND_CLOSE_ANGLE = 150, HAND_OPEN_ANGLE = 130;
+  constexpr int HAND_CLOSE_ANGLE = 150, HAND_CATCH_ANGLE = 125,
+                HAND_OPEN_ANGLE = 30;
   constexpr double WAIT_HAND_TIME = 3;
-  ms.send(HAND_MDD_ID, HAND_CMD, HAND_OPEN_ANGLE);
+  ms.send(HAND_MDD_ID, HAND_CMD, HAND_CATCH_ANGLE);
 
   // Laundry
-  constexpr int LAUNDRY_MDD_ID = 3, LAUNDRY_CMD = 10;
+  constexpr int LAUNDRY_MDD_ID = 2, LAUNDRY_CMD = 10;
   constexpr int LAUNDRY_ARM_X = 400, LAUNDRY_ARM_Y = 480;
   int laundry_mode = 0;
 
@@ -175,6 +179,10 @@ int main() {
     static double arm_goal_y = ARM_START_Y;
     double arm_diff_x = ARM_STICK_SPEED * controller.stick(LEFT_X) / 128;
     double arm_diff_y = ARM_STICK_SPEED * -controller.stick(LEFT_Y) / 128;
+    if (!controller.button(L1)) {
+      arm_diff_x *= 0.5;
+      arm_diff_y *= 0.5;
+    }
     arm_goal_x += arm_diff_x * cos(-gyro.yaw / 180 * M_PI) +
                   -arm_diff_y * sin(-gyro.yaw / 180 * M_PI);
     arm_goal_y += arm_diff_x * sin(-gyro.yaw / 180 * M_PI) +
@@ -206,7 +214,6 @@ int main() {
     static int load_arm_id = -1;
     static bool changed_phase = false;
     static Timer hand_time;
-    hand_time.update();
     switch (phase) {
     // Tary Up or Down
     case -1:
@@ -219,6 +226,8 @@ int main() {
       }
       if (controller.press(SQUARE)) {
         phase = 0;
+        ms.send(HAND_MDD_ID, HAND_CMD, HAND_CATCH_ANGLE);
+        ms.send(SHOOT_MDD_ID, SHOOT_READY_CMD, MAX_LOAD_LENGTH);
         changed_phase = true;
       }
       break;
@@ -228,57 +237,75 @@ int main() {
         hand_time.reset();
         changed_phase = false;
       }
+      hand_time.update();
       if (hand_time.wait(WAIT_HAND_TIME)) {
-        cout << hand_time.read() << endl;
         phase = 2;
         changed_phase = true;
       }
       break;
-    case 4:
+    case 2:
+      if (changed_phase) {
+        laundry_mode = 1;
+        load_arm_id = (load_arm_id + 1) % NUM_LOAD_ARM;
+        arm_goal_x = LOAD_ARM_POSITION[load_arm_id][0];
+        arm_goal_y = LOAD_ARM_POSITION[load_arm_id][1];
+        changed_phase = false;
+        hand_time.reset();
+      }
+      hand_time.update();
+      if (hand_time.wait(3)) {
+        phase = 3;
+        changed_phase = true;
+      }
+      break;
+    case 5:
       if (changed_phase) {
         ms.send(LOAD_MDD_ID, LOAD_CMD, 1);
         changed_phase = false;
       }
       if (controller.press(SQUARE)) {
-        phase = 5;
+        phase = 6;
         changed_phase = true;
       }
       break;
-    case 6:
+    case 7:
       if (changed_phase) {
         ms.send(SHOOT_MDD_ID, SHOOT_ROLL_CMD, SHOOT_ROLL_SPEED);
         ms.send(SHOOT_MDD_ID, SHOOT_STROKE_CMD, SHOOT_CHARGE_STROKE);
         changed_phase = false;
       }
       if (controller.press(SQUARE)) {
-        phase = 7;
+        phase = 8;
         changed_phase = true;
       }
       break;
-    case 8:
+    case 9:
       if (changed_phase) {
         ms.send(LOAD_MDD_ID, LOAD_CMD, -1);
         laundry_mode = 1;
         changed_phase = false;
       }
       if (controller.press(SQUARE)) {
-        phase = 9;
-        changed_phase = true;
-      }
-      break;
-    case 10:
-      if (changed_phase) {
-        ms.send(HAND_MDD_ID, HAND_CMD, HAND_OPEN_ANGLE);
-        hand_time.reset();
-        changed_phase = false;
-      }
-      if (hand_time.wait(WAIT_HAND_TIME)) {
-        phase = 11;
+        phase = 10;
         changed_phase = true;
       }
       break;
     case 11:
       if (changed_phase) {
+        ms.send(HAND_MDD_ID, HAND_CMD, HAND_OPEN_ANGLE);
+        hand_time.reset();
+        changed_phase = false;
+      }
+      hand_time.update();
+      if (hand_time.wait(WAIT_HAND_TIME)) {
+        phase = 12;
+        changed_phase = true;
+      }
+      break;
+    case 12:
+      if (changed_phase) {
+        ms.send(SHOOT_MDD_ID, SHOOT_READY_CMD, SHOOT_READ_STROKE);
+        ms.send(HAND_MDD_ID, HAND_CMD, HAND_CATCH_ANGLE);
         changed_phase = false;
       }
       if (controller.press(SQUARE)) {
@@ -293,8 +320,6 @@ int main() {
         load_arm_id = (load_arm_id + 1) % NUM_LOAD_ARM;
         arm_goal_x = LOAD_ARM_POSITION[load_arm_id][0];
         arm_goal_y = LOAD_ARM_POSITION[load_arm_id][1];
-        cout << phase << ": " << load_arm_id << ", " << arm_goal_x << ", "
-             << arm_goal_y << endl;
         changed_phase = false;
       }
       if (controller.press(SQUARE)) {
@@ -303,6 +328,7 @@ int main() {
       }
       break;
     }
+    cout << phase << ", " << load_arm_id << ":";
 
     // Wheel Output
     double diff_yaw = goal_yaw - gyro.yaw;
@@ -324,6 +350,7 @@ int main() {
     }
 
     // Arm Output
+    cout << arm_goal_x << ", " << arm_goal_y << endl;
     double arm_radius = hypot(arm_goal_x, arm_goal_y);
     double angle_shoulder =
         calcTriangleTheta(SECOND_ARM_LENGTH, arm_radius, FRONT_ARM_LENGTH) +
@@ -335,6 +362,8 @@ int main() {
     ms.send(ARM_MDD_ID, ELBO_CMD, angle_elbo / M_PI * 180 + OFFSET_ELBO_ANGLE);
   }
   cout << "Main Finish" << endl;
+  ms.send(HAND_MDD_ID, HAND_CMD, HAND_OPEN_ANGLE);
+  ms.send(SHOOT_MDD_ID, SHOOT_READY_CMD, SHOOT_READ_STROKE);
   ms.send(255, 255, 0);
   pigpio.write(RUN_LED, 0);
   return finish_mode;
