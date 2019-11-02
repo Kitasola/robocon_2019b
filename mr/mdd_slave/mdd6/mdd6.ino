@@ -7,37 +7,16 @@
 #include <avr/power.h>
 #endif
 
-#define PIN         10
-#define NUMPIXELS   16
-#define READ_PIN_1  A3
-#define READ_PIN_2  A2
-#define SERVO_PIN_1 9
-#define SERVO_PIN_2 3
-#define HEAD_SERVO_1 2
-#define HEAD_SERVO_2  4
-
-int head_flag = 0;
-
-
 void changeID(byte new_id) {
   EEPROM.write(0, new_id);
 }
 
-Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
-
-//const number
-
-constexpr int Motor[3][3] = {
-  {5, 6, 12},
-  {10, 11, 13},
-  {9, 3, 2}
-};
 constexpr long int BAUDRATE = 115200;
 constexpr int REDE_PIN = 4;
-constexpr int high_angle_1 = 150, low_angle_1 = 30, high_angle_2 = 65, low_angle_2 = 30;
-//yellow = (255,255,0), green = (0,255,0), blue = (0,0,255),red = (255,0,0), Non = (0,0,0) White = (255,255,255)
-int f2 = analogRead(READ_PIN_2);
 
+#define PIN         10
+#define NUMPIXELS   16
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 constexpr int color[5][3] = {
   {  0,  0,  0},//Non
   {255, 255,  0}, //yellow
@@ -46,109 +25,109 @@ constexpr int color[5][3] = {
   {  0,  0, 255} //blue
 };
 
+int head_flag = 0;
+constexpr int SHOOT_READ_PIN[2] = {A3, A2};
+int current_shoot_read[2] = {}, prev_shoot_read[2] = {};
+constexpr int SHOOT_READ_THRESHOULD = 512;
+
+constexpr int SHOOT_SERVO_PIN[2] = {9, 3};
+constexpr int SHOOT_SERVO_FREE[2] = {30, 90}, SHOOT_SERVO_ROCK[2] = {150, 135};
+Servo shoot_servo[2];
+
+constexpr int HEAD_SERVO_PIN[2] = {5, 6};
+constexpr int HEAD_SERVO_OPEN[2] = {55, 125}, HEAD_SERVO_WAIT[2] = {90, 90}, HEAD_SERVO_CLOSE[2] = {125, 55};
+constexpr int WAIT_HEAD_TIME = 1000;
+Servo head_servo[2];
+int head_phase = 0;
+unsigned long head_start_time;
+
 ScrpSlave slave(REDE_PIN, EEPROM.read(0), changeID);
-Servo servo_1;
-Servo servo_2;
-Servo head_servo_1;
-Servo head_servo_2;
 
 int angle;
 int stop_flag = 0;
-int prev_flag = 0;
 
 void setup() {
   pinMode(REDE_PIN, OUTPUT);
-  pinMode(READ_PIN_1, INPUT);
-  pinMode(READ_PIN_2, INPUT);
-  head_servo_1.attach(HEAD_SERVO_1);
-  head_servo_2.attach(HEAD_SERVO_2);
-  servo_1.attach(SERVO_PIN_1);
-  servo_2.attach(SERVO_PIN_2);
+  for (int i = 0; i < 2; ++i) {
+    pinMode(SHOOT_READ_PIN[i], INPUT);
+    if (analogRead(SHOOT_READ_PIN[i]) > SHOOT_READ_THRESHOULD) {
+      current_shoot_read[i] = 1;
+    } else {
+      current_shoot_read[i] = 0;
+    }
+    shoot_servo[i].attach(SHOOT_SERVO_PIN[i]);
+    shoot_servo[i].write(SHOOT_SERVO_FREE[i]);
+    head_servo[i].attach(HEAD_SERVO_PIN[i]);
+    head_servo[i].write(HEAD_SERVO_OPEN[i]);
+  }
   Serial.begin(BAUDRATE);
-  slave.addCMD(100, set);
-  slave.addCMD(40, servo);
-  slave.addCMD(250, headMove);
+  slave.addCMD(40, actServo);
+  slave.addCMD(100, setColor);
+  slave.addCMD(250, actHead);
   pixels.begin();
   pixels.setBrightness(100);
 #if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
   clock_prescale_set(clock_div_1);
 #endif
 
-  if (analogRead(READ_PIN_1) > 512) {
-    prev_flag = 1;
-  } else {
-    prev_flag = 0;
-  }
-
-  head_servo_1.write(55);
-  head_servo_2.write(125);
-
 }
 
-int led_flag = 0;
+void loop() {
+  slave.check();
+  for(int i = 0; i < 2; ++i) {
+    prev_shoot_read[i] = current_shoot_read[i];
+    if(analogRead(SHOOT_READ_PIN[i]) > SHOOT_READ_THRESHOULD){
+      current_shoot_read[i] = 1;
+    } else {
+      current_shoot_read[i] = 0;  
+    }
+    if(current_shoot_read[i] == 1 && prev_shoot_read[i] == 0) {
+      shoot_servo[i].write(SHOOT_SERVO_FREE[i]);  
+    } else if(current_shoot_read[i] == 0 && prev_shoot_read[i] == 1) {
+      shoot_servo[i].write(SHOOT_SERVO_ROCK[i]);  
+    }
+  }
 
-boolean set(int rx_data, int& tx_data) {
-  led_flag = rx_data;
+  switch (head_phase) {
+    case 0:
+      break;
+    case 1:
+      for (int i = 0; i < 2; ++i) {
+        head_servo[i].write(HEAD_SERVO_WAIT[i]);
+      }
+      head_start_time = millis();
+      head_phase = 2;
+      break;
+    case 2:
+      if (millis() > head_start_time + WAIT_HEAD_TIME) {
+        head_phase = 3;
+      }
+      break;
+    case 3:
+      for (int i = 0; i < 2; ++i) {
+        head_servo[i].write(HEAD_SERVO_CLOSE[i]);
+      }
+      head_phase = 4;
+      break;
+    case 4:
+      break;
+  }
+}
+
+boolean setColor(int rx_data, int& tx_data) {
   for (int i = 0; i < NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(color[led_flag][0], color[led_flag][1], color[led_flag][2]));
+    pixels.setPixelColor(i, pixels.Color(color[rx_data][0], color[rx_data][1], color[rx_data][2]));
   }
   pixels.show();
   return true;
 }
 
-boolean servo(int rx_data, int& tx_data) {
-  angle = rx_data;
-  stop_flag = 1;
-  servo_1.write(angle);
+boolean actServo(int rx_data, int& tx_data) {
+  shoot_servo[0].write(rx_data);
   return true;
 }
 
-boolean headMove(int rx_data, int& tx_data) {
-  if (head_flag == 0) {
-    if (rx_data == 1) {
-      head_servo_1.write(90);
-      head_servo_2.write(90);
-      unsigned long start_time = millis();
-      while (millis() < start_time + 1000) {
-
-      }
-      head_servo_1.write(150);
-      head_servo_2.write(30);
-    }
-  }
-  head_flag = 1;
+boolean actHead(int rx_data, int& tx_data) {
+  head_phase = rx_data;
   return true;
-}
-
-
-void loop() {
-  slave.check();
-  int cur_flag = 0;
-  int f1 = analogRead(READ_PIN_1);
-  if (f1 > 512) {
-    cur_flag = 1;
-  } else {
-    cur_flag = 0;
-  }
-
-  int f2 = analogRead(READ_PIN_2);
-
-  if (prev_flag != cur_flag) {
-    stop_flag = 0;
-  }
-
-  if (stop_flag == 0) {
-    if (f1 > 512) {
-      servo_1.write(high_angle_1);
-    } else if (f1 < 10) {
-      servo_1.write(low_angle_1);
-    }
-  }
-
-  if (f2 > 512) {
-    servo_2.write(high_angle_2);
-  } else if (f2 < 10) {
-    servo_2.write(low_angle_2);
-  }
-  prev_flag = cur_flag;
 }
