@@ -98,8 +98,10 @@ bool startShoot(int cmd, int rx_data, int &tx_data) {
   return true;
 }
 
+int stroke_ready_length = 200;
 bool setReady(int cmd, int rx_data, int &tx_data) {
   phase = 10;
+  stroke_ready_length = rx_data;
   return true;
 }
 
@@ -155,7 +157,7 @@ int main() {
   RotaryInc stroke_rotary(ENCODER_PIN[STROKE_ENCODER_ID][0],
                           ENCODER_PIN[STROKE_ENCODER_ID][1], 256, 1);
   constexpr int MAX_STROKE_LENGTH = 370, MAX_STROKE_ERROR = 2;
-  constexpr int STROKE_LOAD_LENGTH = 350, STROKE_READY_LENGTH = 200;
+  constexpr int STROKE_LOAD_LENGTH = 360;
   GLOBAL_STROKE_LOAD_LENGTH = STROKE_LOAD_LENGTH;
   int current_stroke = 0, stroke_offset = -MAX_STROKE_LENGTH;
   /* int stroke_offset = -MAX_STROKE_LENGTH; */
@@ -286,7 +288,7 @@ int main() {
       break;
     }
     case 10: {
-      goal_stroke = STROKE_READY_LENGTH;
+      goal_stroke = stroke_ready_length;
       break;
     }
     }
