@@ -66,9 +66,8 @@ bool spinMotor(int cmd, int rx_data, int &tx_data) {
 }
 
 bool safe(int cmd, int rx_data, int &tx_data) {
-  for (int i = 0; i < 4; ++i) {
-    spinMotor(i, 0);
-  }
+  spinMotor(1, 0);
+  spinMotor(2, 0);
   return true;
 }
 
