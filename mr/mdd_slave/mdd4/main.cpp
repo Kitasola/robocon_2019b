@@ -117,15 +117,15 @@ int main() {
         ++current_tray_point;
       }
     } else if (tray_motor_polor < 0) {
-      if (current_slit == DARK && prev_slit == LIGHT) {
+      if (current_slit == LIGHT && prev_slit == DARK) {
         --current_tray_point;
       }
     }
-    if (limit_higher.read() == 1) {
-      current_tray_point = 0;
-    } else if (limit_lower.read() == 1) {
-      current_tray_point = 7;
-    }
+    /* if (limit_higher.read() == 1) { */
+    /*   current_tray_point = 0; */
+    /* } else if (limit_lower.read() == 1) { */
+    /*   current_tray_point = 7; */
+    /* } */
 
     switch (phase) {
     case -1:
