@@ -215,12 +215,19 @@ int main(int argc, char **argv) {
   // パラメータ
   constexpr double ERROR_DISTANCE_MAX = 50, ERROR_ANGLE_MAX = 1.0;
   // 2段目昇降機構
-  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 75, TWO_STAGE_SHEET = 77,
-                TWO_STAGE_READY = 0, TWO_STAGE_ERROR_MAX = 1; // cm
+  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 75, TWO_STAGE_TOWEL = 77,
+                TWO_STAGE_SHEET = 77, TWO_STAGE_READY = 0,
+                TWO_STAGE_ERROR_MAX = 1; // cm
   constexpr double TWO_STAGE_TIME = 0.06;
   // ハンガー
+  constexpr int HUNGER_POSITION_Y = 4500 - 500 - 100;
   constexpr int HUNGER_ID = 1, HUNGER_SPEED = 200;
   constexpr double HUNGER_WAIT_TIME = HUNGER_SPEED * 0.02;
+  // タオル
+  constexpr int TOWEL_POSITION_Y = 6000 + 500 + 100;
+  constexpr int TOWEL_ID = 1, NUM_TOWEL = 3;
+  constexpr int TOWEL_ANGLE[NUM_TOWEL] = {20, 50, -20};
+  constexpr double TOWEL_WAIT_TIME = 3;
   // 3段目昇降機構
   constexpr int THREE_STAGE_ID = 1, THREE_STAGE_SHEET = 74;
   constexpr double THREE_STAGE_TIME = 0.06;
@@ -237,8 +244,7 @@ int main(int argc, char **argv) {
   constexpr int NUM_MAP = 3;
   // map_type
   // 0: ハンガー, 1: シーツ
-  int map_type = 0;
-  constexpr int HUNGER_POSITION_Y = 4500 - 500 - 100;
+  int map_type = 1;
   GoalManager goal_map[NUM_MAP] = {GoalManager(coat), GoalManager(coat),
                                    GoalManager(coat)};
   //位置: 後判定
@@ -250,17 +256,14 @@ int main(int argc, char **argv) {
       3650, HUNGER_POSITION_Y, start_yaw, 10,
       TWO_STAGE_HUNGER *
           TWO_STAGE_TIME); // Move: 小ポール横 -> Wait: 昇降完了タイマー
-  /* /1* goal_map[0].add(3650, 5500, 0); // Move: ハンガー前 *1/ */
-  /* goal_map[0].add( */
-  /*     2850, 3850, start_yaw, 2, */
-  /*     HUNGER_WAIT_TIME); // Move: ハンガー手前 -> Wait:ハンガー完了タイマー
-   */
-  /* goal_map[0].add(2050, 3850, start_yaw, 2, */
-  /*                 HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait:
-   * ハンガー */
-  goal_map[0].add(3650, HUNGER_POSITION_Y, start_yaw, 2,
+  goal_map[0].add(
+      2850, 3850, start_yaw, 2,
+      HUNGER_WAIT_TIME); // Move: ハンガー手前 -> Wait:ハンガー完了タイマー
+  goal_map[0].add(2050, 3850, start_yaw, 2,
+                  HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait:ハンガー
+  goal_map[0].add(2050, HUNGER_POSITION_Y, start_yaw, 2,
                   HUNGER_WAIT_TIME); // Move: 次ハンガー手前 -> Wait: ハンガー
-  goal_map[0].add(3650, HUNGER_POSITION_Y, start_yaw, 1,
+  goal_map[0].add(2050, HUNGER_POSITION_Y, start_yaw, 1,
                   TWO_STAGE_READY); // Move: 次ハンガー手前 -> Wait: ハンガー
   goal_map[0].add(
       start_x + 200, start_y - 200, start_yaw, 10,
@@ -271,36 +274,25 @@ int main(int argc, char **argv) {
   goal_map[0].restart();
 
   goal_map[1].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
-  goal_map[1].add(2850, HUNGER_POSITION_Y, start_yaw); // Move: 小ポール横
-  goal_map[1].add(2850, HUNGER_POSITION_Y, start_yaw, 1,
-                  TWO_STAGE_HUNGER); // Start: 昇降
-  goal_map[1].add(2850, HUNGER_POSITION_Y, start_yaw, 10,
-                  TWO_STAGE_HUNGER * TWO_STAGE_TIME); // Wait: 昇降完了タイマー
-  goal_map[1].add(2850, HUNGER_POSITION_Y, start_yaw, 2,
-                  HUNGER_WAIT_TIME); // Start: ハンガー
-  goal_map[1].add(2850, HUNGER_POSITION_Y, start_yaw, 1,
-                  TWO_STAGE_READY); // Start: 昇降
-  goal_map[1].add(start_x, start_y - 500, start_yaw, 10,
-                  TWO_STAGE_HUNGER * TWO_STAGE_TIME); // Wait: 昇降完了タイマー
-  goal_map[1].add(start_x, start_y - 500, start_yaw,
+  goal_map[1].add(5400, 7500, start_yaw);
+  goal_map[1].add(3650, 7500, start_yaw, 1, TWO_STAGE_TOWEL);
+  goal_map[1].add(3650, TOWEL_POSITION_Y, start_yaw, 10,
+                  TWO_STAGE_HUNGER); // Move: 小ポール横 -> Start: 昇降
+  goal_map[1].add(2850, 7500, start_yaw, 3, TOWEL_ANGLE[0]);
+  goal_map[1].add(2850, 7500, start_yaw);
+  goal_map[1].add(2050, TOWEL_POSITION_Y, start_yaw, 3, TOWEL_ANGLE[1]);
+  goal_map[1].add(2050, 7500, start_yaw);
+  goal_map[1].add(2050, 7500, start_yaw, 3, TOWEL_ANGLE[2]);
+  goal_map[1].add(2050, 7500, start_yaw, 1,
+                  TWO_STAGE_READY); // Move: 次ハンガー手前 -> Wait: ハンガー
+  goal_map[1].add(
+      5400, 7500, start_yaw, 10,
+      TWO_STAGE_HUNGER *
+          TWO_STAGE_TIME); // Move: スタートゾーン -> Wait: スタートスイッチ
+  goal_map[1].add(start_x + 200, start_y - 200, start_yaw);
+  goal_map[1].add(start_x + 200, start_y - 200, start_yaw,
                   11); // Move: スタートゾーン -> Wait: スタートスイッチ
   goal_map[1].restart();
-
-  goal_map[2].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
-  goal_map[2].add(2100, HUNGER_POSITION_Y, start_yaw); // Move: 小ポール横
-  goal_map[2].add(2100, HUNGER_POSITION_Y, start_yaw, 1,
-                  TWO_STAGE_HUNGER); // Start: 昇降
-  goal_map[2].add(2100, HUNGER_POSITION_Y, start_yaw, 10,
-                  TWO_STAGE_HUNGER * TWO_STAGE_TIME); // Wait: 昇降完了タイマー
-  goal_map[2].add(2100, HUNGER_POSITION_Y, start_yaw, 2,
-                  HUNGER_WAIT_TIME); // Start: ハンガー
-  goal_map[2].add(2100, HUNGER_POSITION_Y, start_yaw, 1,
-                  TWO_STAGE_READY); // Start: 昇降
-  goal_map[2].add(start_x, start_y, start_yaw, 10,
-                  TWO_STAGE_HUNGER * TWO_STAGE_TIME); // Wait: 昇降完了タイマー
-  goal_map[2].add(start_x, start_y, start_yaw,
-                  11); // Move: スタートゾーン -> Wait: スタートスイッチ
-  goal_map[2].restart();
 
   bool changed_phase = true;
   double start;
@@ -390,8 +382,19 @@ int main(int argc, char **argv) {
         break;
       }
       case 3: {
-        can_send_next_goal = true;
-        changed_phase = true;
+        planner.should_stop_emergency = true;
+        if (changed_phase) {
+          // 伸ばす(取り付け)
+          send(TOWEL_ID, 10, goal_map[map_type].now.action_value);
+          start = now;
+          changed_phase = false;
+        }
+        // 取り付くまでタイマー待機
+        if (now - start > TOWEL_WAIT_TIME) {
+          send(TOWEL_ID, 10, 0);
+          can_send_next_goal = true;
+          changed_phase = true;
+        }
         break;
       }
       case 10: {
@@ -411,6 +414,7 @@ int main(int argc, char **argv) {
           } else if (Pi::gpio().read(HUNGER_3) == 1) {
             map_type = 2;
           }
+          map_type = 1;
           global_message.data = "Robot Pose Reset";
           global_message_pub.publish(global_message);
           goal_map[map_type].restart();
@@ -435,8 +439,7 @@ int main(int argc, char **argv) {
         planner.sendNextGoal(goal_map[map_type].getPtp());
         goal_map[map_type].next();
       }
-
-      loop_rate.sleep();
     }
+    loop_rate.sleep();
   }
 }
