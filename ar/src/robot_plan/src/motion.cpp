@@ -34,13 +34,17 @@ public:
   bool checkReachGoal(double error_distance, double error_angle) {
     double diff_yaw = (goal_point.theta - current_point.theta) / M_PI * 180;
     diff_yaw = diff_yaw - (int)diff_yaw / 180 * 360;
+    /* ROS_INFO_STREAM("x:" << goal_point.x << ", " << current_point.x << ", "
+     */
+    /*                      << goal_point.y << ", " << current_point.y << ",
+     * yaw: " */
+    /*                      << goal_point.theta << ", " << current_point.theta);
+     */
     if (hypot(goal_point.x - current_point.x, goal_point.y - current_point.y) <
             error_distance &&
         abs(diff_yaw) < error_angle) {
-      should_stop_emergency = true;
       return true;
     } else {
-      should_stop_emergency = false;
       return false;
     }
   }
@@ -51,7 +55,8 @@ public:
     emergency_stop_pub.publish(msg);
   }
 
-  void sendNextGoal(geometry_msgs::Pose2D goal_point) {
+  void sendNextGoal(geometry_msgs::Pose2D point) {
+    goal_point = point;
     ROS_INFO_STREAM("Next Goal Point is " << goal_point.x << ", "
                                           << goal_point.y << ", "
                                           << goal_point.theta * 180 / M_PI);
@@ -301,22 +306,25 @@ int main(int argc, char **argv) {
   double start;
 
   // スイッチ基板
+  constexpr double FREQ = 10;
+  ros::Rate loop_rate(FREQ);
+
   for (Switch pin : ALL_SWITCH) {
     Pi::gpio().set(pin, IN, PULL_DOWN);
   }
 
   while (ros::ok()) {
+    loop_rate.sleep();
     if (Pi::gpio().read(START) == 1) {
       planner.sendNextGoal(goal_map[map_type].getPtp());
       goal_map[map_type].next();
       break;
     }
+    planner.should_stop_emergency = true;
+    planner.sendEmergencyStatus();
   }
   global_message.data = "Game Start";
   global_message_pub.publish(global_message);
-
-  constexpr double FREQ = 1;
-  ros::Rate loop_rate(FREQ);
 
   while (ros::ok()) {
     ros::spinOnce();
@@ -353,15 +361,16 @@ int main(int argc, char **argv) {
         break;
       }
       case 1: {
+        planner.should_stop_emergency = true;
         start = now;
         // 伸縮
         send(TWO_STAGE_ID, 30, goal_map[map_type].now.action_value);
-        planner.should_stop_emergency = true;
         can_send_next_goal = true;
         changed_phase = true;
         break;
       }
       case 2: {
+        planner.should_stop_emergency = true;
         if (changed_phase) {
           // 伸ばす(取り付け)
           send(HUNGER_ID, 20, HUNGER_SPEED);
