@@ -21,11 +21,12 @@ public:
   SVelocity(ros::NodeHandle *n, const std::string username, int user_rate) {
     velocity_pub =
         n->advertise<geometry_msgs::Twist>(username + "/velocity", 1);
-    reach_goal_pub = n->advertise<std_msgs::Bool>(username + "/reach_goal", 1);
     goal_point_sub = n->subscribe(username + "/goal_point", 1,
                                   &SVelocity::getGoalPoint, this);
     goal_velocity_sub = n->subscribe(username + "/goal_velocity", 1,
                                      &SVelocity::getGoalVelocity, this);
+    emergency_stop_sub = n->subscribe(username + "/emergency_stop", 1,
+                                      &SVelocity::checkEmergency, this);
     robot_pose_sub =
         n->subscribe("robot_pose", 1, &SVelocity::getRobotPose, this);
     rate = user_rate * MAP_SCOPE;
@@ -67,11 +68,13 @@ public:
   /* double x = msgs.orientation.x, w = msgs.orientation.w; */
   /* current_point.theta = atan2(2 * x * w, x * x - w * w); */
   /* } */
+  void checkEmergency(const std_msgs::Bool &msg) {
+    should_stop_emergency = msg.data;
+  }
 
   void control() {
-    if (hypot(goal_point.x - current_point.x, goal_point.y - current_point.y) <
-        ERROR_DISTANCE_MAX) {
-      msgs.data = true;
+    if (should_stop_emergency) {
+      send_twist.linear.x = send_twist.linear.y = send_twist.angular.z = 0;
       send_twist.angular.y = -1;
     } else {
       msgs.data = false;
@@ -119,19 +122,13 @@ public:
                   (velocity_map[i].at(map_id[i]).position - current_point.y);
         }
       }
-    }
 
-    if (goal_point.theta - current_point.theta > M_PI) {
-      goal_point.theta -= 2 * M_PI;
-    } else if (goal_point.theta - current_point.theta < -M_PI) {
-      goal_point.theta += 2 * M_PI;
-    }
+      if (goal_point.theta - current_point.theta > M_PI) {
+        goal_point.theta -= 2 * M_PI;
+      } else if (goal_point.theta - current_point.theta < -M_PI) {
+        goal_point.theta += 2 * M_PI;
+      }
 
-    if (abs(goal_point.theta - current_point.theta) < ERROR_ANGLE_MAX) {
-      /* msgs.data = true; */
-      /* send_twist.angular.y = -1; */
-    } else {
-      msgs.data = false;
       send_twist.angular.y = WHEEL_DEBUG_MODE;
       send_twist.angular.z = moment.control(goal_point.theta * 180 / M_PI,
                                             current_point.theta * 180 / M_PI);
@@ -143,7 +140,6 @@ public:
     }
 
     velocity_pub.publish(send_twist);
-    reach_goal_pub.publish(msgs);
   }
 
   void setParam() {
@@ -283,20 +279,19 @@ public:
 private:
   int rate = 0;
   geometry_msgs::Pose2D current_point = {}, goal_point = {}, start_point = {};
-  ros::Subscriber goal_point_sub, robot_pose_sub, goal_velocity_sub;
-  ros::Publisher velocity_pub, reach_goal_pub;
+  ros::Subscriber goal_point_sub, robot_pose_sub, goal_velocity_sub,
+      emergency_stop_sub;
+  ros::Publisher velocity_pub;
   geometry_msgs::Twist send_twist, goal_velocity;
   double velocity_final_prev[2] = {};
   constexpr static double VELOCITY_MIN = 400, VELOCITY_MAX = 3000,
-                          ACCEL_MAX = 5000;
-  constexpr static double ERROR_DISTANCE_MAX = 50,
-                          ERROR_ANGLE_MAX = 1.0 / 180 * M_PI;
+                          ACCEL_MAX = 4000;
   constexpr static double ROOT_FOLLOW = 1.7;
   std::vector<AccelMap> velocity_map[2];
   constexpr static int MAP_SCOPE = 1, MAP_SEARCH_RANGE = 5 * MAP_SCOPE;
   int map_id[2] = {};
   int map_id_max[2] = {};
-  std_msgs::Bool msgs;
+  bool should_stop_emergency = false;
 
   arrc::PidVelocity moment{12, 0, 0};
   constexpr static int MAX_MOMENT = 1000;

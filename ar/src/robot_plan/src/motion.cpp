@@ -10,17 +10,48 @@
 #include <std_msgs/String.h>
 #include <vector>
 
+double abs(double a) { return fabs(a); }
+
 class Ptp {
 public:
   Ptp(ros::NodeHandle *n, const std::string usename) {
     goal_point_pub =
         n->advertise<geometry_msgs::Pose2D>(usename + "/goal_point", 1);
-    reach_goal_sub =
-        n->subscribe(usename + "/reach_goal", 1, &Ptp::checkReachGoal, this);
+    emergency_stop_pub =
+        n->advertise<std_msgs::Bool>(usename + "/emergency_stop", 1);
+    robot_pose_sub =
+        n->subscribe("robot_pose", 1, &SVelocity::getRobotPose, this);
   }
 
-  bool is_reach_goal;
-  void checkReachGoal(const std_msgs::Bool &msg) { is_reach_goal = msg.data; }
+  void getRobotPose(const geometry_msgs::Pose2D &msg) { current_point = msg; }
+  /* void getRobotPose(const geometry_msgs::Pose &msgs) { */
+  /* current_point.x = msgs.position.x; */
+  /* current_point.y = msgs.position.y; */
+  /* double x = msgs.orientation.x, w = msgs.orientation.w; */
+  /* current_point.theta = atan2(2 * x * w, x * x - w * w); */
+  /* } */
+
+  bool should_stop_emergency = false;
+  bool checkReachGoal(error_distance, error_angle) {
+    double diff_yaw = (goal_point.theta - current_point.theta) / M_PI * 180;
+    diff_yaw = diff_yaw - (int)diff_yaw / 180 * 360;
+    if (hypot(goal_point.x - current_point.x, goal_point.y - current_point.y) <
+            error_distance &&
+        abs(diff_yaw) < error_angle) {
+      should_stop_emergency = true;
+      return true;
+    } else {
+      should_stop_emergency = false;
+      return false;
+    }
+  }
+
+  void sendEmergencyStatus() {
+    std_msgs::Bool msg;
+    msg.data = should_stop_emergency;
+    emergency_stop_pub.publish(msg);
+  }
+
   void sendNextGoal(geometry_msgs::Pose2D goal_point) {
     ROS_INFO_STREAM("Next Goal Point is " << goal_point.x << ", "
                                           << goal_point.y << ", "
@@ -38,9 +69,9 @@ public:
   }
 
 private:
-  ros::Subscriber reach_goal_sub;
-  ros::Publisher goal_point_pub;
-  geometry_msgs::Pose2D goal_point = {};
+  ros::Publisher goal_point_pub, emergency_stop_pub;
+  ros::Subscriber robot_pose_sub;
+  geometry_msgs::Pose2D goal_point = {}, current_point = {};
 };
 
 struct GoalInfo {
@@ -177,6 +208,7 @@ int main(int argc, char **argv) {
   n.getParam("/ar/start_yaw", start_yaw);
 
   // パラメータ
+  constexpr double ERROR_DISTANCE_MAX = 50, ERROR_ANGLE_MAX = 1.0;
   // 2段目昇降機構
   constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 75, TWO_STAGE_SHEET = 77,
                 TWO_STAGE_READY = 0, TWO_STAGE_ERROR_MAX = 1; // cm
@@ -204,6 +236,7 @@ int main(int argc, char **argv) {
   constexpr int HUNGER_POSITION_Y = 4500 - 500 - 100;
   GoalManager goal_map[NUM_MAP] = {GoalManager(coat), GoalManager(coat),
                                    GoalManager(coat)};
+  //位置: 後判定
   goal_map[0].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
   goal_map[0].add(3650, HUNGER_POSITION_Y, start_yaw);
   goal_map[0].add(3650, HUNGER_POSITION_Y, start_yaw, 1,
@@ -312,7 +345,7 @@ int main(int argc, char **argv) {
     double now = ros::Time::now().toSec();
 
     bool can_send_next_goal = false;
-    if (planner.is_reach_goal) {
+    if (planner.checkReachGoal) {
       switch (goal_map[map_type].now.action_type) {
       case 0: {
         can_send_next_goal = true;
@@ -323,6 +356,7 @@ int main(int argc, char **argv) {
         start = now;
         // 伸縮
         send(TWO_STAGE_ID, 30, goal_map[map_type].now.action_value);
+        planner.should_stop_emergency = true;
         can_send_next_goal = true;
         changed_phase = true;
         break;
@@ -353,6 +387,7 @@ int main(int argc, char **argv) {
       }
       case 10: {
         if (now - start > goal_map[map_type].now.action_value) {
+          planner.should_stop_emergency = true;
           can_send_next_goal = true;
           changed_phase = true;
           break;
@@ -376,6 +411,7 @@ int main(int argc, char **argv) {
         break;
       }
       }
+      planner.sendEmergencyStatus();
 
       if (can_send_next_goal) {
         // ログ取り用
