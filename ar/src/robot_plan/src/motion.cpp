@@ -178,7 +178,7 @@ int main(int argc, char **argv) {
 
   // パラメータ
   // 2段目昇降機構
-  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 77, TWO_STAGE_SHEET = 77,
+  constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 75, TWO_STAGE_SHEET = 77,
                 TWO_STAGE_READY = 0, TWO_STAGE_ERROR_MAX = 1; // cm
   constexpr double TWO_STAGE_TIME = 0.06;
   // ハンガー
@@ -201,8 +201,9 @@ int main(int argc, char **argv) {
   // map_type
   // 0: ハンガー, 1: シーツ
   int map_type = 0;
-  constexpr int HUNGER_POSITION_Y = 4500 - 520;
-  GoalManager goal_map[NUM_MAP] = {GoalManager(coat), GoalManager(coat)};
+  constexpr int HUNGER_POSITION_Y = 4500 - 500 - 100;
+  GoalManager goal_map[NUM_MAP] = {GoalManager(coat), GoalManager(coat),
+                                   GoalManager(coat)};
   goal_map[0].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
   goal_map[0].add(3650, HUNGER_POSITION_Y, start_yaw);
   goal_map[0].add(3650, HUNGER_POSITION_Y, start_yaw, 1,
@@ -224,10 +225,10 @@ int main(int argc, char **argv) {
   goal_map[0].add(3650, HUNGER_POSITION_Y, start_yaw, 1,
                   TWO_STAGE_READY); // Move: 次ハンガー手前 -> Wait: ハンガー
   goal_map[0].add(
-      start_x, start_y - 500, start_yaw, 10,
+      start_x + 200, start_y - 200, start_yaw, 10,
       TWO_STAGE_HUNGER *
           TWO_STAGE_TIME); // Move: スタートゾーン -> Wait: スタートスイッチ
-  goal_map[0].add(start_x, start_y - 500, start_yaw,
+  goal_map[0].add(start_x + 200, start_y - 200, start_yaw,
                   11); // Move: スタートゾーン -> Wait: スタートスイッチ
   goal_map[0].restart();
 
@@ -257,9 +258,9 @@ int main(int argc, char **argv) {
                   HUNGER_WAIT_TIME); // Start: ハンガー
   goal_map[2].add(2100, HUNGER_POSITION_Y, start_yaw, 1,
                   TWO_STAGE_READY); // Start: 昇降
-  goal_map[2].add(start_x, start_y - 500, start_yaw, 10,
+  goal_map[2].add(start_x, start_y, start_yaw, 10,
                   TWO_STAGE_HUNGER * TWO_STAGE_TIME); // Wait: 昇降完了タイマー
-  goal_map[2].add(start_x, start_y - 500, start_yaw,
+  goal_map[2].add(start_x, start_y, start_yaw,
                   11); // Move: スタートゾーン -> Wait: スタートスイッチ
   goal_map[2].restart();
 
