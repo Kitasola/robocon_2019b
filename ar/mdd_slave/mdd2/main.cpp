@@ -66,17 +66,24 @@ bool spinMotor(int cmd, int rx_data, int &tx_data) {
   return spinMotor(cmd - 2, rx_data);
 }
 
-PwmOut towel[2] = {PwmOut(PA_3), PwmOut(PA_1)};
+constexpr int NUM_TOWEL = 2;
+PwmOut towel[NUM_TOWEL] = {PwmOut(PA_3), PwmOut(PA_1)};
 constexpr float MIN_SERVO_PULSE = 0.5e-3;
 constexpr float MAX_SERVO_PULSE = 2.4e-3;
 float servoDegreeToPulse(int degree) {
   return map(degree, 0, 180, MIN_SERVO_PULSE, MAX_SERVO_PULSE);
 }
 
-constexpr int OFFSET_ANGLE[2] = {5, 13};
+constexpr int OFFSET_ANGLE[NUM_TOWEL] = {77, 93};
+int towel_goal_angle[NUM_TOWEL] = {};
 bool dryTowel(int cmd, int rx_data, int &tx_data) {
-  towel[0].pulsewidth(servoDegreeToPulse(rx_data + OFFSET_ANGLE[0]));
-  towel[1].pulsewidth(servoDegreeToPulse(180 - rx_data + OFFSET_ANGLE[1]));
+  towel_goal_angle[0] = rx_data + OFFSET_ANGLE[0];
+  towel_goal_angle[1] = -rx_data + OFFSET_ANGLE[1];
+  return true;
+}
+
+bool dryTowelServo(int cmd, int rx_data, int &tx_data) {
+  towel_goal_angle[cmd - 11] = rx_data;
   return true;
 }
 
@@ -88,20 +95,6 @@ bool setTwoHigh(int cmd, int rx_data, int &tx_data) {
   tx_data = dummy_current_two_hight / 10;
   return true;
 }
-
-/* int two_max_velocity = 0; // mm/s */
-/* bool setTwoVelocity(int cmd, int rx_data, int &tx_data) { */
-/*   // rx_data, tx_data [cm] */
-/*   two_max_velocity = rx_data * 10; */
-/*   return true; */
-/* } */
-
-/* int two_max_accel = 0; // mm/s^2 */
-/* bool setTwoAccel(int cmd, int rx_data, int &tx_data) { */
-/*   // rx_data, tx_data [cm] */
-/*   two_max_accel = rx_data * 10; */
-/*   return true; */
-/* } */
 
 int two_hight_current[2] = {};
 bool checkTwoRegister(int cmd, int rx_data, int &tx_data) {
@@ -132,9 +125,9 @@ int main() {
   slave.addCMD(5, spinMotor);
 
   slave.addCMD(10, dryTowel);
+  slave.addCMD(11, dryTowelServo);
+  slave.addCMD(12, dryTowelServo);
   slave.addCMD(30, setTwoHigh);
-  /* slave.addCMD(31, setTwoVelocity); */
-  /* slave.addCMD(32, setTwoAccel); */
   slave.addCMD(33, checkTwoRegister);
   slave.addCMD(34, checkTwoVelocity);
 
@@ -161,6 +154,9 @@ int main() {
       spinMotor(TWO_STAGE_ID[i], two_stage_speed[i]);
     }
     dummy_current_two_hight = (two_hight_current[0] + two_hight_current[1]) / 2;
+    for (int i = 0; i < NUM_TOWEL; ++i) {
+      towel[i].pulsewidth(servoDegreeToPulse(towel_goal_angle[i]));
+    }
     wait(0.01);
   }
 }
