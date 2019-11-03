@@ -19,8 +19,7 @@ public:
         n->advertise<geometry_msgs::Pose2D>(usename + "/goal_point", 1);
     emergency_stop_pub =
         n->advertise<std_msgs::Bool>(usename + "/emergency_stop", 1);
-    robot_pose_sub =
-        n->subscribe("robot_pose", 1, &SVelocity::getRobotPose, this);
+    robot_pose_sub = n->subscribe("robot_pose", 1, &Ptp::getRobotPose, this);
   }
 
   void getRobotPose(const geometry_msgs::Pose2D &msg) { current_point = msg; }
@@ -32,7 +31,7 @@ public:
   /* } */
 
   bool should_stop_emergency = false;
-  bool checkReachGoal(error_distance, error_angle) {
+  bool checkReachGoal(double error_distance, double error_angle) {
     double diff_yaw = (goal_point.theta - current_point.theta) / M_PI * 180;
     diff_yaw = diff_yaw - (int)diff_yaw / 180 * 360;
     if (hypot(goal_point.x - current_point.x, goal_point.y - current_point.y) <
@@ -57,7 +56,8 @@ public:
                                           << goal_point.y << ", "
                                           << goal_point.theta * 180 / M_PI);
     goal_point_pub.publish(goal_point);
-    is_reach_goal = false;
+    should_stop_emergency = false;
+    sendEmergencyStatus();
   }
 
   void sendNextGoal(double x, double y, double theta) {
@@ -345,7 +345,7 @@ int main(int argc, char **argv) {
     double now = ros::Time::now().toSec();
 
     bool can_send_next_goal = false;
-    if (planner.checkReachGoal) {
+    if (planner.checkReachGoal(ERROR_DISTANCE_MAX, ERROR_ANGLE_MAX)) {
       switch (goal_map[map_type].now.action_type) {
       case 0: {
         can_send_next_goal = true;

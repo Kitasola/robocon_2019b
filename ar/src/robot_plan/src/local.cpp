@@ -77,7 +77,6 @@ public:
       send_twist.linear.x = send_twist.linear.y = send_twist.angular.z = 0;
       send_twist.angular.y = -1;
     } else {
-      msgs.data = false;
       send_twist.angular.y = WHEEL_DEBUG_MODE;
       for (int i = 0; i < 2; ++i) {
         int search_id_min = map_id[i] - MAP_SEARCH_RANGE;
@@ -177,21 +176,21 @@ public:
                           dummy_distance * abs(sin(angle))};
     double accel_time[2] = {}, const_time[2] = {}, decel_time[2] = {};
     for (int i = 0; i < 2; ++i) {
-      if (distance[i] > ERROR_DISTANCE_MAX) {
-        accel_time[i] =
-            2 * abs((velocity_max[i] - velocity_first[i]) / accel_max[i]);
-        const_time[i] = (abs(distance[i]) -
-                         (2 * pow2(velocity_max[i]) -
-                          (pow2(velocity_first[i]) + pow2(velocity_final[i]))) /
-                             abs(accel_max[i])) /
-                            abs(velocity_max[i]) +
-                        accel_time[i];
-        decel_time[i] =
-            2 * abs((velocity_max[i] - velocity_final[i]) / accel_max[i]) +
-            const_time[i];
-      } else {
-        accel_max[i] = const_time[i] = decel_time[i] = 0;
-      }
+      /* if (distance[i] > ERROR_DISTANCE_MAX) { */
+      accel_time[i] =
+          2 * abs((velocity_max[i] - velocity_first[i]) / accel_max[i]);
+      const_time[i] = (abs(distance[i]) -
+                       (2 * pow2(velocity_max[i]) -
+                        (pow2(velocity_first[i]) + pow2(velocity_final[i]))) /
+                           abs(accel_max[i])) /
+                          abs(velocity_max[i]) +
+                      accel_time[i];
+      decel_time[i] =
+          2 * abs((velocity_max[i] - velocity_final[i]) / accel_max[i]) +
+          const_time[i];
+      /* } else { */
+      /*   accel_max[i] = const_time[i] = decel_time[i] = 0; */
+      /* } */
 
       start_point = current_point;
       double delta_t = 1.0 / rate;
@@ -203,53 +202,52 @@ public:
       }
       velocity_map[i].resize(0);
 
-      if (distance[i] > ERROR_DISTANCE_MAX) {
-        for (int j = 0; j * delta_t <= decel_time[i]; ++j) {
-          double time = j * delta_t;
-          AccelMap data;
-          if (time < accel_time[i]) {
-            data.position =
-                accel_max[i] * pow2(accel_time[i]) / (8 * pow2(M_PI)) *
-                    (cos(2 * M_PI / accel_time[i] * time) - 1) +
-                accel_max[i] * pow2(time) / 4 + velocity_first[i] * time;
-            data.velocity = -accel_max[i] * accel_time[i] / (4 * M_PI) *
-                                sin(2 * M_PI / accel_time[i] * time) +
-                            accel_max[i] * time / 2 + velocity_first[i];
-          } else if (time < const_time[i]) {
-            time -= accel_time[i];
-            data.position =
-                velocity_max[i] * time +
-                pow2(velocity_max[i] - velocity_first[i]) / accel_max[i] +
-                2 * velocity_first[i] * (velocity_max[i] - velocity_first[i]) /
-                    accel_max[i];
-            data.velocity = velocity_max[i];
-          } else {
-            time -= const_time[i];
-            data.position =
-                -accel_max[i] * pow2(decel_time[i] - const_time[i]) /
-                    (8 * pow2(M_PI)) *
-                    (cos(2 * M_PI / (decel_time[i] - const_time[i]) * time) -
-                     1) -
-                accel_max[i] * pow2(time) / 4 + velocity_max[i] * time +
-                velocity_max[i] * (const_time[i] - accel_time[i]) +
-                pow2(velocity_max[i] - velocity_first[i]) / accel_max[i] +
-                2 * velocity_first[i] * (velocity_max[i] - velocity_first[i]) /
-                    accel_max[i];
-            data.velocity =
-                accel_max[i] * (decel_time[i] - const_time[i]) / (4 * M_PI) *
-                    sin(2 * M_PI / (decel_time[i] - const_time[i]) * time) -
-                accel_max[i] * time / 2 + velocity_max[i];
-          }
-          data.position += dummy_start;
-          velocity_map[i].push_back(data);
-        }
-      } else {
+      /* if (distance[i] > ERROR_DISTANCE_MAX) { */
+      for (int j = 0; j * delta_t <= decel_time[i]; ++j) {
+        double time = j * delta_t;
         AccelMap data;
-        data.position = 0;
-        data.velocity = 0;
+        if (time < accel_time[i]) {
+          data.position =
+              accel_max[i] * pow2(accel_time[i]) / (8 * pow2(M_PI)) *
+                  (cos(2 * M_PI / accel_time[i] * time) - 1) +
+              accel_max[i] * pow2(time) / 4 + velocity_first[i] * time;
+          data.velocity = -accel_max[i] * accel_time[i] / (4 * M_PI) *
+                              sin(2 * M_PI / accel_time[i] * time) +
+                          accel_max[i] * time / 2 + velocity_first[i];
+        } else if (time < const_time[i]) {
+          time -= accel_time[i];
+          data.position =
+              velocity_max[i] * time +
+              pow2(velocity_max[i] - velocity_first[i]) / accel_max[i] +
+              2 * velocity_first[i] * (velocity_max[i] - velocity_first[i]) /
+                  accel_max[i];
+          data.velocity = velocity_max[i];
+        } else {
+          time -= const_time[i];
+          data.position =
+              -accel_max[i] * pow2(decel_time[i] - const_time[i]) /
+                  (8 * pow2(M_PI)) *
+                  (cos(2 * M_PI / (decel_time[i] - const_time[i]) * time) - 1) -
+              accel_max[i] * pow2(time) / 4 + velocity_max[i] * time +
+              velocity_max[i] * (const_time[i] - accel_time[i]) +
+              pow2(velocity_max[i] - velocity_first[i]) / accel_max[i] +
+              2 * velocity_first[i] * (velocity_max[i] - velocity_first[i]) /
+                  accel_max[i];
+          data.velocity =
+              accel_max[i] * (decel_time[i] - const_time[i]) / (4 * M_PI) *
+                  sin(2 * M_PI / (decel_time[i] - const_time[i]) * time) -
+              accel_max[i] * time / 2 + velocity_max[i];
+        }
         data.position += dummy_start;
         velocity_map[i].push_back(data);
       }
+      /* } else { */
+      /*   AccelMap data; */
+      /*   data.position = 0; */
+      /*   data.velocity = 0; */
+      /*   data.position += dummy_start; */
+      /*   velocity_map[i].push_back(data); */
+      /* } */
       map_id[i] = 0;
       map_id_max[i] = velocity_map[i].size();
 
