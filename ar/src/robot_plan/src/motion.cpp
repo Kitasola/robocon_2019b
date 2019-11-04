@@ -217,16 +217,17 @@ int main(int argc, char **argv) {
   // 2段目昇降機構
   constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 75, TWO_STAGE_TOWEL = 77,
                 TWO_STAGE_SHEET = 77, TWO_STAGE_READY = 0,
-                TWO_STAGE_ERROR_MAX = 1; // cm
-  constexpr double TWO_STAGE_TIME = 0.06;
-  // ハンガー
+                TWO_STAGE_ERROR_MAX = 1;  // cm
+  constexpr double TWO_STAGE_TIME = 0.08; // 0.06;
+                                          // ハンガー
   constexpr int HUNGER_POSITION_Y = 4500 - 500 - 100;
   constexpr int HUNGER_ID = 1, HUNGER_SPEED = 200;
   constexpr double HUNGER_WAIT_TIME = HUNGER_SPEED * 0.02;
   // タオル
   constexpr int TOWEL_POSITION_Y = 6000 + 500 + 100;
-  constexpr int TOWEL_ID = 1, NUM_TOWEL = 3;
-  constexpr int TOWEL_ANGLE[NUM_TOWEL] = {20, 50, -20};
+  constexpr int TOWEL_ID = 2, NUM_TOWEL = 3;
+  constexpr int TOWEL_ANGLE[NUM_TOWEL] = {50, 50, -25};
+  send(TOWEL_ID, 10, 0);
   constexpr double TOWEL_WAIT_TIME = 3;
   // 3段目昇降機構
   constexpr int THREE_STAGE_ID = 1, THREE_STAGE_SHEET = 74;
@@ -277,7 +278,8 @@ int main(int argc, char **argv) {
   goal_map[1].add(5400, 7500, start_yaw);
   goal_map[1].add(3650, 7500, start_yaw, 1, TWO_STAGE_TOWEL);
   goal_map[1].add(3650, TOWEL_POSITION_Y, start_yaw, 10,
-                  TWO_STAGE_HUNGER); // Move: 小ポール横 -> Start: 昇降
+                  TWO_STAGE_TOWEL *
+                      TWO_STAGE_TIME); // Move: 小ポール横 -> Start: 昇降
   goal_map[1].add(2850, 7500, start_yaw, 3, TOWEL_ANGLE[0]);
   goal_map[1].add(2850, 7500, start_yaw);
   goal_map[1].add(2050, TOWEL_POSITION_Y, start_yaw, 3, TOWEL_ANGLE[1]);
@@ -287,7 +289,7 @@ int main(int argc, char **argv) {
                   TWO_STAGE_READY); // Move: 次ハンガー手前 -> Wait: ハンガー
   goal_map[1].add(
       5400, 7500, start_yaw, 10,
-      TWO_STAGE_HUNGER *
+      TWO_STAGE_TOWEL *
           TWO_STAGE_TIME); // Move: スタートゾーン -> Wait: スタートスイッチ
   goal_map[1].add(start_x + 200, start_y - 200, start_yaw);
   goal_map[1].add(start_x + 200, start_y - 200, start_yaw,
@@ -299,10 +301,11 @@ int main(int argc, char **argv) {
   goal_map[2].add(5400, 7500, start_yaw, 1,
                   TWO_STAGE_TOWEL); // Move: 小ポール横 -> Start: 昇降
   goal_map[2].add(
-      5400, 7500, start_yaw, 10,
+      5400, TOWEL_POSITION_Y, start_yaw, 10,
       TWO_STAGE_TOWEL *
           TWO_STAGE_TIME); // Move: スタートゾーン -> Wait: スタートスイッチ
-  goal_map[2].add(5400, 7500, start_yaw, 1,
+  goal_map[2].add(5400, TOWEL_POSITION_Y, start_yaw, 3, TOWEL_ANGLE[0]);
+  goal_map[2].add(5400, TOWEL_POSITION_Y, start_yaw, 1,
                   TWO_STAGE_READY); // Move: 小ポール横 -> Start: 昇降
   goal_map[2].add(
       start_x + 200, start_y - 200, start_yaw, 10,

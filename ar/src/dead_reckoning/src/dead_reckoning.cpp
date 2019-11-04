@@ -87,8 +87,9 @@ int main(int argc, char **argv) {
       should_reset_point = false;
     } else {
       robot_pose = wheel_robot_pose;
-      robot_pose.theta =
-          (wheel_theta + 2 * M_PI) * 0.5 + (robot_pose.theta + 2 * M_PI) * 0.5;
+      /* robot_pose.theta = */
+      /*     (wheel_theta + 2 * M_PI) * 0.5 + (robot_pose.theta + 2 * M_PI) *
+       * 0.5; */
       if (robot_pose.theta > M_PI) {
         robot_pose.theta -= 2 * M_PI;
       } else if (robot_pose.theta <= -M_PI) {
