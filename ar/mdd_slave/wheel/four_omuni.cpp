@@ -22,16 +22,16 @@ DigitalOut *g_drive_led[NUM_WHEEL];
 
 ros::NodeHandle nh;
 geometry_msgs::Twist goal_twist;
-void getTwist(const geometry_msgs::Twist &msgs) { goal_twist = msgs; }
 geometry_msgs::Pose2D robot_pose;
 ros::Publisher robot_pose_pub("/wheel/robot_pose", &robot_pose);
 geometry_msgs::Twist debug_velocity;
 ros::Publisher debug_velocity_pub("/wheel/debug_velocity", &debug_velocity);
+void getTwist(const geometry_msgs::Twist &msgs) { goal_twist = msgs; }
 ros::Subscriber<geometry_msgs::Twist> velocity_sub("/wheel/velocity",
                                                    &getTwist);
-float robot_yaw = 0;
-void getYaw(const std_msgs::Float32 &msg) { robot_yaw = msg.data / 180 * M_PI; }
-ros::Subscriber<std_msgs::Float32> gyro_sub("/wheel/yaw", &getYaw);
+void resetRoboPose(const geometry_msgs::Pose2D &msgs) { robot_pose = msgs; }
+ros::Subscriber<geometry_msgs::Pose2D> robot_pose_sub("/wheel/reset_robot_pose",
+                                                      &resetRoboPose);
 
 int main() {
   nh.getHardware()->setBaud(115200);
@@ -39,7 +39,7 @@ int main() {
   nh.advertise(robot_pose_pub);
   nh.advertise(debug_velocity_pub);
   nh.subscribe(velocity_sub);
-  nh.subscribe(gyro_sub);
+  nh.subscribe(robot_pose_sub);
 
   /* constexpr double MAIN_FREQUENCY = 1000; */
   constexpr double TOPIC_FREQUENCY = 50;
@@ -85,15 +85,15 @@ int main() {
       RotaryInc(PC_10, PC_11, DRIVE_WHEEL_DIAMETER * M_PI, DRIVE_ROTARY_RANGE,
                 DRIVE_ROTARY_MULTI)};
   PidPosition drive_speed[NUM_WHEEL] = {
-      PidPosition(0.00030, 0.007, 0.0000007, 0.5),
-      PidPosition(0.00030, 0.005, 0.0000005, 0.5),
-      PidPosition(0.00028, 0.005, 0.0000007, 0.5),
-      PidPosition(0.00029, 0.005, 0.0000007, 0.5)};
+      PidPosition(0.00030, 0.007, 0.0000007, 1.0),
+      PidPosition(0.00030, 0.005, 0.0000005, 1.0),
+      PidPosition(0.00028, 0.005, 0.0000007, 1.0),
+      PidPosition(0.00029, 0.005, 0.0000007, 1.0)};
   double drive_velocity[NUM_WHEEL] = {}, drive_filter = 0;
 
   /* 計測輪 */
   constexpr int MEASURE_ROTARY_RANGE = 256, MEASURE_ROTARY_MULTI = 2;
-  constexpr double MEASURE_WHEEL_DIAMETER = 50.8 * 0.99;
+  constexpr double MEASURE_WHEEL_DIAMETER = 50.8 * 0.99, MEASURE_RADIUS = 312;
   RotaryInc measure_rotary[NUM_WHEEL] = {
       RotaryInc(PC_0, PC_1, MEASURE_WHEEL_DIAMETER * M_PI, MEASURE_ROTARY_RANGE,
                 MEASURE_ROTARY_MULTI),
@@ -119,6 +119,7 @@ int main() {
 
   robot_pose.x = 0;
   robot_pose.y = 0;
+  robot_pose.theta = M_PI;
   while (true) {
     nh.spinOnce();
     /* if (topic_loop.read() > 1.0 / MAIN_FREQUENCY) { */
@@ -132,13 +133,37 @@ int main() {
       debug_velocity_pub.publish(&debug_velocity);
     }
 
+    // Odometry
+    double measure_diff[NUM_WHEEL] = {};
+    for (int i = 0; i < NUM_WHEEL; ++i) {
+      measure_diff[i] = measure_rotary[i].diff();
+    }
+    double robot_x = measure_diff[0] / 2 - measure_diff[2] / 2;
+    double robot_y = -measure_diff[1] / 2 + measure_diff[3] / 2;
+    double robot_theta = 0;
+    for (int i = 0; i < NUM_WHEEL; ++i) {
+      robot_theta += -measure_diff[i];
+    }
+    robot_theta /= MEASURE_RADIUS * NUM_WHEEL;
+    robot_pose.theta += robot_theta;
+    if (robot_pose.theta > M_PI) {
+      robot_pose.theta -= 2 * M_PI;
+    } else if (robot_pose.theta <= -M_PI) {
+      robot_pose.theta += 2 * M_PI;
+    }
+    robot_pose.x +=
+        robot_x * cos(robot_pose.theta) - robot_y * sin(robot_pose.theta);
+    robot_pose.y +=
+        robot_x * sin(robot_pose.theta) + robot_y * cos(robot_pose.theta);
+
     // Move
     // Exchange to Robot, from Field
-    double robot_velocity[NUM_AXIS] = {goal_twist.linear.x * cos(robot_yaw) -
-                                           goal_twist.linear.y * sin(robot_yaw),
-                                       goal_twist.linear.x * sin(robot_yaw) +
-                                           goal_twist.linear.y * cos(robot_yaw),
-                                       goal_twist.angular.z};
+    double robot_velocity[NUM_AXIS] = {
+        goal_twist.linear.x * cos(robot_pose.theta) -
+            goal_twist.linear.y * sin(robot_pose.theta),
+        goal_twist.linear.x * sin(robot_pose.theta) +
+            goal_twist.linear.y * cos(robot_pose.theta),
+        goal_twist.angular.z};
     double drive_goal[NUM_WHEEL] = {};
     for (int i = 0; i < NUM_WHEEL; ++i) {
       double drive_control;
@@ -157,16 +182,6 @@ int main() {
       }
       spinMotor(i, drive_control);
     }
-
-    // Odometry
-    double robot_x =
-        measure_rotary[0].diff() / 2 - measure_rotary[2].diff() / 2;
-    double robot_y =
-        -measure_rotary[1].diff() / 2 + measure_rotary[3].diff() / 2;
-    double field_yaw = robot_yaw;
-    robot_pose.x += robot_x * cos(field_yaw) - robot_y * sin(field_yaw);
-    robot_pose.y += robot_x * sin(field_yaw) + robot_y * cos(field_yaw);
-    robot_pose.theta = field_yaw;
 
     // Debug
     debug_velocity.angular.y = goal_twist.angular.y;

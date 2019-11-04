@@ -31,6 +31,8 @@ int main(int argc, char **argv) {
   /*     n.subscribe("lidar/robot_pose", 1, getPoseLidar); */
   ros::Publisher robot_pose_pub =
       n.advertise<geometry_msgs::Pose2D>("robot_pose", 1);
+  ros::Publisher reset_robot_pose_pub =
+      n.advertise<geometry_msgs::Pose2D>("wheel/reset_robot_pose", 1);
   geometry_msgs::Pose2D robot_pose;
 
   constexpr int FREQ = 100;
@@ -68,7 +70,6 @@ int main(int argc, char **argv) {
     robot_relative_pose = wheel_robot_pose;
     if (should_reset_point) {
       offset_robot_pose = robot_relative_pose;
-      should_reset_point = false;
     }
 
     robot_relative_pose.x -= offset_robot_pose.x;
@@ -86,6 +87,11 @@ int main(int argc, char **argv) {
       robot_pose.theta += 2 * M_PI;
     }
     robot_pose_pub.publish(robot_pose);
+
+    if (should_reset_point) {
+      reset_robot_pose_pub.publish(robot_pose);
+      should_reset_point = false;
+    }
 
     loop_rate.sleep();
   }
