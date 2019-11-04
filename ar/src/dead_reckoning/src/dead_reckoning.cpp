@@ -14,11 +14,6 @@ void checkGlobalMessage(const std_msgs::String msg) {
   }
 }
 
-double wheel_theta;
-void getWheelYaw(const std_msgs::Float32 msg) {
-  wheel_theta = msg.data * M_PI / 180;
-}
-
 geometry_msgs::Pose2D wheel_robot_pose;
 void getPoseWheel(const geometry_msgs::Pose2D msgs) {
   wheel_robot_pose.x = msgs.x * 1.0;
@@ -33,7 +28,6 @@ int main(int argc, char **argv) {
       n.subscribe("wheel/robot_pose", 1, getPoseWheel);
   ros::Subscriber global_sub =
       n.subscribe("global_message", 1, checkGlobalMessage);
-  ros::Subscriber wheel_yaw_sub = n.subscribe("wheel/yaw", 1, getWheelYaw);
   /* ros::Subscriber lidar_robot_pose_sub = */
   /*     n.subscribe("lidar/robot_pose", 1, getPoseLidar); */
   ros::Publisher robot_pose_pub =
@@ -72,8 +66,8 @@ int main(int argc, char **argv) {
 
   geometry_msgs::Pose2D robot_relative_pose;
   while (ros::ok()) {
-    ros::spinOnce();
 
+    ros::Time now = ros::Time::now();
     if (should_reset_point) {
       robot_pose.x = start_x;
       robot_pose.y = start_y;
@@ -83,13 +77,9 @@ int main(int argc, char **argv) {
       } else if (robot_pose.theta <= -M_PI) {
         robot_pose.theta += 2 * M_PI;
       }
-      reset_robot_pose_pub.publish(robot_pose);
       should_reset_point = false;
     } else {
       robot_pose = wheel_robot_pose;
-      /* robot_pose.theta = */
-      /*     (wheel_theta + 2 * M_PI) * 0.5 + (robot_pose.theta + 2 * M_PI) *
-       * 0.5; */
       if (robot_pose.theta > M_PI) {
         robot_pose.theta -= 2 * M_PI;
       } else if (robot_pose.theta <= -M_PI) {
