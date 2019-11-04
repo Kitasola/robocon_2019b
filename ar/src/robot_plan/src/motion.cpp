@@ -176,6 +176,16 @@ int send(int id, int cmd, int data) {
   return srv.response.data;
 }
 
+void lightTape(int type) {
+  if (Pi::gpio().read(EMERGENCY) == 0) {
+    send(4, 100, 0);
+    send(4, 101, 0);
+  } else {
+    send(4, 100, type);
+    send(4, 101, type);
+  }
+}
+
 bool can_starts_game = false;
 void checkGlobalMessage(const std_msgs::String msg) { can_starts_game = true; }
 
@@ -192,16 +202,20 @@ int main(int argc, char **argv) {
 
   // コート情報の取得
   std::string coat_color;
+  int nomal_led;
   n.getParam("/coat", coat_color);
   int coat;
   if (coat_color == "blue") {
     coat = 1;
+    nomal_led = 4;
     ROS_INFO_STREAM("Coat is Blue");
   } else if (coat_color == "red") {
     coat = -1;
+    nomal_led = 3;
     ROS_INFO_STREAM("Coat is Red");
   } else {
     coat = 1;
+    nomal_led = 4;
     ROS_INFO_STREAM("Coat is ???");
   }
 
@@ -304,7 +318,7 @@ int main(int argc, char **argv) {
       5400, TOWEL_POSITION_Y, start_yaw, 10,
       TWO_STAGE_TOWEL *
           TWO_STAGE_TIME); // Move: スタートゾーン -> Wait: スタートスイッチ
-  goal_map[2].add(5400, TOWEL_POSITION_Y, start_yaw);
+  goal_map[2].add(5400, TOWEL_POSITION_Y, start_yaw, 10, TOWEL_WAIT_TIME);
   goal_map[2].add(5400, TOWEL_POSITION_Y, start_yaw, 3, TOWEL_ANGLE[0]);
   goal_map[2].add(5400, TOWEL_POSITION_Y, start_yaw, 1,
                   TWO_STAGE_READY); // Move: 小ポール横 -> Start: 昇降
@@ -342,13 +356,6 @@ int main(int argc, char **argv) {
 
   while (ros::ok()) {
     ros::spinOnce();
-    if (Pi::gpio().read(EMERGENCY) == 0) {
-      send(4, 100, 0);
-      send(4, 101, 0);
-    } else {
-      send(4, 100, 2);
-      send(4, 101, 2);
-    }
     /* if (Pi::gpio().read(RESET)) { */
     /*   global_message.data = "Robo_Pose Reset Both"; */
     /*   global_message_pub.publish(global_message); */
@@ -386,6 +393,7 @@ int main(int argc, char **argv) {
       }
       case 2: {
         planner.should_stop_emergency = true;
+        lightTape(1);
         if (changed_phase) {
           // 伸ばす(取り付け)
           send(HUNGER_ID, 20, HUNGER_SPEED);
@@ -406,6 +414,7 @@ int main(int argc, char **argv) {
       }
       case 3: {
         planner.should_stop_emergency = true;
+        lightTape(2);
         if (changed_phase) {
           // 伸ばす(取り付け)
           send(TOWEL_ID, 10, goal_map[map_type].now.action_value);
@@ -462,6 +471,8 @@ int main(int argc, char **argv) {
         planner.sendNextGoal(goal_map[map_type].getPtp());
         goal_map[map_type].next();
       }
+    } else {
+      lightTape(nomal_led);
     }
     loop_rate.sleep();
   }
