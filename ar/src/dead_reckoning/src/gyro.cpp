@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
     first_yaw *= 1;
   }
 
-  ros::GY521 gyro(0x68, 2, 1000, 1.02);
+  ros::GY521 gyro(0x68, 1, 1000, 1.02);
   gyro.start(first_yaw);
   message.data = "Calibration Finish";
   global_pub.publish(message);

@@ -1,5 +1,6 @@
 #include <geometry_msgs/Pose2D.h>
 #include <ros/ros.h>
+#include <std_msgs/Float32.h>
 #include <std_msgs/String.h>
 #include <string>
 
@@ -11,6 +12,11 @@ void checkGlobalMessage(const std_msgs::String msg) {
   } else if (mode == "Robot Pose Reset") {
     should_reset_point = true;
   }
+}
+
+double wheel_theta;
+void getWheelYaw(const std_msgs::Float32 msg) {
+  wheel_theta = msg.data * M_PI / 180;
 }
 
 geometry_msgs::Pose2D wheel_robot_pose;
@@ -27,6 +33,7 @@ int main(int argc, char **argv) {
       n.subscribe("wheel/robot_pose", 1, getPoseWheel);
   ros::Subscriber global_sub =
       n.subscribe("global_message", 1, checkGlobalMessage);
+  ros::Subscriber wheel_yaw_sub = n.subscribe("wheel/yaw", 1, getWheelYaw);
   /* ros::Subscriber lidar_robot_pose_sub = */
   /*     n.subscribe("lidar/robot_pose", 1, getPoseLidar); */
   ros::Publisher robot_pose_pub =
@@ -80,6 +87,8 @@ int main(int argc, char **argv) {
       should_reset_point = false;
     } else {
       robot_pose = wheel_robot_pose;
+      robot_pose.theta =
+          (wheel_theta + 2 * M_PI) * 0.5 + (robot_pose.theta + 2 * M_PI) * 0.5;
       if (robot_pose.theta > M_PI) {
         robot_pose.theta -= 2 * M_PI;
       } else if (robot_pose.theta <= -M_PI) {
