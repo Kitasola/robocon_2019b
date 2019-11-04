@@ -304,6 +304,7 @@ int main(int argc, char **argv) {
       5400, TOWEL_POSITION_Y, start_yaw, 10,
       TWO_STAGE_TOWEL *
           TWO_STAGE_TIME); // Move: スタートゾーン -> Wait: スタートスイッチ
+  goal_map[2].add(5400, TOWEL_POSITION_Y, start_yaw);
   goal_map[2].add(5400, TOWEL_POSITION_Y, start_yaw, 3, TOWEL_ANGLE[0]);
   goal_map[2].add(5400, TOWEL_POSITION_Y, start_yaw, 1,
                   TWO_STAGE_READY); // Move: 小ポール横 -> Start: 昇降
@@ -366,7 +367,8 @@ int main(int argc, char **argv) {
     double now = ros::Time::now().toSec();
 
     bool can_send_next_goal = false;
-    if (planner.checkReachGoal(ERROR_DISTANCE_MAX, ERROR_ANGLE_MAX)) {
+    if (planner.checkReachGoal(ERROR_DISTANCE_MAX, ERROR_ANGLE_MAX) ||
+        planner.should_stop_emergency) {
       switch (goal_map[map_type].now.action_type) {
       case 0: {
         can_send_next_goal = true;
