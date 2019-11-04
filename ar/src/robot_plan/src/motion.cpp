@@ -244,7 +244,7 @@ int main(int argc, char **argv) {
   constexpr int NUM_MAP = 3;
   // map_type
   // 0: ハンガー, 1: シーツ
-  int map_type = 1;
+  int map_type = 2;
   GoalManager goal_map[NUM_MAP] = {GoalManager(coat), GoalManager(coat),
                                    GoalManager(coat)};
   //位置: 後判定
@@ -432,7 +432,7 @@ int main(int argc, char **argv) {
           } else if (Pi::gpio().read(HUNGER_3) == 1) {
             map_type = 2;
           }
-          map_type = 1;
+          map_type = 2;
           global_message.data = "Robot Pose Reset";
           global_message_pub.publish(global_message);
           goal_map[map_type].restart();

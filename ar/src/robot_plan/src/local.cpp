@@ -285,7 +285,7 @@ private:
   double velocity_final_prev[2] = {};
   constexpr static double ERROR_DISTANCE_MAX = 50, ERROR_ANGLE_MAX = 1.0;
   constexpr static double VELOCITY_MIN = 400, VELOCITY_MAX = 3000,
-                          ACCEL_MAX = 4000;
+                          ACCEL_MAX = 1000;
   constexpr static double ROOT_FOLLOW = 1.7;
   std::vector<AccelMap> velocity_map[2];
   constexpr static int MAP_SCOPE = 1, MAP_SEARCH_RANGE = 5 * MAP_SCOPE;
