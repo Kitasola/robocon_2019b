@@ -67,30 +67,25 @@ int main(int argc, char **argv) {
   while (ros::ok()) {
     ros::spinOnce();
 
-    robot_relative_pose = wheel_robot_pose;
     if (should_reset_point) {
-      offset_robot_pose = robot_relative_pose;
-    }
-
-    robot_relative_pose.x -= offset_robot_pose.x;
-    robot_relative_pose.y -= offset_robot_pose.y;
-    robot_relative_pose.theta -= offset_robot_pose.theta;
-
-    // 相対位置を絶対位置に変換する
-    robot_pose = robot_relative_pose;
-    robot_pose.x += start_x;
-    robot_pose.y += start_y;
-    robot_pose.theta += start_yaw;
-    if (robot_pose.theta > M_PI) {
-      robot_pose.theta -= 2 * M_PI;
-    } else if (robot_pose.theta <= -M_PI) {
-      robot_pose.theta += 2 * M_PI;
-    }
-    robot_pose_pub.publish(robot_pose);
-
-    if (should_reset_point) {
+      robot_pose.x = start_x;
+      robot_pose.y = start_y;
+      robot_pose.theta = start_yaw;
+      if (robot_pose.theta > M_PI) {
+        robot_pose.theta -= 2 * M_PI;
+      } else if (robot_pose.theta <= -M_PI) {
+        robot_pose.theta += 2 * M_PI;
+      }
       reset_robot_pose_pub.publish(robot_pose);
       should_reset_point = false;
+    } else {
+      robot_pose = wheel_robot_pose;
+      if (robot_pose.theta > M_PI) {
+        robot_pose.theta -= 2 * M_PI;
+      } else if (robot_pose.theta <= -M_PI) {
+        robot_pose.theta += 2 * M_PI;
+      }
+      robot_pose_pub.publish(robot_pose);
     }
 
     loop_rate.sleep();
