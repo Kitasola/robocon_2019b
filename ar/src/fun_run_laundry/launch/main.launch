@@ -13,7 +13,7 @@
   </node>
 
   <param name="/coat" value="red"/>
-  <param name="/ar/start_x" value="5200"/>
+  <param name="/ar/start_x" value="5400"/>
   <param name="/ar/start_y" value="2040"/>
   <param name="/ar/start_yaw" value="180"/>
   <node machine="ar" name="motor_serial" pkg="motor_serial" type="motor_serial"/>

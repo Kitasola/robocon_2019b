@@ -294,6 +294,24 @@ int main(int argc, char **argv) {
                   11); // Move: スタートゾーン -> Wait: スタートスイッチ
   goal_map[1].restart();
 
+  goal_map[2].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
+  goal_map[2].add(5400, 7500, start_yaw);
+  goal_map[2].add(5400, 7500, start_yaw, 10,
+                  TWO_STAGE_TOWEL); // Move: 小ポール横 -> Start: 昇降
+  goal_map[2].add(
+      5400, 7500, start_yaw, 10,
+      TWO_STAGE_TOWEL *
+          TWO_STAGE_TIME); // Move: スタートゾーン -> Wait: スタートスイッチ
+  goal_map[2].add(5400, 7500, start_yaw, 10,
+                  TWO_STAGE_READY); // Move: 小ポール横 -> Start: 昇降
+  goal_map[2].add(
+      5400, 7500, start_yaw, 10,
+      TWO_STAGE_TOWEL *
+          TWO_STAGE_TIME); // Move: スタートゾーン -> Wait: スタートスイッチ
+  goal_map[2].add(start_x + 200, start_y - 200, start_yaw,
+                  11); // Move: スタートゾーン -> Wait: スタートスイッチ
+  goal_map[2].restart();
+
   bool changed_phase = true;
   double start;
 
