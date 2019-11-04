@@ -259,7 +259,7 @@ int main(int argc, char **argv) {
   constexpr int NUM_MAP = 3;
   // map_type
   // 0: ハンガー, 1: シーツ
-  int map_type = 2;
+  int map_type = 1;
   GoalManager goal_map[NUM_MAP] = {GoalManager(coat), GoalManager(coat),
                                    GoalManager(coat)};
   //位置: 後判定
@@ -290,16 +290,17 @@ int main(int argc, char **argv) {
 
   goal_map[1].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
   goal_map[1].add(5400, 7500, start_yaw);
-  goal_map[1].add(3650, 7500, start_yaw, 1, TWO_STAGE_TOWEL);
-  goal_map[1].add(3650, TOWEL_POSITION_Y, start_yaw, 10,
+  goal_map[1].add(3600, 7500, start_yaw, 1, TWO_STAGE_TOWEL);
+  goal_map[1].add(3600, TOWEL_POSITION_Y, start_yaw, 10,
                   TWO_STAGE_TOWEL *
                       TWO_STAGE_TIME); // Move: 小ポール横 -> Start: 昇降
   goal_map[1].add(2850, 7500, start_yaw, 3, TOWEL_ANGLE[0]);
   goal_map[1].add(2850, 7500, start_yaw);
   goal_map[1].add(2050, TOWEL_POSITION_Y, start_yaw, 3, TOWEL_ANGLE[1]);
-  goal_map[1].add(2050, 7500, start_yaw);
-  goal_map[1].add(2050, 7500, start_yaw, 3, TOWEL_ANGLE[2]);
-  goal_map[1].add(2050, 7500, start_yaw, 1,
+  goal_map[1].add(2100, 7500, start_yaw);
+  goal_map[1].add(2100, TOWEL_POSITION_Y, start_yaw, 3, TOWEL_ANGLE[2]);
+  goal_map[1].add(2100, 7500, start_yaw);
+  goal_map[1].add(2100, 7500, start_yaw, 1,
                   TWO_STAGE_READY); // Move: 次ハンガー手前 -> Wait: ハンガー
   goal_map[1].add(
       5400, 7500, start_yaw, 10,
@@ -446,7 +447,7 @@ int main(int argc, char **argv) {
           } else if (Pi::gpio().read(HUNGER_3) == 1) {
             map_type = 2;
           }
-          map_type = 2;
+          map_type = 1;
           global_message.data = "Robot Pose Reset";
           global_message_pub.publish(global_message);
           goal_map[map_type].restart();
