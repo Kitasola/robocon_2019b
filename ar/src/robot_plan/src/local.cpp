@@ -4,6 +4,7 @@
 #include <pid.hpp>
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Int32.h>
 #include <std_msgs/String.h>
 #include <vector>
 
@@ -25,6 +26,8 @@ public:
                                   &SVelocity::getGoalPoint, this);
     goal_velocity_sub = n->subscribe(username + "/goal_velocity", 1,
                                      &SVelocity::getGoalVelocity, this);
+    accel_max_sub =
+        n->subscribe(username + "/accel_max", 1, &SVelocity::changeAccel, this);
     emergency_stop_sub = n->subscribe(username + "/emergency_stop", 1,
                                       &SVelocity::checkEmergency, this);
     robot_pose_sub =
@@ -68,6 +71,7 @@ public:
   /* double x = msgs.orientation.x, w = msgs.orientation.w; */
   /* current_point.theta = atan2(2 * x * w, x * x - w * w); */
   /* } */
+  void changeAccel(const std_msgs::Int32 &msg) { ACCEL_MAX = msg.data; }
   void checkEmergency(const std_msgs::Bool &msg) {
     should_stop_emergency = msg.data;
   }
@@ -279,13 +283,13 @@ private:
   int rate = 0;
   geometry_msgs::Pose2D current_point = {}, goal_point = {}, start_point = {};
   ros::Subscriber goal_point_sub, robot_pose_sub, goal_velocity_sub,
-      emergency_stop_sub;
+      accel_max_sub, emergency_stop_sub;
   ros::Publisher velocity_pub;
   geometry_msgs::Twist send_twist, goal_velocity;
   double velocity_final_prev[2] = {};
   constexpr static double ERROR_DISTANCE_MAX = 50, ERROR_ANGLE_MAX = 1.0;
-  constexpr static double VELOCITY_MIN = 400, VELOCITY_MAX = 3000,
-                          ACCEL_MAX = 500;
+  constexpr static double VELOCITY_MIN = 400, VELOCITY_MAX = 3000;
+  double ACCEL_MAX = 500;
   constexpr static double ROOT_FOLLOW = 1.7;
   std::vector<AccelMap> velocity_map[2];
   constexpr static int MAP_SCOPE = 1, MAP_SEARCH_RANGE = 5 * MAP_SCOPE;
