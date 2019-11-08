@@ -84,6 +84,7 @@ int main() {
                                                     0};
   constexpr int MAX_ROBOT_SPEED = 200, MAX_ROBOT_MOMENT = 100,
                 MAX_WHEEL_SPEED = 250;
+  constexpr double MAX_YAW_CONTROL = 0.1;
   PidPosition robot_pose(10.0 * 0.7, 0, 0.0, MAX_ROBOT_MOMENT);
 
   // Leg
@@ -167,12 +168,16 @@ int main() {
     }
     static double goal_yaw = START_YAW;
     if (controller.press(UP)) {
-      goal_yaw = 0;
+      goal_yaw = START_YAW;
     } else if (controller.press(LEFT)) {
       goal_yaw = 90;
     } else if (controller.press(RIGHT)) {
       goal_yaw = -90;
     }
+    double yaw_control =
+        (controller.stick(RIGHT_T) - controller.stick(LEFT_T)) / 128.0 *
+        MAX_YAW_CONTROL;
+    gyro.yaw += yaw_control;
 
     // Arm Goal Input Manual
     static double arm_goal_x = ARM_START_X;
