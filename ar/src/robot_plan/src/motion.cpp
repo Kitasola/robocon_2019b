@@ -238,9 +238,9 @@ int main(int argc, char **argv) {
   constexpr int HUNGER_ID = 1, HUNGER_SPEED = 200;
   constexpr double HUNGER_WAIT_TIME = HUNGER_SPEED * 0.02;
   // タオル
-  constexpr int TOWEL_POSITION_Y = 6000 + 500 + 100;
+  constexpr int TOWEL_POSITION_Y = 7100;
   constexpr int TOWEL_ID = 2, NUM_TOWEL = 3;
-  constexpr int TOWEL_ANGLE[NUM_TOWEL] = {50, 50, -25};
+  constexpr int TOWEL_ANGLE[NUM_TOWEL] = {50, 50, 0};
   send(TOWEL_ID, 10, 0);
   constexpr double TOWEL_WAIT_TIME = 3;
   // 3段目昇降機構
@@ -290,6 +290,7 @@ int main(int argc, char **argv) {
 
   goal_map[1].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
   goal_map[1].add(5400, 7500, start_yaw);
+  goal_map[1].add(3600, 7500, start_yaw);
   goal_map[1].add(3600, 7500, start_yaw, 1, TWO_STAGE_TOWEL);
   goal_map[1].add(3600, TOWEL_POSITION_Y, start_yaw, 10,
                   TWO_STAGE_TOWEL *
