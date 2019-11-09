@@ -259,7 +259,7 @@ int main(int argc, char **argv) {
   constexpr int NUM_MAP = 3;
   // map_type
   // 0: ハンガー, 1: シーツ
-  int map_type = 1;
+  int map_type = 2;
   GoalManager goal_map[NUM_MAP] = {GoalManager(coat), GoalManager(coat),
                                    GoalManager(coat)};
   //位置: 後判定
@@ -311,24 +311,19 @@ int main(int argc, char **argv) {
                   11); // Move: スタートゾーン -> Wait: スタートスイッチ
   goal_map[1].restart();
 
+  int TOWEL_FES_POSITION_Y = start_y + 2730;
   goal_map[2].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
-  goal_map[2].add(5400, 7500, start_yaw);
-  goal_map[2].add(5400, 7500, start_yaw, 1,
-                  TWO_STAGE_TOWEL); // Move: 小ポール横 -> Start: 昇降
-  goal_map[2].add(
-      5400, TOWEL_POSITION_Y, start_yaw, 10,
-      TWO_STAGE_TOWEL *
-          TWO_STAGE_TIME); // Move: スタートゾーン -> Wait: スタートスイッチ
-  goal_map[2].add(5400, TOWEL_POSITION_Y, start_yaw, 10, TOWEL_WAIT_TIME);
-  goal_map[2].add(5400, TOWEL_POSITION_Y, start_yaw, 3, TOWEL_ANGLE[0]);
-  goal_map[2].add(5400, TOWEL_POSITION_Y, start_yaw, 1,
-                  TWO_STAGE_READY); // Move: 小ポール横 -> Start: 昇降
-  goal_map[2].add(
-      start_x + 200, start_y - 200, start_yaw, 10,
-      TWO_STAGE_TOWEL *
-          TWO_STAGE_TIME); // Move: スタートゾーン -> Wait: スタートスイッチ
-  goal_map[2].add(start_x + 200, start_y - 200, start_yaw,
-                  11); // Move: スタートゾーン -> Wait: スタートスイッチ
+  goal_map[2].add(start_x - 1000, TOWEL_FES_POSITION_Y + 500,
+                  start_yaw); // Move: スタートゾーン
+  goal_map[2].add(start_x - 1000, TOWEL_FES_POSITION_Y + 500, start_yaw, 1,
+                  TWO_STAGE_TOWEL);
+  goal_map[2].add(start_x - 1000, TOWEL_FES_POSITION_Y, start_yaw, 10,
+                  TWO_STAGE_TOWEL *
+                      TWO_STAGE_TIME); // Move: 小ポール横 -> Start: 昇降
+  goal_map[2].add(start_x - 1000, TOWEL_FES_POSITION_Y, start_yaw, 3,
+                  TOWEL_ANGLE[1]); // Move: スタートゾーン
+  goal_map[2].add(start_x, start_y, start_yaw, 12); // Move: スタートゾーン
+  goal_map[2].add(start_x, start_y, start_yaw); // Move: スタートゾーン
   goal_map[2].restart();
 
   bool changed_phase = true;
@@ -375,6 +370,24 @@ int main(int argc, char **argv) {
     double now = ros::Time::now().toSec();
 
     bool can_send_next_goal = false;
+    if (goal_map[map_type].now.action_type == 12) {
+      planner.should_stop_emergency = true;
+      if (Pi::gpio().read(START) == 1) {
+        if (Pi::gpio().read(HUNGER_1) == 1) {
+          map_type = 0;
+        } else if (Pi::gpio().read(HUNGER_2) == 1) {
+          map_type = 1;
+        } else if (Pi::gpio().read(HUNGER_3) == 1) {
+          map_type = 2;
+        }
+        map_type = 2;
+        global_message.data = "Robot Pose Reset";
+        global_message_pub.publish(global_message);
+        goal_map[map_type].restart();
+        can_send_next_goal = true;
+        changed_phase = true;
+      }
+    }
     if (planner.checkReachGoal(ERROR_DISTANCE_MAX, ERROR_ANGLE_MAX) ||
         planner.should_stop_emergency) {
       switch (goal_map[map_type].now.action_type) {
@@ -418,12 +431,13 @@ int main(int argc, char **argv) {
         lightTape(2);
         if (changed_phase) {
           // 伸ばす(取り付け)
-          send(TOWEL_ID, 10, goal_map[map_type].now.action_value);
           start = now;
           changed_phase = false;
         }
         // 取り付くまでタイマー待機
         if (now - start > TOWEL_WAIT_TIME) {
+          send(TOWEL_ID, 10, goal_map[map_type].now.action_value);
+        } else if (now - start > TOWEL_WAIT_TIME * 2) {
           send(TOWEL_ID, 10, 0);
           can_send_next_goal = true;
           changed_phase = true;
@@ -431,6 +445,7 @@ int main(int argc, char **argv) {
         break;
       }
       case 10: {
+        planner.should_stop_emergency = true;
         if (now - start > goal_map[map_type].now.action_value) {
           planner.should_stop_emergency = true;
           can_send_next_goal = true;
@@ -447,7 +462,7 @@ int main(int argc, char **argv) {
           } else if (Pi::gpio().read(HUNGER_3) == 1) {
             map_type = 2;
           }
-          map_type = 1;
+          map_type = 2;
           global_message.data = "Robot Pose Reset";
           global_message_pub.publish(global_message);
           goal_map[map_type].restart();
