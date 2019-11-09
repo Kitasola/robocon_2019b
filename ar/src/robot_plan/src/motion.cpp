@@ -322,7 +322,7 @@ int main(int argc, char **argv) {
                       TWO_STAGE_TIME); // Move: 小ポール横 -> Start: 昇降
   goal_map[2].add(start_x - 1000, TOWEL_FES_POSITION_Y, start_yaw, 3,
                   TOWEL_ANGLE[1]); // Move: スタートゾーン
-  goal_map[2].add(start_x, start_y, start_yaw, 12); // Move: スタートゾーン
+  goal_map[2].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
   goal_map[2].add(start_x, start_y, start_yaw); // Move: スタートゾーン
   goal_map[2].restart();
 
@@ -370,9 +370,9 @@ int main(int argc, char **argv) {
     double now = ros::Time::now().toSec();
 
     bool can_send_next_goal = false;
-    if (goal_map[map_type].now.action_type == 12) {
+    if (goal_map[map_type].now.action_type == 11) {
       planner.should_stop_emergency = true;
-      if (Pi::gpio().read(START) == 1) {
+      if (Pi::gpio().read(START) == 1 && Pi::gpio().read(EMERGENCY) == 1) {
         if (Pi::gpio().read(HUNGER_1) == 1) {
           map_type = 0;
         } else if (Pi::gpio().read(HUNGER_2) == 1) {
@@ -388,6 +388,7 @@ int main(int argc, char **argv) {
         changed_phase = true;
       }
     }
+
     if (planner.checkReachGoal(ERROR_DISTANCE_MAX, ERROR_ANGLE_MAX) ||
         planner.should_stop_emergency) {
       switch (goal_map[map_type].now.action_type) {
@@ -452,24 +453,6 @@ int main(int argc, char **argv) {
           changed_phase = true;
           break;
         }
-      }
-      case 11: {
-        if (Pi::gpio().read(START) == 1) {
-          if (Pi::gpio().read(HUNGER_1) == 1) {
-            map_type = 0;
-          } else if (Pi::gpio().read(HUNGER_2) == 1) {
-            map_type = 1;
-          } else if (Pi::gpio().read(HUNGER_3) == 1) {
-            map_type = 2;
-          }
-          map_type = 2;
-          global_message.data = "Robot Pose Reset";
-          global_message_pub.publish(global_message);
-          goal_map[map_type].restart();
-          can_send_next_goal = true;
-          changed_phase = true;
-        }
-        break;
       }
       }
       planner.sendEmergencyStatus();
