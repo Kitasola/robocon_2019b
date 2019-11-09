@@ -17,6 +17,8 @@ public:
   Ptp(ros::NodeHandle *n, const std::string usename) {
     goal_point_pub =
         n->advertise<geometry_msgs::Pose2D>(usename + "/goal_point", 1);
+    goal_velocity_pub =
+        n->advertise<geometry_msgs::Twist>(usename + "/goal_velocity", 1);
     emergency_stop_pub =
         n->advertise<std_msgs::Bool>(usename + "/emergency_stop", 1);
     robot_pose_sub = n->subscribe("robot_pose", 1, &Ptp::getRobotPose, this);
@@ -55,6 +57,13 @@ public:
     emergency_stop_pub.publish(msg);
   }
 
+  void sendNextVelocity(geometry_msgs::Twist velocity) {
+    goal_velocity = velocity;
+    ROS_INFO_STREAM("Next Goal Velocity is " << goal_velocity.linear.x << ", "
+                                             << goal_velocity.linear.y);
+    goal_velocity_pub.publish(goal_velocity);
+  }
+
   void sendNextGoal(geometry_msgs::Pose2D point) {
     goal_point = point;
     ROS_INFO_STREAM("Next Goal Point is " << goal_point.x << ", "
@@ -74,9 +83,10 @@ public:
   }
 
 private:
-  ros::Publisher goal_point_pub, emergency_stop_pub;
+  ros::Publisher goal_point_pub, goal_velocity_pub, emergency_stop_pub;
   ros::Subscriber robot_pose_sub;
   geometry_msgs::Pose2D goal_point = {}, current_point = {};
+  geometry_msgs::Twist goal_velocity;
 };
 
 struct GoalInfo {
@@ -108,7 +118,7 @@ public:
     dummy_goal.yaw = coat_reverse_ * yaw;
     dummy_goal.action_type = action_type;
     dummy_goal.action_value = action_value;
-    dummy_goal.velocity_x = velocity_x;
+    dummy_goal.velocity_x = velocity_x * coat_reverse_;
     dummy_goal.velocity_y = velocity_y;
     map_.push_back(dummy_goal);
   }
@@ -135,12 +145,19 @@ public:
 
   void reset() { map_.resize(0); }
 
-  geometry_msgs::Pose2D getPtp() {
+  void getPtp(Ptp &controller) {
+    geometry_msgs::Twist dummy_velocity;
+    dummy_velocity.linear.x = now.velocity_x;
+    dummy_velocity.linear.y = now.velocity_y;
+    controller.sendNextVelocity(dummy_velocity);
+
     geometry_msgs::Pose2D dummy_goal;
     dummy_goal.x = now.x;
     dummy_goal.y = now.y;
     dummy_goal.theta = now.yaw / 180.0 * M_PI;
-    return dummy_goal;
+    controller.sendNextGoal(dummy_goal);
+
+    next();
   }
 
   GoalInfo now;
@@ -227,7 +244,7 @@ int main(int argc, char **argv) {
   n.getParam("/ar/start_yaw", start_yaw);
 
   // パラメータ
-  constexpr double ERROR_DISTANCE_MAX = 50, ERROR_ANGLE_MAX = 1.0;
+  constexpr double ERROR_DISTANCE_MAX = 100, ERROR_ANGLE_MAX = 1.0;
   // 2段目昇降機構
   constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 75, TWO_STAGE_TOWEL = 77,
                 TWO_STAGE_SHEET = 77, TWO_STAGE_READY = 0,
@@ -341,8 +358,7 @@ int main(int argc, char **argv) {
   while (ros::ok()) {
     loop_rate.sleep();
     if (Pi::gpio().read(START) == 1) {
-      planner.sendNextGoal(goal_map[map_type].getPtp());
-      goal_map[map_type].next();
+      goal_map[map_type].getPtp(planner);
       break;
     }
     planner.should_stop_emergency = true;
@@ -468,8 +484,7 @@ int main(int argc, char **argv) {
         global_message.data = ss.str();
         global_message_pub.publish(global_message);
 
-        planner.sendNextGoal(goal_map[map_type].getPtp());
-        goal_map[map_type].next();
+        goal_map[map_type].getPtp(planner);
       }
     } else {
       lightTape(nomal_led);
