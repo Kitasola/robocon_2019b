@@ -7,6 +7,7 @@
 #include <ros/ros.h>
 #include <sstream>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Int32.h>
 #include <std_msgs/String.h>
 #include <vector>
 
@@ -19,6 +20,7 @@ public:
         n->advertise<geometry_msgs::Pose2D>(usename + "/goal_point", 1);
     goal_velocity_pub =
         n->advertise<geometry_msgs::Twist>(usename + "/goal_velocity", 1);
+    accel_max_pub = n->advertise<std_msgs::Int32>(usename + "/accel_max", 1);
     emergency_stop_pub =
         n->advertise<std_msgs::Bool>(usename + "/emergency_stop", 1);
     robot_pose_sub = n->subscribe("robot_pose", 1, &Ptp::getRobotPose, this);
@@ -57,6 +59,12 @@ public:
     emergency_stop_pub.publish(msg);
   }
 
+  void sendAccelMax(int accel) {
+    accel_max.data = accel;
+    ROS_INFO_STREAM("Accel Max is " << accel);
+    accel_max_pub.publish(accel_max);
+  }
+
   void sendNextVelocity(geometry_msgs::Twist velocity) {
     goal_velocity = velocity;
     ROS_INFO_STREAM("Next Goal Velocity is " << goal_velocity.linear.x << ", "
@@ -83,10 +91,12 @@ public:
   }
 
 private:
-  ros::Publisher goal_point_pub, goal_velocity_pub, emergency_stop_pub;
+  ros::Publisher goal_point_pub, goal_velocity_pub, accel_max_pub,
+      emergency_stop_pub;
   ros::Subscriber robot_pose_sub;
   geometry_msgs::Pose2D goal_point = {}, current_point = {};
   geometry_msgs::Twist goal_velocity;
+  std_msgs::Int32 accel_max;
 };
 
 struct GoalInfo {
@@ -97,6 +107,7 @@ struct GoalInfo {
   int action_value; // 必要なら使う e.g. 高さ
   int velocity_x;
   int velocity_y;
+  int accel;
 };
 
 class GoalManager {
@@ -110,8 +121,8 @@ public:
     goal.yaw = coat_reverse_ * goal.yaw;
     map_.push_back(goal);
   }
-  void add(int x, int y, int yaw, int action_type = 0, int action_value = 0,
-           int velocity_x = 0, int velocity_y = 0) {
+  void add(int x, int y, int yaw, int accel = 100, int action_type = 0,
+           int action_value = 0, int velocity_x = 0, int velocity_y = 0) {
     GoalInfo dummy_goal;
     dummy_goal.x = coat_reverse_ * x;
     dummy_goal.y = y;
@@ -120,6 +131,7 @@ public:
     dummy_goal.action_value = action_value;
     dummy_goal.velocity_x = velocity_x * coat_reverse_;
     dummy_goal.velocity_y = velocity_y;
+    dummy_goal.accel = accel;
     map_.push_back(dummy_goal);
   }
 
@@ -146,6 +158,8 @@ public:
   void reset() { map_.resize(0); }
 
   void getPtp(Ptp &controller) {
+    controller.sendAccelMax(now.accel);
+
     geometry_msgs::Twist dummy_velocity;
     dummy_velocity.linear.x = now.velocity_x;
     dummy_velocity.linear.y = now.velocity_y;
@@ -245,6 +259,7 @@ int main(int argc, char **argv) {
 
   // パラメータ
   constexpr double ERROR_DISTANCE_MAX = 100, ERROR_ANGLE_MAX = 1.0;
+  constexpr int MAX_ACCEL_NOMAL = 500;
   // 2段目昇降機構
   constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 75, TWO_STAGE_TOWEL = 77,
                 TWO_STAGE_SHEET = 77, TWO_STAGE_READY = 0,
@@ -255,6 +270,7 @@ int main(int argc, char **argv) {
   constexpr int HUNGER_ID = 1, HUNGER_SPEED = 200;
   constexpr double HUNGER_WAIT_TIME = HUNGER_SPEED * 0.02;
   // タオル
+  constexpr int MAX_ACCEL_TOWEL = 100;
   constexpr int TOWEL_POSITION_Y = 7100;
   constexpr int TOWEL_ID = 2, NUM_TOWEL = 3;
   constexpr int TOWEL_ANGLE[NUM_TOWEL] = {50, 50, 0};
@@ -330,15 +346,17 @@ int main(int argc, char **argv) {
   goal_map[1].restart();
 
   int TOWEL_FES_POSITION_Y = start_y + 2730;
-  goal_map[2].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
-  goal_map[2].add(start_x - 1000, TOWEL_FES_POSITION_Y + 500,
+  goal_map[2].add(start_x, start_y, start_yaw, MAX_ACCEL_NOMAL,
+                  11); // Move: スタートゾーン
+  goal_map[2].add(start_x - 1000, TOWEL_FES_POSITION_Y + 500, MAX_ACCEL_NOMAL,
                   start_yaw); // Move: スタートゾーン
-  goal_map[2].add(start_x - 1000, TOWEL_FES_POSITION_Y + 500, start_yaw, 1,
-                  TWO_STAGE_TOWEL);
-  goal_map[2].add(start_x - 1000, TOWEL_FES_POSITION_Y, start_yaw, 10,
-                  TWO_STAGE_TOWEL *
-                      TWO_STAGE_TIME); // Move: 小ポール横 -> Start: 昇降
-  goal_map[2].add(start_x - 1000, TOWEL_FES_POSITION_Y, start_yaw, 3,
+  goal_map[2].add(start_x - 1000, TOWEL_FES_POSITION_Y + 500, start_yaw,
+                  MAX_ACCEL_TOWEL, 1, TWO_STAGE_TOWEL);
+  goal_map[2].add(
+      start_x - 1000, TOWEL_FES_POSITION_Y, start_yaw, MAX_ACCEL_TOWEL, 10,
+      TWO_STAGE_TOWEL * TWO_STAGE_TIME); // Move: 小ポール横 -> Start: 昇降
+  goal_map[2].add(start_x - 1000, TOWEL_FES_POSITION_Y, start_yaw,
+                  MAX_ACCEL_NOMAL, 3,
                   TOWEL_ANGLE[1]); // Move: スタートゾーン
   goal_map[2].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
   goal_map[2].add(start_x, start_y, start_yaw); // Move: スタートゾーン
