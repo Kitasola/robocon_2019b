@@ -77,6 +77,7 @@ int main(int argc, char **argv) {
       } else if (robot_pose.theta <= -M_PI) {
         robot_pose.theta += 2 * M_PI;
       }
+      reset_robot_pose_pub.publish(robot_pose);
       should_reset_point = false;
     } else {
       robot_pose = wheel_robot_pose;

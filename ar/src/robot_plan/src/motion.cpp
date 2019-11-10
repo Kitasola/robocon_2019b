@@ -382,6 +382,8 @@ int main(int argc, char **argv) {
     planner.should_stop_emergency = true;
     planner.sendEmergencyStatus();
   }
+  global_message.data = "Robot Pose Reset";
+  global_message_pub.publish(global_message);
   global_message.data = "Game Start";
   global_message_pub.publish(global_message);
 
