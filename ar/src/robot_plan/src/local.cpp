@@ -297,8 +297,9 @@ private:
   int map_id_max[2] = {};
   bool should_stop_emergency = false;
 
-  arrc::PidVelocity moment{12, 0, 0};
-  constexpr static int MAX_MOMENT = 1000;
+  /* arrc::PidVelocity moment{12, 0, 0}; */
+  arrc::PidVelocity moment{8, 0, 0};
+  constexpr static int MAX_MOMENT = 0;
 
   constexpr static int WHEEL_DEBUG_MODE = 0;
 };

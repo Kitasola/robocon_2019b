@@ -4,7 +4,7 @@
 #include <std_msgs/String.h>
 #include <string>
 
-bool should_reset_point = false;
+bool should_reset_point = true;
 void checkGlobalMessage(const std_msgs::String msg) {
   std::string mode = msg.data;
   if (mode == "Game Start") {
@@ -66,6 +66,7 @@ int main(int argc, char **argv) {
 
   geometry_msgs::Pose2D robot_relative_pose;
   while (ros::ok()) {
+    ros::spinOnce();
 
     ros::Time now = ros::Time::now();
     if (should_reset_point) {
@@ -81,6 +82,7 @@ int main(int argc, char **argv) {
       should_reset_point = false;
     } else {
       robot_pose = wheel_robot_pose;
+      robot_pose.theta = M_PI;
       if (robot_pose.theta > M_PI) {
         robot_pose.theta -= 2 * M_PI;
       } else if (robot_pose.theta <= -M_PI) {

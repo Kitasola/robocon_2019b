@@ -258,8 +258,8 @@ int main(int argc, char **argv) {
   n.getParam("/ar/start_yaw", start_yaw);
 
   // パラメータ
-  constexpr double ERROR_DISTANCE_MAX = 100, ERROR_ANGLE_MAX = 1.0;
-  constexpr int MAX_ACCEL_NOMAL = 500;
+  constexpr double ERROR_DISTANCE_MAX = 400, ERROR_ANGLE_MAX = 10000;
+  constexpr int MAX_ACCEL_NOMAL = 1000;
   // 2段目昇降機構
   constexpr int TWO_STAGE_ID = 2, TWO_STAGE_HUNGER = 75, TWO_STAGE_TOWEL = 77,
                 TWO_STAGE_SHEET = 77, TWO_STAGE_READY = 0,
@@ -270,7 +270,7 @@ int main(int argc, char **argv) {
   constexpr int HUNGER_ID = 1, HUNGER_SPEED = 200;
   constexpr double HUNGER_WAIT_TIME = HUNGER_SPEED * 0.02;
   // タオル
-  constexpr int MAX_ACCEL_TOWEL = 100;
+  constexpr int MAX_ACCEL_TOWEL = 200;
   constexpr int TOWEL_POSITION_Y = 7100;
   constexpr int TOWEL_ID = 2, NUM_TOWEL = 3;
   constexpr int TOWEL_ANGLE[NUM_TOWEL] = {50, 50, 0};
@@ -346,20 +346,14 @@ int main(int argc, char **argv) {
   goal_map[1].restart();
 
   int TOWEL_FES_POSITION_Y = start_y + 2730;
-  goal_map[2].add(start_x, start_y, start_yaw, MAX_ACCEL_NOMAL,
+  goal_map[2].add(start_x, start_y, start_yaw,
+                  MAX_ACCEL_NOMAL); // Move: スタートゾーン
+  goal_map[2].add(start_x - 1500, TOWEL_FES_POSITION_Y + 500, start_yaw,
+                  MAX_ACCEL_NOMAL);
+  goal_map[2].add(start_x, start_y, start_yaw,
+                  MAX_ACCEL_NOMAL); // Move: スタートゾーン
+  goal_map[2].add(start_x, start_y, start_yaw, MAX_ACCEL_TOWEL,
                   11); // Move: スタートゾーン
-  goal_map[2].add(start_x - 1000, TOWEL_FES_POSITION_Y + 500, MAX_ACCEL_NOMAL,
-                  start_yaw); // Move: スタートゾーン
-  goal_map[2].add(start_x - 1000, TOWEL_FES_POSITION_Y + 500, start_yaw,
-                  MAX_ACCEL_TOWEL, 1, TWO_STAGE_TOWEL);
-  goal_map[2].add(
-      start_x - 1000, TOWEL_FES_POSITION_Y, start_yaw, MAX_ACCEL_TOWEL, 10,
-      TWO_STAGE_TOWEL * TWO_STAGE_TIME); // Move: 小ポール横 -> Start: 昇降
-  goal_map[2].add(start_x - 1000, TOWEL_FES_POSITION_Y, start_yaw,
-                  MAX_ACCEL_NOMAL, 3,
-                  TOWEL_ANGLE[1]); // Move: スタートゾーン
-  goal_map[2].add(start_x, start_y, start_yaw, 11); // Move: スタートゾーン
-  goal_map[2].add(start_x, start_y, start_yaw); // Move: スタートゾーン
   goal_map[2].restart();
 
   bool changed_phase = true;
@@ -376,16 +370,16 @@ int main(int argc, char **argv) {
   while (ros::ok()) {
     loop_rate.sleep();
     if (Pi::gpio().read(START) == 1) {
-      goal_map[map_type].getPtp(planner);
       break;
     }
     planner.should_stop_emergency = true;
     planner.sendEmergencyStatus();
   }
-  global_message.data = "Robot Pose Reset";
-  global_message_pub.publish(global_message);
   global_message.data = "Game Start";
   global_message_pub.publish(global_message);
+
+  ros::Duration(1.0).sleep();
+  goal_map[map_type].getPtp(planner);
 
   while (ros::ok()) {
     ros::spinOnce();
@@ -435,7 +429,7 @@ int main(int argc, char **argv) {
         break;
       }
       case 1: {
-        planner.should_stop_emergency = true;
+        /* planner.should_stop_emergency = true; */
         start = now;
         // 伸縮
         send(TWO_STAGE_ID, 30, goal_map[map_type].now.action_value);
@@ -491,6 +485,7 @@ int main(int argc, char **argv) {
           break;
         }
       }
+        planner.should_stop_emergency = false;
       }
       planner.sendEmergencyStatus();
 

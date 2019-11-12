@@ -1,6 +1,5 @@
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
-#include <gy521.hpp>
 #include <math.h>
 #include <mbed.h>
 #include <pid.hpp>
@@ -104,9 +103,6 @@ int main() {
       RotaryInc(PA_6, PA_7, MEASURE_WHEEL_DIAMETER * M_PI, MEASURE_ROTARY_RANGE,
                 MEASURE_ROTARY_MULTI)};
 
-  I2C i2c(PB_3, PB_10);
-  Gy521 gyro(i2c, 0x68, 1, 1.02);
-
   /* 余剰PWMピン */
   /* constexpr PinName OTHER_PWM_PIN[3][3] = { */
   /*     {PB_6, PB_7, PB_12}, {PB_8, PB_9, PC_7}, {PA_0, PA_1, PB_0}}; */
@@ -114,14 +110,6 @@ int main() {
   DigitalOut run_led(LED1);
   run_led = 1;
   DigitalIn calibration_switch(PC_13); //青色のボタン
-  while (1) {
-    if (calibration_switch.read() == 0) {
-      run_led = 0;
-      break;
-    }
-  }
-  gyro.calibration(1000);
-  run_led = 1;
 
   /* ==========ここより上にしかパラメータは存在しません========== */
   Timer main_loop, topic_loop;
@@ -130,8 +118,7 @@ int main() {
 
   robot_pose.x = 0;
   robot_pose.y = 0;
-  /* robot_pose.theta = M_PI; */
-  gyro.yaw = 180;
+  robot_pose.theta = M_PI;
   while (true) {
     nh.spinOnce();
     /* if (topic_loop.read() > 1.0 / MAIN_FREQUENCY) { */
@@ -146,25 +133,23 @@ int main() {
     }
 
     // Odometry
-    gyro.update();
     double measure_diff[NUM_WHEEL] = {};
     for (int i = 0; i < NUM_WHEEL; ++i) {
       measure_diff[i] = measure_rotary[i].diff();
     }
     double robot_x = measure_diff[0] / 2 - measure_diff[2] / 2;
     double robot_y = -measure_diff[1] / 2 + measure_diff[3] / 2;
-    /* double robot_theta = 0; */
-    /* for (int i = 0; i < NUM_WHEEL; ++i) { */
-    /*   robot_theta += -measure_diff[i]; */
-    /* } */
-    /* robot_theta /= MEASURE_RADIUS * NUM_WHEEL; */
-    /* robot_pose.theta += robot_theta; */
-    /* if (robot_pose.theta > M_PI) { */
-    /*   robot_pose.theta -= 2 * M_PI; */
-    /* } else if (robot_pose.theta <= -M_PI) { */
-    /*   robot_pose.theta += 2 * M_PI; */
-    /* } */
-    robot_pose.theta = gyro.yaw / 180.0 * M_PI;
+    double robot_theta = 0;
+    for (int i = 0; i < NUM_WHEEL; ++i) {
+      robot_theta += -measure_diff[i];
+    }
+    robot_theta /= MEASURE_RADIUS * NUM_WHEEL;
+    robot_pose.theta += robot_theta;
+    if (robot_pose.theta > M_PI) {
+      robot_pose.theta -= 2 * M_PI;
+    } else if (robot_pose.theta <= -M_PI) {
+      robot_pose.theta += 2 * M_PI;
+    }
     robot_pose.x +=
         robot_x * cos(robot_pose.theta) - robot_y * sin(robot_pose.theta);
     robot_pose.y +=
@@ -184,8 +169,8 @@ int main() {
       drive_velocity[i] = drive_velocity[i] * drive_filter +
                           drive_rotary[i].getSpeed() * (1 - drive_filter);
       if ((int)goal_twist.angular.y == -1) {
-        drive_goal[i] = drive_velocity[i];
         drive_speed[i].control(drive_goal[i], drive_velocity[i]);
+        drive_speed[i].reset();
         drive_control = 0;
       } else {
         for (int j = 0; j < NUM_AXIS; ++j) {
