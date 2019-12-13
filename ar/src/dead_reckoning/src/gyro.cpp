@@ -8,22 +8,33 @@ int main(int argc, char **argv) {
   ros::NodeHandle n;
   /* ros::Subscriber global_sub = */
   /*     n.subscribe("global_message", 1, checkGlobalMessage); */
+  ros::Publisher global_pub =
+      n.advertise<std_msgs::String>("global_message", 1);
+  std_msgs::String message;
   ros::Publisher wheel_gyro_pub =
       n.advertise<std_msgs::Float32>("wheel/yaw", 1);
   std_msgs::Float32 yaw;
 
-  // Calibration
-  /* while (!Pigpiod) { */
-  /*   if (!ros::ok()) { */
-  /*     return 0; */
-  /*   } */
-  /* } */
-  ros::GY521 gyro(0x68, 2, 1000, 1.02);
-  gyro.start();
-  ROS_INFO_STREAM("Calibration Finish");
+  // コート情報の取得
+  std::string coat_color;
+  n.getParam("/coat", coat_color);
+  int first_yaw;
+  n.getParam("/ar/start_yaw", first_yaw);
+  if (coat_color == "blue") {
+    first_yaw *= 1;
+  } else if (coat_color == "red") {
+    first_yaw *= -1;
+  } else {
+    first_yaw *= 1;
+  }
 
-  constexpr int MAIN_FREQ = 500;
-  constexpr int TOPIC_FREQ = 10;
+  ros::GY521 gyro(0x68, 1, 1000, 1.02);
+  gyro.start(first_yaw);
+  message.data = "Calibration Finish";
+  global_pub.publish(message);
+
+  constexpr int MAIN_FREQ = 1000;
+  constexpr int TOPIC_FREQ = 30;
   ros::Rate loop_rate(MAIN_FREQ);
   ros::Time start = ros::Time::now();
 

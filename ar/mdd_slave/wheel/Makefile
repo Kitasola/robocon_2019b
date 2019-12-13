@@ -47,7 +47,6 @@ LIBRARY_DIR := /home/$(USER)/arrc/nucleo_utility/library/f446re
 # Objects and Paths
 
 OBJECTS += four_omuni.o
-OBJECTS += $(LIBRARY_DIR)/arrc/gy521.o
 OBJECTS += $(LIBRARY_DIR)/arrc/rotary_inc.o
 OBJECTS += $(LIBRARY_DIR)/arrc/scrp_slave.o
 OBJECTS += $(LIBRARY_DIR)/ros_lib_kinetic/BufferedSerial/Buffer/MyBuffer.o

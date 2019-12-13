@@ -1,42 +1,40 @@
 #include <chrono>
 #include <ctime>
 #include <fstream>
-#include <geometry_msgs/Pose2D.h>
-#include <geometry_msgs/Twist.h>
 #include <iomanip>
 #include <queue>
 #include <ros/ros.h>
+#include <sensor_msgs/LaserScan.h>
+#include <sensor_msgs/PointCloud.h>
 #include <sstream>
 #include <std_msgs/String.h>
 #include <string>
 
-struct LogFormat {
-  double time;
-  double x;
-  double y;
-  double theta;
-  double v_x;
-  double v_y;
-  double v_theta;
-};
-
-bool starts_game = false;
-bool should_reset_point = false;
-void checkGlobalMessage(const std_msgs::String msg) {
-  std::string mode = msg.data;
-  if (mode == "Game Start") {
-    starts_game = true;
-    should_reset_point = true;
-  } else if (mode == "Robot Pose Reset") {
-    should_reset_point = true;
+constexpr double MIN_SCAN_LENGTH = 0.25, MAX_SCAN_LENGTH = 7.695, // m
+    SCAN_START_ANGLE = -87.0 / 180 * M_PI,
+                 SCAN_FINISH_ANGLE = 87.0 / 180 * M_PI; // rad
+sensor_msgs::PointCloud scan_data;                      // 相対位置
+bool can_detection = false;
+void getLidarScan(const sensor_msgs::LaserScan msgs) {
+  int scan_start_id =
+      (SCAN_START_ANGLE - msgs.angle_min) / msgs.angle_increment;
+  int scan_finish_id =
+      (SCAN_FINISH_ANGLE - msgs.angle_min) / msgs.angle_increment;
+  scan_data.points.resize(0);
+  for (int i = scan_start_id; i < scan_finish_id + 1; ++i) {
+    if (msgs.ranges[i] >= MIN_SCAN_LENGTH &&
+        msgs.ranges[i] <= MAX_SCAN_LENGTH) {
+      geometry_msgs::Point32 dummy_point;
+      dummy_point.x =
+          msgs.ranges[i] * cos(i * msgs.angle_increment + msgs.angle_min);
+      dummy_point.y =
+          msgs.ranges[i] * sin(i * msgs.angle_increment + msgs.angle_min);
+      scan_data.points.push_back(dummy_point);
+    }
   }
+  scan_data.header = msgs.header;
+  can_detection = true;
 }
-
-geometry_msgs::Pose2D robot_pose;
-void getPose(const geometry_msgs::Pose2D msgs) { robot_pose = msgs; }
-
-geometry_msgs::Twist robot_velocity;
-void getVelocity(const geometry_msgs::Twist msgs) { robot_velocity = msgs; }
 
 std::string getDate() {
   auto now = std::chrono::system_clock::now();
@@ -50,50 +48,30 @@ std::string getDate() {
 int main(int argc, char **argv) {
   ros::init(argc, argv, "robot_logger");
   ros::NodeHandle n;
-  ros::Subscriber robot_pose_sub = n.subscribe("robot_pose", 100, getPose);
-  ros::Subscriber wheel_velocity_sub =
-      n.subscribe("wheel/velocity", 100, getVelocity);
-  ros::Subscriber global_sub =
-      n.subscribe("global_message", 1, checkGlobalMessage);
+  ros::Subscriber scan_sub = n.subscribe("scan", 10, getLidarScan);
 
-  constexpr int FREQ = 100;
-  ros::Rate loop_rate(FREQ);
   double start = ros::Time::now().toSec();
-  std::queue<LogFormat> log_data;
+
+  std::ofstream log_file;
+  std::string log_dir = "/home/kusoelmo/arrc/robocon_2019b/ar/log/lrf/";
+  std::string date = getDate();
+  log_file.open(log_dir + "scan" + date + ".csv", std::ios::out);
+  if (log_file.fail()) {
+    ROS_ERROR_STREAM("File Open Failed.");
+    std::exit(1);
+  }
+  ROS_INFO_STREAM("File Open Succeed.");
 
   while (ros::ok()) {
     ros::spinOnce();
 
-    if (starts_game) {
-      LogFormat data;
-      data.time = ros::Time::now().toSec() - start;
-      data.x = robot_pose.x;
-      data.y = robot_pose.y;
-      data.theta = robot_pose.theta;
-      data.v_x = robot_velocity.linear.x;
-      data.v_y = robot_velocity.linear.y;
-      data.v_theta = robot_velocity.angular.z;
-      log_data.push(data);
-    }
-
-    loop_rate.sleep();
-  }
-
-  if (starts_game) {
-    std::ofstream log;
-    std::string log_dir = "/home/kusoelmo/arrc/robocon_2019b/ar/log/latest/";
-    log.open(log_dir + "robot_pose" + getDate() + ".csv", std::ios::out);
-    if (log.fail()) {
-      ROS_ERROR_STREAM("File Open Failed.");
-      std::exit(1);
-    }
-    ROS_INFO_STREAM("File Open Succeed.");
-    while (!log_data.empty()) {
-      LogFormat data = log_data.front();
-      log << data.time << ", " << data.x << ", " << data.y << ", " << data.theta
-          << ", " << data.v_x << ", " << data.v_y << ", " << data.v_theta
-          << std::endl;
-      log_data.pop();
+    if (can_detection) {
+      double time = ros::Time::now().toSec() - start;
+      for (point : scan_data.points) {
+        log_file << point.x << ", " << point.y << ", ";
+      }
+      log_file << time << std::endl;
+      can_detection = false;
     }
   }
 }
