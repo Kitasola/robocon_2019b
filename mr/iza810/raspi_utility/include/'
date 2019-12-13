@@ -1,0 +1,28 @@
+#ifndef ARRC_RASPI_TIME_HPP
+#define ARRC_RASPI_TIME_HPP
+#include <chrono>
+
+using namespace arrc_raspi {
+  class Timer {
+  public:
+    Timer() { prev = now = std::chrono::high_resolution_clock::now(); }
+    void reset() { prev = std::chrono::high_resolution_clock::now(); }
+    void update() {
+      now = std::chrono::high_resolution_clock::now();
+      time =
+          (long double)std::chrono::duration_cast<std::chrono::nanoseconds>(
+              now - prev)
+              .count() *
+          1.0e-9;
+      prev = now;
+    }
+    long double read() { return time; }
+    void stop() { timer_stop = true; }
+    void start() { timer_stop = false; }
+
+  private:
+    std::chrono::high_resolution_clock::time_point now, prev;
+    bool timer_stop = false;
+  }
+}
+#endif
