@@ -23,34 +23,6 @@ constexpr int NUM_ENCODER_PORT = 4;
 constexpr int RANGE = 256;
 constexpr PinName ENCODER_PIN[NUM_ENCODER_PORT][2] = {
     {PA_0, PA_4}, {PA_1, PA_3}, {PA_8, PA_7}, {PB_6, PA_11}};
-double goal_degree[2] = {-10.0, -10.0};
-
-AnalogIn shoulder(PB_0);
-AnalogIn elbow(PA_0);
-double test_data_1, test_data_2;
-double raw_shoulder, raw_elbow;
-/*
-bool calibration_flag = false;
-bool start_flag = false;
-
-InterruptIn shoulder(PB_6, PullUp);
-InterruptIn elbow(PA_11, PullUp);
-*/
-
-//RotaryInc raw_shoulder(PA_0, PA_4, 256, 2);
-//RotaryInc raw_elbow(PA_1, PA_3, 256, 2);
-
-/*
-bool flag_z_shoulder = false;
-bool flag_z_elbow = false;
-
-void riseShoulder(){
-    flag_z_shoulder = true;
-}
-void riseElbow(){
-    flag_z_elbow = true;
-}
-*/
 
 float map(float value, float from_low, float from_high, float to_low,
           float to_high) {
@@ -95,120 +67,60 @@ bool spinMotor(int cmd, int rx_data, int &tx_data) {
   return spinMotor(cmd - 2, rx_data);
 }
 
+double arm_current_angle[2];
+int arm_goal_angle[2] = {};
+bool getArmGoal(int cmd, int rx_data, int &tx_data) {
+  arm_goal_angle[cmd % 2] = rx_data;
+  tx_data = arm_current_angle[cmd % 2];
+  return true;
+}
+
+double arm_raw_data[2] = {};
+bool checkArmRegister(int cmd, int rx_data, int &tx_data) {
+  tx_data = arm_raw_data[rx_data % 2] * 1000;
+  return true;
+}
+
+constexpr int FIRST_ANGLE[2] = {45, 45};
 bool safe(int cmd, int rx_data, int &tx_data) {
-  for (int i = 0; i < 4; ++i) {
-    spinMotor(i, 0);
+  for (int i = 0; i < 2; ++i) {
+    arm_goal_angle[i] = FIRST_ANGLE[i];
   }
   return true;
 }
-/*
-bool calibration(int cmd, int rx_data, int &tx_data){
- if(rx_data == 1){
-   start_flag = true;
-   tx_data = 10;
- }
- return true;
-}
-*/
-
-double arm_angle[2];
-bool angleShoulder(int cmd, int rx_data, int &tx_data) {
-  goal_degree[0] = rx_data;
-  if(goal_degree[0] >= 5){
-    goal_degree[0] = 5;
-  }
-  tx_data = arm_angle[0];
-  return true;
-}
-
-bool angleElbow(int cmd, int rx_data, int &tx_data) {
-  goal_degree[1] = rx_data;
-  tx_data = arm_angle[1];
-  return true;
-}
-
-bool getdata_1(int cmd, int rx_data,int &tx_data){
-    tx_data = arm_angle[0];
-}
-
-bool getdata_2(int cmd, int rx_data,int &tx_data){
-    // tx_data = elbow.read()*100;
-    tx_data = raw_elbow*100;
-}
-
 
 int main() {
   slave.addCMD(255, safe);
-  // slave.addCMD(60, calibration);
-  slave.addCMD(61, angleShoulder);
-  slave.addCMD(62, angleElbow);
-  slave.addCMD(120, getdata_1);
-  slave.addCMD(121, getdata_2);
-  // shoulder.rise(riseShoulder);
-  // elbow.rise(riseElbow);
-  constexpr int two_motor[2] = {1, 2};
-  //double raw_shoulder = shoulder.read();
-  //double raw_elbow = elbow.read();
+  slave.addCMD(60, getArmGoal);
+  slave.addCMD(61, getArmGoal);
+  slave.addCMD(120, checkArmRegister);
 
-  PidPosition se_motor[2] = {PidPosition(1.0, 0, 0.0, 0),
-                             PidPosition(1.0, 0, 0.0, 0)};
-  /*
-    while(calibration_flag == false){
-      if(start_flag == true){
-
-        if(flag_z_shoulder == false){
-          spinMotor(two_motor[0],5);
-        }else if(flag_z_shoulder == true){
-          spinMotor(two_motor[0],0);
-        }
-
-        if(flag_z_elbow == false){
-          spinMotor(two_motor[1],5);
-        }else if(flag_z_elbow == true){
-          spinMotor(two_motor[1],0);
-        }
-
-       if(flag_z_shoulder == true && flag_z_elbow == true){
-          calibration_flag = true;
-       }else{
-       calibration_flag = false;
-      }
-        //spinMotor(1, 0);
-        //spinMotor(3, 0);
-      }else{
-      spinMotor(two_motor[0],0);
-      spinMotor(two_motor[1],0);
-       }
-      //spinMotor(two_motor[0], 0);
-      //spinMotor(two_motor[1], 0);
-     // }else if(start_flag == false){
-      //spinMotor(two_motor[0], 30);
-      //spinMotor(two_motor[1], 30);
-      //}
-    }
-    */
-  // RotaryInc raw_shoulder(PA_0, PA_4, 512, 1);
-  // RotaryInc raw_elbow(PA_1, PA_3, 512, 1);
+  constexpr double ARM_ANGLE_MIN[2] = {35, 122.4}, ARM_ANGLE_MAX[2] = {95, 30},
+                   ARM_REGISTER_LOW[2] = {0.775, 0.06},
+                   ARM_REGISTER_HIGH[2] = {1.0, 0.402};
+  AnalogIn arm_joint[2] = {AnalogIn(PB_0), AnalogIn(PA_0)}; // Shoulder, Elbo
+  constexpr int ARM_MOTOR_ID[2] = {1, 2};
+  PidVelocity arm_motor[2] = {
+      PidVelocity(5.0 * 0.7, 5.0 * 1.2 / 0.5, 5.0 * 0.075 * 0.5, MAX_PWM),
+      PidVelocity(5.0 * 0.7, 5.0 * 1.2 / 0.2, 5.0 * 0.075 * 0.4, MAX_PWM)};
+  constexpr int ARM_ANGLE_ERROR[2] = {1, 3}, ARM_SPEED_MIN[2] = {0, 10};
+  arm_goal_angle[0] = FIRST_ANGLE[0];
+  arm_goal_angle[1] = FIRST_ANGLE[1];
   while (true) {
-    raw_shoulder = shoulder.read();
-    raw_elbow = elbow.read();
-
-    arm_angle[0] = map(raw_shoulder, 0.0, 1.0, 0.0, 270.0) - 252;
-    arm_angle[1] = map(raw_elbow, 0.0, 1.0, 300.0, -30.0) - 258;
-
-    //PidPosition se_motor[2] = {PidPosition(0.5, 0, 0.4, 0),
-    //                           PidPosition(0.5, 0, 0.4, 0)};
-    //for (int i = 0; i < 1; ++i) {
-      spinMotor(two_motor[1],
-        se_motor[1].control((double)goal_degree[1], arm_angle[1]));
-    //}
-    if(arm_angle[0] >= 5){
-        spinMotor(two_motor[0], -50);
-    }else{
-        spinMotor(two_motor[0], se_motor[0].control((double)goal_degree[0], arm_angle[0]));
+    for (int i = 0; i < 2; ++i) {
+      arm_raw_data[i] = arm_joint[i].read();
+      arm_current_angle[i] =
+          map(arm_raw_data[i], ARM_REGISTER_LOW[i], ARM_REGISTER_HIGH[i],
+              ARM_ANGLE_MIN[i], ARM_ANGLE_MAX[i]);
+      double arm_control =
+          arm_motor[i].control(arm_goal_angle[i], arm_current_angle[i]);
+      if (fabs(arm_goal_angle[i] - arm_current_angle[i]) < ARM_ANGLE_ERROR[i]) {
+        arm_control = 0;
+      } else if (fabs(arm_control) < ARM_SPEED_MIN[i]) {
+        arm_control = ARM_SPEED_MIN[i];
+      }
+      spinMotor(ARM_MOTOR_ID[i], arm_control);
     }
-    //spinMotor(two_motor[0], se_motor[0].control((double)goal_degree[0], arm_angle[0]));
-    //spinMotor(two_motor[1], 80);
-   // wait(0.01);
+    wait(0.01);
   }
 }
